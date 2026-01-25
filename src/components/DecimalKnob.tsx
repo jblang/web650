@@ -1,4 +1,4 @@
-import React, { useId, useState, useRef, useEffect } from 'react';
+import React, { useId, useState, useRef, useEffect, useLayoutEffect } from 'react';
 
 interface DecimalKnobProps {
   value: number; // 0-9
@@ -107,21 +107,25 @@ const DecimalKnob: React.FC<DecimalKnobProps> = ({ value, onChange, style }) => 
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [showPopup]);
 
-  useEffect(() => {
-    if (!showPopup || !popupRef.current) {
-      setPopupOffset(0);
-      return;
+  useLayoutEffect(() => {
+    if (showPopup && popupRef.current) {
+      const popup = popupRef.current;
+      const rect = popup.getBoundingClientRect();
+      const viewportWidth = window.innerWidth;
+      let newOffset = 0;
+      if (rect.left < 0) {
+        newOffset = -rect.left + 4;
+      } else if (rect.right > viewportWidth) {
+        newOffset = viewportWidth - rect.right - 4;
+      }
+
+      setPopupOffset(prevOffset => {
+        if (newOffset !== prevOffset) {
+          return newOffset;
+        }
+        return prevOffset;
+      });
     }
-    const popup = popupRef.current;
-    const rect = popup.getBoundingClientRect();
-    const viewportWidth = window.innerWidth;
-    let offset = 0;
-    if (rect.left < 0) {
-      offset = -rect.left + 4;
-    } else if (rect.right > viewportWidth) {
-      offset = viewportWidth - rect.right - 4;
-    }
-    setPopupOffset(offset);
   }, [showPopup]);
 
   return (

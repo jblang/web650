@@ -3,6 +3,12 @@
 import { ReactNode } from 'react';
 import EmulatorProvider from './EmulatorProvider';
 
+import CardDeckProvider from './CardDeckProvider';
+
 export default function Providers({ children }: { children: ReactNode }) {
-  return <EmulatorProvider>{children}</EmulatorProvider>;
+  return (
+    <CardDeckProvider>
+      <EmulatorProvider>{children}</EmulatorProvider>
+    </CardDeckProvider>
+  );
 }

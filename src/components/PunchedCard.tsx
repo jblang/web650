@@ -105,10 +105,9 @@ const styles = {
     display: 'inline-block',
     backgroundColor: '#f5e6c8', // cream/manila card color
     borderRadius: '4px',
-    boxShadow: '0 2px 8px rgba(0,0,0,0.3)',
     position: 'relative' as const,
     overflow: 'hidden',
-    clipPath: 'polygon(20px 0, 100% 0, 100% 100%, 0 100%, 0 20px)', // corner cut
+    clipPath: 'polygon(23px 0, 100% 0, 100% 100%, 0 100%, 0 40px)', // corner cut with 60 degree angle, 40px down vertical edge
   },
   cardInner: {
     display: 'flex',
@@ -162,7 +161,6 @@ const styles = {
     // width, height will be set dynamically
     backgroundColor: '#002244', // dark hole
     borderRadius: '1px',
-    boxShadow: 'inset 0 1px 2px rgba(0,0,0,0.5)',
   },
   columnNumbers: {
     display: 'flex',
@@ -178,8 +176,8 @@ const styles = {
     position: 'absolute' as const,
     top: 0,
     left: 0,
-    width: '20px',
-    height: '20px',
+    width: '23px',
+    height: '40px',
     backgroundColor: '#002244', // Dark color for the cut corner
     clipPath: 'polygon(0 0, 100% 0, 0 100%)', // Triangle cut
   }
@@ -237,11 +235,11 @@ const PunchedCard: React.FC<PunchedCardProps> = ({ text, style }) => {
       width: `${newCardWidth}px`,
       height: `${newCardHeight}px`,
       padding: `${cardPaddingVertical / 2}px ${cardPaddingHorizontal / 2}px`,
-    }}>
-      {/* Corner cut indicator */}
-      <div style={styles.cornerCut} />
-
-      <div style={styles.cardInner}>
+        }}>
+          {/* Corner cut indicator */}
+          <div style={styles.cornerCut} />
+    
+          <div style={styles.cardInner}>
         {/* Row labels */}
         <div style={{ ...styles.rowLabels, paddingTop: `${rowLabelsPaddingTop}px`, marginRight: `${rowLabelsMarginRight}px` }}>
           {ROW_LABELS.map((label, i) => (

@@ -1,64 +1,86 @@
 'use client';
 
 import React, { useState } from 'react';
-import { TextInput } from '@carbon/react';
+import {
+  Accordion,
+  AccordionItem,
+  FileUploaderDropContainer,
+  Button,
+} from '@carbon/react';
 import PunchedCard from '@/components/PunchedCard';
+import { useCardDeck } from '@/components/CardDeckProvider'; // Import useCardDeck
 
 const styles = {
-  container: {
-    padding: '24px',
-    display: 'flex',
-    flexDirection: 'column' as const,
-    gap: '24px',
-  },
-  header: {
-    color: 'white',
-    fontSize: '24px',
-    fontWeight: 'bold' as const,
-  },
   inputSection: {
     maxWidth: '800px',
   },
   cardSection: {
-    overflowX: 'auto' as const,
-    paddingBottom: '16px',
+    marginTop: '24px',
   },
-  characterCount: {
-    color: '#888',
-    fontSize: '12px',
-    marginTop: '4px',
+  fileUploader: {
+    marginBottom: '16px',
   },
 };
 
 export default function PunchPage() {
-  const [text, setText] = useState('HELLO WORLD');
+  const { cardDeck, uploadedFile, handleFileChange, handleClearDeck } = useCardDeck(); // Use hook
 
-  const handleTextChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    // Limit to 80 characters and convert to uppercase for display
-    const newText = e.target.value.slice(0, 80);
-    setText(newText);
+  const [expandedItems, setExpandedItems] = useState<Set<number>>(new Set());
+
+  const handleHeadingClick = (index: number, isExpanded: boolean) => {
+    console.log(`handleHeadingClick - index: ${index}, isExpanded: ${isExpanded}`);
+    setExpandedItems(prev => {
+      const newExpanded = new Set(prev);
+      if (isExpanded) {
+        newExpanded.add(index);
+      } else {
+        newExpanded.delete(index);
+      }
+      console.log('handleHeadingClick - newExpanded:', newExpanded);
+      return newExpanded;
+    });
   };
 
   return (
-    <div style={styles.container}>
-      <h1 style={styles.header}>Card Reader / Punch</h1>
-
+    <div>
       <div style={styles.inputSection}>
-        <TextInput
-          id="card-text-input"
-          labelText="Card Text (up to 80 characters)"
-          placeholder="Enter text to punch on card..."
-          value={text}
-          onChange={handleTextChange}
-          maxLength={80}
-        />
-        <div style={styles.characterCount}>
-          {text.length} / 80 characters
+        <div style={styles.fileUploader}>
+          <FileUploaderDropContainer
+            labelText="Drag and drop a text file here or click to upload"
+            accept={['.txt', '.dck']}
+            onAddFiles={(event, content) => {
+              handleFileChange({ addedFiles: content.addedFiles });
+            }}
+          />
+          {uploadedFile && (
+            <p>File loaded: {uploadedFile.name} ({cardDeck.length} cards)</p>
+          )}
         </div>
+
+        {cardDeck.length > 0 && (
+          <Button kind="danger" onClick={handleClearDeck}>
+            Clear Deck
+          </Button>
+        )}
       </div>
 
       <div style={styles.cardSection}>
-        <PunchedCard text={text} />
+        {cardDeck.length > 0 ? (
+          <Accordion>
+            {cardDeck.map((cardText, index) => (
+              <AccordionItem
+                key={index}
+                title={<><span>{index + 1}: </span><span style={{ fontFamily: 'monospace' }}>{cardText}</span></>}
+                onHeadingClick={({ isExpanded }) => handleHeadingClick(index, isExpanded)}
+              >
+                {console.log(`AccordionItem - index: ${index}, expandedItems.has(${index}): ${expandedItems.has(index)}`)}
+                {expandedItems.has(index) && <PunchedCard text={cardText} />}
+              </AccordionItem>
+            ))}
+          </Accordion>
+        ) : (
+          <p>Upload a text file to see the card deck.</p>
+        )}
       </div>
     </div>
   );
