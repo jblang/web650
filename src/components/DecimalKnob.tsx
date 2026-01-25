@@ -1,4 +1,4 @@
-import React, { useId } from 'react';
+import React, { useId, useState, useRef, useEffect } from 'react';
 
 interface DecimalKnobProps {
   value: number; // 0-9
@@ -6,12 +6,17 @@ interface DecimalKnobProps {
   style?: React.CSSProperties;
 }
 
+// SVG cursors for clockwise and counter-clockwise rotation
+const ccwCursor = `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='32' height='32' viewBox='0 0 24 24'%3E%3Cpath fill='white' stroke='black' stroke-width='0.5' d='M12 4C7.58 4 4 7.58 4 12h2c0-3.31 2.69-6 6-6v3l4-4-4-4v3z'/%3E%3C/svg%3E") 16 16, pointer`;
+const cwCursor = `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='32' height='32' viewBox='0 0 24 24'%3E%3Cpath fill='white' stroke='black' stroke-width='0.5' d='M12 4V1L8 5l4 4V6c3.31 0 6 2.69 6 6h2c0-4.42-3.58-8-8-8z'/%3E%3C/svg%3E") 16 16, pointer`;
+
 const styles = {
   container: {
     display: 'inline-flex',
     flexDirection: 'column' as const,
     alignItems: 'center',
     gap: '4px',
+    minWidth: '85px',
   },
   display: {
     backgroundColor: '#1a1a1a',
@@ -25,36 +30,128 @@ const styles = {
     border: '1px solid #333',
   },
   knobWrapper: {
+    position: 'relative' as const,
+  },
+  knobHalf: {
+    position: 'absolute' as const,
+    top: 0,
+    width: '50%',
+    height: '100%',
+  },
+  displayWrapper: {
+    position: 'relative' as const,
+  },
+  popup: {
+    position: 'absolute' as const,
+    top: '100%',
+    left: '50%',
+    transform: 'translateX(-50%)',
+    display: 'flex',
+    flexDirection: 'row' as const,
+    backgroundColor: '#2a2a2a',
+    border: '1px solid #555',
+    borderRadius: '4px',
+    padding: '4px',
+    gap: '2px',
+    zIndex: 100,
+    marginTop: '2px',
+  },
+  popupDigit: {
+    width: '20px',
+    height: '20px',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#1a1a1a',
+    color: 'white',
+    fontSize: '12px',
+    fontWeight: 'bold' as const,
+    borderRadius: '2px',
     cursor: 'pointer',
+    border: '1px solid #333',
   },
 };
 
 const DecimalKnob: React.FC<DecimalKnobProps> = ({ value, onChange, style }) => {
   const id = useId();
+  const [showPopup, setShowPopup] = useState(false);
+  const [popupOffset, setPopupOffset] = useState(0);
+  const wrapperRef = useRef<HTMLDivElement>(null);
+  const popupRef = useRef<HTMLDivElement>(null);
+
   // Each digit is 36 degrees apart (360 / 10)
   // Position 0 is at top, rotating clockwise
   const rotation = value * 36;
 
-  const handleClick = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (!onChange) return;
-    const rect = e.currentTarget.getBoundingClientRect();
-    const clickX = e.clientX - rect.left;
-    const center = rect.width / 2;
-    if (clickX < center) {
-      onChange((value + 9) % 10); // Left half: decrement
-    } else {
-      onChange((value + 1) % 10); // Right half: increment
-    }
+  const handleLeftClick = () => {
+    onChange?.((value + 9) % 10);
   };
+
+  const handleRightClick = () => {
+    onChange?.((value + 1) % 10);
+  };
+
+  const handleDigitSelect = (digit: number) => {
+    onChange?.(digit);
+    setShowPopup(false);
+  };
+
+  useEffect(() => {
+    if (!showPopup) return;
+    const handleClickOutside = (e: MouseEvent) => {
+      if (wrapperRef.current && !wrapperRef.current.contains(e.target as Node)) {
+        setShowPopup(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [showPopup]);
+
+  useEffect(() => {
+    if (!showPopup || !popupRef.current) {
+      setPopupOffset(0);
+      return;
+    }
+    const popup = popupRef.current;
+    const rect = popup.getBoundingClientRect();
+    const viewportWidth = window.innerWidth;
+    let offset = 0;
+    if (rect.left < 0) {
+      offset = -rect.left + 4;
+    } else if (rect.right > viewportWidth) {
+      offset = viewportWidth - rect.right - 4;
+    }
+    setPopupOffset(offset);
+  }, [showPopup]);
 
   return (
     <div style={{...styles.container, ...style}}>
-      <div style={styles.display}>{value}</div>
-      <div
-        style={styles.knobWrapper}
-        onClick={handleClick}
-        title="Click left to decrement, right to increment"
-      >
+      <div style={styles.displayWrapper} ref={wrapperRef}>
+        <div
+          style={{ ...styles.display, cursor: 'pointer' }}
+          onClick={() => setShowPopup(!showPopup)}
+          title="Click to select digit"
+        >
+          {value}
+        </div>
+        {showPopup && (
+          <div ref={popupRef} style={{ ...styles.popup, marginLeft: popupOffset }}>
+            {[0, 1, 2, 3, 4, 5, 6, 7, 8, 9].map((digit) => (
+              <div
+                key={digit}
+                style={{
+                  ...styles.popupDigit,
+                  backgroundColor: digit === value ? '#444' : '#1a1a1a',
+                }}
+                onClick={() => handleDigitSelect(digit)}
+              >
+                {digit}
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+      <div style={styles.knobWrapper}>
         <svg
           width="48"
           height="48"
@@ -92,6 +189,16 @@ const DecimalKnob: React.FC<DecimalKnobProps> = ({ value, onChange, style }) => 
             <circle cx="24" cy="14" r="1.5" fill="#e0e0e0" />
           </g>
         </svg>
+        <div
+          style={{ ...styles.knobHalf, left: 0, cursor: cwCursor }}
+          onClick={handleLeftClick}
+          title="Click to rotate counter-clockwise"
+        />
+        <div
+          style={{ ...styles.knobHalf, right: 0, cursor: ccwCursor }}
+          onClick={handleRightClick}
+          title="Click to rotate clockwise"
+        />
       </div>
     </div>
   );

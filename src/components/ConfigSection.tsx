@@ -64,7 +64,7 @@ const ConfigSection: React.FC<ConfigSectionProps> = ({
       <LabeledKnob value={programmed} positions={STOP_RUN_POS} onChange={onProgrammedChange} />
       <LabeledKnob value={halfCycle} positions={HALF_RUN_POS} onChange={onHalfCycleChange} />
       <AddressSelection addressSelection={addressSelection} onAddressChange={onAddressChange} />
-      <LabeledKnob value={control} positions={CONTROL_POS} onChange={onControlChange} labelRadius={43} />
+      <LabeledKnob value={control} positions={CONTROL_POS} onChange={onControlChange} labelRadius={48} />
       <LabeledKnob value={display} positions={DISPLAY_POS} onChange={onDisplayChange} style={{ gridColumn: 'span 2' }} labelRadius={56} />
       <LabeledKnob value={overflow} positions={OVERFLOW_POS} onChange={onOverflowChange} />
       <LabeledKnob value={error} positions={ERROR_POS} onChange={onErrorChange} />

@@ -13,12 +13,17 @@ interface LabeledKnobProps {
   labelRadius?: number;
 }
 
+// SVG cursors for clockwise and counter-clockwise rotation
+const ccwCursor = `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='32' height='32' viewBox='0 0 24 24'%3E%3Cpath fill='white' stroke='black' stroke-width='0.5' d='M12 4C7.58 4 4 7.58 4 12h2c0-3.31 2.69-6 6-6v3l4-4-4-4v3z'/%3E%3C/svg%3E") 16 16, pointer`;
+const cwCursor = `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='32' height='32' viewBox='0 0 24 24'%3E%3Cpath fill='white' stroke='black' stroke-width='0.5' d='M12 4V1L8 5l4 4V6c3.31 0 6 2.69 6 6h2c0-4.42-3.58-8-8-8z'/%3E%3C/svg%3E") 16 16, pointer`;
+
 const styles = {
   container: {
     display: 'inline-flex',
     flexDirection: 'column' as const,
     alignItems: 'center',
     gap: '4px',
+    minWidth: '85px',
   },
   knobContainer: {
     position: 'relative' as const,
@@ -34,13 +39,26 @@ const styles = {
     transform: 'translate(-50%, -50%)',
     textAlign: 'center' as const,
     maxWidth: '60px',
+    cursor: 'pointer',
   },
   knobWrapper: {
     position: 'absolute' as const,
     bottom: '0',
     left: '50%',
     transform: 'translateX(-50%)',
-    cursor: 'pointer',
+  },
+  knobHalf: {
+    position: 'absolute' as const,
+    top: 0,
+    width: '50%',
+    height: '100%',
+  },
+  tickmark: {
+    position: 'absolute' as const,
+    width: '2px',
+    height: '6px',
+    backgroundColor: 'white',
+    borderRadius: '1px',
   },
 };
 
@@ -48,23 +66,21 @@ const LabeledKnob: React.FC<LabeledKnobProps> = ({ value, positions, onChange, s
   const id = useId();
   const rotation = positions[value]?.angle ?? 0;
 
-  const handleClick = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (!onChange) return;
-    const rect = e.currentTarget.getBoundingClientRect();
-    const clickX = e.clientX - rect.left;
-    const center = rect.width / 2;
-    if (clickX < center) {
-      onChange((value + positions.length - 1) % positions.length); // Left half: decrement
-    } else {
-      onChange((value + 1) % positions.length); // Right half: increment
-    }
+  const handleLeftClick = () => {
+    onChange?.((value + positions.length - 1) % positions.length);
+  };
+
+  const handleRightClick = () => {
+    onChange?.((value + 1) % positions.length);
   };
 
   const currentRadius = labelRadius ?? 40;
+  const tickRadius = 29; // Between knob edge (24) and labels
   const centerX = 82.34 / 2;
   // Knob is 48px tall, positioned at bottom of 68px container
   // So knob center is at 68 - 24 = 44px from top
   const knobCenterY = 44;
+  const showTickmarks = positions.length > 2;
 
   return (
     <div style={{...styles.container, ...style}}>
@@ -75,16 +91,33 @@ const LabeledKnob: React.FC<LabeledKnobProps> = ({ value, positions, onChange, s
           const y = Math.round(knobCenterY + currentRadius * Math.sin(angleRad));
 
           return (
-            <span key={i} style={{ ...styles.label, top: y, left: x }}>
+            <span
+              key={i}
+              style={{ ...styles.label, top: y, left: x }}
+              onClick={() => onChange?.(i)}
+            >
               {p.label}
             </span>
           );
         })}
-        <div
-          style={styles.knobWrapper}
-          onClick={handleClick}
-          title="Click left to decrement, right to increment"
-        >
+        {showTickmarks && positions.map((p, i) => {
+          const angleRad = (p.angle - 90) * (Math.PI / 180);
+          const x = centerX + tickRadius * Math.cos(angleRad);
+          const y = knobCenterY + tickRadius * Math.sin(angleRad) - 2;
+
+          return (
+            <div
+              key={`tick-${i}`}
+              style={{
+                ...styles.tickmark,
+                top: y,
+                left: x,
+                transform: `translate(-50%, -50%) rotate(${p.angle}deg)`,
+              }}
+            />
+          );
+        })}
+        <div style={styles.knobWrapper}>
           <svg width="48" height="48" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
             <defs>
               <linearGradient id={`knobBase${id}`} x1="0%" y1="0%" x2="100%" y2="0%">
@@ -108,6 +141,16 @@ const LabeledKnob: React.FC<LabeledKnobProps> = ({ value, positions, onChange, s
               <circle cx="24" cy="14" r="1.5" fill="#e0e0e0" />
             </g>
           </svg>
+          <div
+            style={{ ...styles.knobHalf, left: 0, cursor: cwCursor }}
+            onClick={handleLeftClick}
+            title="Click to rotate counter-clockwise"
+          />
+          <div
+            style={{ ...styles.knobHalf, right: 0, cursor: ccwCursor }}
+            onClick={handleRightClick}
+            title="Click to rotate clockwise"
+          />
         </div>
       </div>
     </div>
