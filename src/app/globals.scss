@@ -16,3 +16,29 @@ body {
 .mono-textarea textarea {
   @include type.font-family('mono');
 }
+
+// Allow ComboBox dropdowns to overflow DataTable bounds
+.cds--data-table-content,
+.cds--data-table,
+.cds--table-container,
+.cds--data-table tbody,
+.cds--data-table tr,
+.cds--data-table td,
+.cds--content {
+  overflow: visible !important;
+}
+
+// Ensure dropdown menu appears above other content and doesn't get clipped
+.cds--list-box__menu {
+  z-index: 9999 !important;
+  max-height: 200px !important;
+}
+
+// Ensure the list-box wrapper allows overflow
+.cds--list-box__wrapper {
+  overflow: visible !important;
+}
+
+.cds--list-box {
+  overflow: visible !important;
+}
