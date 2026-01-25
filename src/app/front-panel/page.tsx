@@ -10,8 +10,10 @@ export default function FrontPanelPage() {
   const formattedValue = `${sign}${number.toString().padStart(10, '0')}`;
 
   return (
-    <div style={{ padding: '10px', backgroundColor: '#C0C0C0', color: 'black', display: 'inline-block' }}>
-      <FrontPanel value={formattedValue} />
+    <div style={{ display: 'flex', justifyContent: 'center' }}>
+      <div style={{ padding: '10px', backgroundColor: '#C0C0C0', color: 'black', display: 'inline-block' }}>
+        <FrontPanel value={formattedValue} />
+      </div>
     </div>
   );
 }

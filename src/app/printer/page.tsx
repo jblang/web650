@@ -1,3 +1,3 @@
 export default function PrinterPage() {
-  return <h1>Printer</h1>;
+  return <p>🚧 Under Construction</p>;
 }

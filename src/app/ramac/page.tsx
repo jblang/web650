@@ -1,3 +1,3 @@
-export default function PunchPage() {
+export default function RamacPage() {
   return <p>🚧 Under Construction</p>;
 }

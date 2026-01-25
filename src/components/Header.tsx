@@ -11,10 +11,13 @@ import {
 
 const links = [
   { href: '/front-panel', text: 'Front Panel' },
-  { href: '/program', text: 'Program' },
-  { href: '/punch', text: 'Punch Cards' },
+  { href: '/program', text: 'Programming' },
+  { href: '/punch', text: 'Reader / Punch' },
   { href: '/printer', text: 'Printer' },
+  { href: '/tape', text: 'Magnetic Tape' },
+  { href: '/ramac', text: 'RAMAC' },
   { href: '/emulator', text: 'Emulator' },
+  { href: '/docs', text: 'Documentation' },
 ];
 
 export default function AppHeader() {

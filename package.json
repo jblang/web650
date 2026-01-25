@@ -16,6 +16,7 @@
     "node-pty": "^1.1.0",
     "react": "19.2.3",
     "react-dom": "19.2.3",
+    "react-markdown": "^10.1.0",
     "sass": "^1.97.3"
   },
   "devDependencies": {
