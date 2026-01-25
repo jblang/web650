@@ -10,7 +10,7 @@ import {
 } from '@carbon/react';
 import { Send } from '@carbon/icons-react';
 
-export default function Console() {
+export default function EmulatorConsole() {
   const [command, setCommand] = useState('');
   const [output, setOutput] = useState('');
   const [loading, setLoading] = useState(false);

@@ -1,10 +1,10 @@
 import UIShell from '@/components/UIShell';
-import Console from '@/components/Console';
+import EmulatorConsole from '@/components/EmulatorConsole';
 
 export default function EmulatorPage() {
   return (
     <UIShell>
-      <Console />
+      <EmulatorConsole />
     </UIShell>
   );
 }
