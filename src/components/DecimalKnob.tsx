@@ -3,6 +3,7 @@ import React, { useId } from 'react';
 interface DecimalKnobProps {
   value: number; // 0-9
   onChange?: (value: number) => void;
+  style?: React.CSSProperties;
 }
 
 const styles = {
@@ -28,7 +29,7 @@ const styles = {
   },
 };
 
-const DecimalKnob: React.FC<DecimalKnobProps> = ({ value, onChange }) => {
+const DecimalKnob: React.FC<DecimalKnobProps> = ({ value, onChange, style }) => {
   const id = useId();
   // Each digit is 36 degrees apart (360 / 10)
   // Position 0 is at top, rotating clockwise
@@ -48,7 +49,7 @@ const DecimalKnob: React.FC<DecimalKnobProps> = ({ value, onChange }) => {
   };
 
   return (
-    <div style={styles.container}>
+    <div style={{...styles.container, ...style}}>
       <div style={styles.display}>{value}</div>
       <div
         style={styles.knobWrapper}
@@ -86,55 +87,11 @@ const DecimalKnob: React.FC<DecimalKnobProps> = ({ value, onChange }) => {
 
           {/* Rotating group */}
           <g transform={`rotate(${rotation} 24 24)`}>
-            {/* Center raised grip - rounded rectangle */}
-            <rect
-              x="15"
-              y="5"
-              width="18"
-              height="38"
-              rx="4"
-              fill={`url(#gripGradient${id})`}
-            />
-
-            {/* Grip edge highlight */}
-            <rect
-              x="15"
-              y="5"
-              width="18"
-              height="38"
-              rx="4"
-              fill="none"
-              stroke="#555"
-              strokeWidth="0.5"
-            />
-
-            {/* Sloped top face */}
-            <ellipse
-              cx="24"
-              cy="7"
-              rx="7"
-              ry="2"
-              fill="#3a3a3a"
-            />
-
-            {/* White indicator groove on top */}
-            <line
-              x1="24"
-              y1="3"
-              x2="24"
-              y2="7"
-              stroke="#d0d0d0"
-              strokeWidth="2"
-              strokeLinecap="round"
-            />
-
-            {/* White dot on grip face */}
-            <circle
-              cx="24"
-              cy="14"
-              r="3"
-              fill="#e0e0e0"
-            />
+            <rect x="15" y="3" width="18" height="42" rx="6" fill={`url(#gripGradient${id})`} />
+            <rect x="15" y="3" width="18" height="42" rx="6" fill="none" stroke="#555" strokeWidth="0.5" />
+            <ellipse cx="24" cy="5" rx="7" ry="3" fill="#3a3a3a" />
+            <line x1="24" y1="3" x2="24" y2="7" stroke="#d0d0d0" strokeWidth="2" strokeLinecap="round" />
+            <circle cx="24" cy="14" r="1.5" fill="#e0e0e0" />
           </g>
         </svg>
       </div>

@@ -2,8 +2,8 @@ import React from 'react';
 
 interface BiQuinaryDigitProps {
   value: number; // A single digit from 0-9
-  label?: string;
 }
+
 
 const litBulb = '🟡';
 const unlitBulb = '⚪';
@@ -26,7 +26,7 @@ const styles = {
   },
 };
 
-const BiQuinaryDigit: React.FC<BiQuinaryDigitProps> = ({ value, label }) => {
+const BiQuinaryDigit: React.FC<BiQuinaryDigitProps> = ({ value }) => {
   const isLeftColumnActive = value >= 0 && value <= 4;
   const isRightColumnActive = value >= 5 && value <= 9;
   const activeRow = value % 5;
