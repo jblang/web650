@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import DisplayRegister from '@/components/DisplayRegister';
+import FrontPanel from '@/components/FrontPanel';
 
 export default function FrontPanelPage() {
   const number = 1234567890;
@@ -11,7 +11,7 @@ export default function FrontPanelPage() {
 
   return (
     <div style={{ padding: '10px', backgroundColor: '#C0C0C0', color: 'black', display: 'inline-block' }}>
-      <DisplayRegister value={formattedValue} />
+      <FrontPanel value={formattedValue} />
     </div>
   );
 }

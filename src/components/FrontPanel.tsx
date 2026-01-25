@@ -4,7 +4,7 @@ import SignDisplay from './SignDisplay';
 import DecimalKnob from './DecimalKnob';
 import LabeledKnob from './LabeledKnob';
 
-interface DisplayRegisterProps {
+interface FrontPanelProps {
   value: string; // e.g., "+1234567890"
 }
 
@@ -189,7 +189,7 @@ const styles = {
     },
   };
 
-const DisplayRegister: React.FC<DisplayRegisterProps> = ({ value }) => {
+const FrontPanel: React.FC<FrontPanelProps> = ({ value }) => {
   const sign = value[0] === '-' ? '-' : '+';
   const digitsStr = value.substring(1).padStart(10, '0');
   const digits = digitsStr.split('').map(d => parseInt(d, 10));
@@ -380,4 +380,4 @@ const DisplayRegister: React.FC<DisplayRegisterProps> = ({ value }) => {
   );
 };
 
-export default DisplayRegister;
+export default FrontPanel;

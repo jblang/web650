@@ -79,10 +79,10 @@ const LabeledKnob: React.FC<LabeledKnobProps> = ({ value, positions, onChange, b
       <div style={styles.knobContainer}>
         {positions.map((p, i) => {
           const angleRad = (p.angle - 90) * (Math.PI / 180);
-          const x = centerX + currentRadius * Math.cos(angleRad);
-          const y = knobCenterY + currentRadius * Math.sin(angleRad);
+          const x = Math.round(centerX + currentRadius * Math.cos(angleRad));
+          const y = Math.round(knobCenterY + currentRadius * Math.sin(angleRad));
           return (
-            <span key={i} style={{ ...styles.label, top: `${y}px`, left: `${x}px`, textAlign: 'center' }}>
+            <span key={i} style={{ ...styles.label, top: y, left: x }}>
               {p.label}
             </span>
           );
