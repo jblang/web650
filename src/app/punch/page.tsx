@@ -28,7 +28,7 @@ export default function PunchPage() {
   const [expandedItems, setExpandedItems] = useState<Set<number>>(new Set());
 
   const handleHeadingClick = (index: number, isExpanded: boolean) => {
-    console.log(`handleHeadingClick - index: ${index}, isExpanded: ${isExpanded}`);
+
     setExpandedItems(prev => {
       const newExpanded = new Set(prev);
       if (isExpanded) {
@@ -36,7 +36,7 @@ export default function PunchPage() {
       } else {
         newExpanded.delete(index);
       }
-      console.log('handleHeadingClick - newExpanded:', newExpanded);
+
       return newExpanded;
     });
   };
@@ -71,9 +71,9 @@ export default function PunchPage() {
               <AccordionItem
                 key={index}
                 title={<><span>{index + 1}: </span><span style={{ fontFamily: 'monospace' }}>{cardText}</span></>}
-                onHeadingClick={({ isExpanded }) => handleHeadingClick(index, isExpanded)}
+                onHeadingClick={(isExpanded) => handleHeadingClick(index, isExpanded)}
               >
-                {console.log(`AccordionItem - index: ${index}, expandedItems.has(${index}): ${expandedItems.has(index)}`)}
+
                 {expandedItems.has(index) && <PunchedCard text={cardText} />}
               </AccordionItem>
             ))}
