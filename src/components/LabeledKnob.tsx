@@ -49,16 +49,15 @@ const LabeledKnob: React.FC<LabeledKnobProps> = ({ value, positions, onChange, s
   const id = useId();
   const rotation = positions[value]?.angle ?? 0;
 
-  const handleClick = () => {
-    if (onChange) {
-      onChange((value + 1) % positions.length);
-    }
-  };
-
-  const handleContextMenu = (e: React.MouseEvent) => {
-    e.preventDefault();
-    if (onChange) {
-      onChange((value + positions.length - 1) % positions.length);
+  const handleClick = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (!onChange) return;
+    const rect = e.currentTarget.getBoundingClientRect();
+    const clickX = e.clientX - rect.left;
+    const center = rect.width / 2;
+    if (clickX < center) {
+      onChange((value + positions.length - 1) % positions.length); // Left half: decrement
+    } else {
+      onChange((value + 1) % positions.length); // Right half: increment
     }
   };
 
@@ -82,8 +81,7 @@ const LabeledKnob: React.FC<LabeledKnobProps> = ({ value, positions, onChange, s
         <div
           style={styles.knobWrapper}
           onClick={handleClick}
-          onContextMenu={handleContextMenu}
-          title="Click to increment, right-click to decrement"
+          title="Click left to decrement, right to increment"
         >
           <svg width="48" height="48" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
             <defs>

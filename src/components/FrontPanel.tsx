@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import BiQuinaryDigit from './BiQuinaryDigit';
 import SignDisplay from './SignDisplay';
 import DecimalKnob from './DecimalKnob';
@@ -226,9 +226,43 @@ const styles = {
 };
 
 const FrontPanel: React.FC<FrontPanelProps> = ({ value }) => {
-  const sign = value[0] === '-' ? '-' : '+';
-  const digitsStr = value.substring(1).padStart(10, '0');
-  const digits = digitsStr.split('').map(d => parseInt(d, 10));
+  // Parse initial value
+  const initialSign = value[0] === '-' ? 0 : 1; // 0 = minus, 1 = plus
+
+  // Storage entry knobs state (initialized to 0-9)
+  const [storageDigits, setStorageDigits] = useState([0, 1, 2, 3, 4, 5, 6, 7, 8, 9]);
+  const [storageSign, setStorageSign] = useState(initialSign);
+
+  // Final row knobs state
+  const [programmed, setProgrammed] = useState(0);
+  const [halfCycle, setHalfCycle] = useState(0);
+  const [addressSelection, setAddressSelection] = useState([1, 9, 5, 4]);
+  const [control, setControl] = useState(0);
+  const [display, setDisplay] = useState(0);
+  const [overflow, setOverflow] = useState(0);
+  const [error, setError] = useState(0);
+
+  // Derived values for display
+  const sign = storageSign === 1 ? '+' : '-';
+  const digits = storageDigits;
+
+  // Handler for storage digit changes
+  const handleStorageDigitChange = (index: number) => (newValue: number) => {
+    setStorageDigits(prev => {
+      const next = [...prev];
+      next[index] = newValue;
+      return next;
+    });
+  };
+
+  // Handler for address selection changes
+  const handleAddressChange = (index: number) => (newValue: number) => {
+    setAddressSelection(prev => {
+      const next = [...prev];
+      next[index] = newValue;
+      return next;
+    });
+  };
 
   return (
     <div style={styles.container}>
@@ -272,7 +306,7 @@ const FrontPanel: React.FC<FrontPanelProps> = ({ value }) => {
         <div style={{ gridColumn: '1 / 11', display: 'grid', gridTemplateColumns: 'subgrid', gap: '12px' }}>
           {digits.map((digit, i) => (
             <div key={i} style={styles.cell}>
-              <DecimalKnob value={digit} />
+              <DecimalKnob value={digit} onChange={handleStorageDigitChange(i)} />
             </div>
           ))}
         </div>
@@ -283,32 +317,32 @@ const FrontPanel: React.FC<FrontPanelProps> = ({ value }) => {
 
       <div style={styles.signKnobCell}>
         <div style={styles.cell}>
-          <LabeledKnob value={sign === '+' ? 1 : 0} positions={SIGN_POS} />
+          <LabeledKnob value={storageSign} positions={SIGN_POS} onChange={setStorageSign} />
         </div>
         <div style={{ color: 'white', fontSize: '11px', fontWeight: 'bold', textAlign: 'center', alignSelf: 'end' }}>
           SIGN
         </div>
       </div>
 
-      {/* Second row of digits - first group */}
+      {/* Second row of digits - first group (operation code display) */}
       <div style={{ ...styles.digitGroup1, gridTemplateRows: 'auto 1fr' }}>
         <div style={{ gridColumn: 'span 2', textAlign: 'center', color: 'white', fontSize: '10px', fontWeight: 'bold', letterSpacing: '1.2em', paddingLeft: '1.2em' }}>
           OPERATION
         </div>
-        {digits.slice(0, 2).map((digit, i) => (
-          <div key={`extra-g1-${i}`} style={styles.cell}>
+        {[6, 9].map((digit, i) => (
+          <div key={`op-${i}`} style={styles.cell}>
             <BiQuinaryDigit value={digit} />
           </div>
         ))}
       </div>
 
-      {/* Second row of digits - second group */}
+      {/* Second row of digits - second group (controlled by address selection knobs) */}
       <div style={{ ...styles.digitGroup2, gridTemplateRows: 'auto 1fr' }}>
         <div style={{ gridColumn: 'span 4', textAlign: 'center', color: 'white', fontSize: '10px', fontWeight: 'bold', letterSpacing: '2.4em', paddingLeft: '2.4em' }}>
           ADDRESS
         </div>
-        {digits.slice(2, 6).map((digit, i) => (
-          <div key={`extra-g2-${i}`} style={styles.cell}>
+        {addressSelection.map((digit, i) => (
+          <div key={`addr-${i}`} style={styles.cell}>
             <BiQuinaryDigit value={digit} />
           </div>
         ))}
@@ -352,16 +386,16 @@ const FrontPanel: React.FC<FrontPanelProps> = ({ value }) => {
 
       {/* Final Knobs Row */}
       <div style={styles.finalKnobsRow}>
-        <LabeledKnob value={0} positions={STOP_RUN_POS} />
-        <LabeledKnob value={0} positions={HALF_RUN_POS} />
-        <DecimalKnob value={0} />
-        <DecimalKnob value={0} />
-        <DecimalKnob value={0} />
-        <DecimalKnob value={0} />
-        <LabeledKnob value={0} positions={CONTROL_POS} />
-        <LabeledKnob value={0} positions={DISPLAY_POS} style={{ gridColumn: 'span 2' }} />
-        <LabeledKnob value={0} positions={OVERFLOW_POS} />
-        <LabeledKnob value={0} positions={ERROR_POS} />
+        <LabeledKnob value={programmed} positions={STOP_RUN_POS} onChange={setProgrammed} />
+        <LabeledKnob value={halfCycle} positions={HALF_RUN_POS} onChange={setHalfCycle} />
+        <DecimalKnob value={addressSelection[0]} onChange={handleAddressChange(0)} />
+        <DecimalKnob value={addressSelection[1]} onChange={handleAddressChange(1)} />
+        <DecimalKnob value={addressSelection[2]} onChange={handleAddressChange(2)} />
+        <DecimalKnob value={addressSelection[3]} onChange={handleAddressChange(3)} />
+        <LabeledKnob value={control} positions={CONTROL_POS} onChange={setControl} />
+        <LabeledKnob value={display} positions={DISPLAY_POS} onChange={setDisplay} style={{ gridColumn: 'span 2' }} />
+        <LabeledKnob value={overflow} positions={OVERFLOW_POS} onChange={setOverflow} />
+        <LabeledKnob value={error} positions={ERROR_POS} onChange={setError} />
         <div style={{ ...styles.knobLabel, gridColumn: '1 / 2' }}>PROGRAMMED</div>
         <div style={{ ...styles.knobLabel, gridColumn: '2 / 3' }}>HALF CYCLE</div>
         <div style={{ ...styles.knobLabel, gridColumn: '3 / 7', letterSpacing: '1.2em' }}>ADDRESS SELECTION</div>

@@ -35,16 +35,15 @@ const DecimalKnob: React.FC<DecimalKnobProps> = ({ value, onChange, style }) => 
   // Position 0 is at top, rotating clockwise
   const rotation = value * 36;
 
-  const handleClick = () => {
-    if (onChange) {
-      onChange((value + 1) % 10);
-    }
-  };
-
-  const handleContextMenu = (e: React.MouseEvent) => {
-    e.preventDefault();
-    if (onChange) {
-      onChange((value + 9) % 10); // Go backwards
+  const handleClick = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (!onChange) return;
+    const rect = e.currentTarget.getBoundingClientRect();
+    const clickX = e.clientX - rect.left;
+    const center = rect.width / 2;
+    if (clickX < center) {
+      onChange((value + 9) % 10); // Left half: decrement
+    } else {
+      onChange((value + 1) % 10); // Right half: increment
     }
   };
 
@@ -54,8 +53,7 @@ const DecimalKnob: React.FC<DecimalKnobProps> = ({ value, onChange, style }) => 
       <div
         style={styles.knobWrapper}
         onClick={handleClick}
-        onContextMenu={handleContextMenu}
-        title="Click to increment, right-click to decrement"
+        title="Click left to decrement, right to increment"
       >
         <svg
           width="48"
