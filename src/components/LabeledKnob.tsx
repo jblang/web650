@@ -9,7 +9,6 @@ interface LabeledKnobProps {
   value: number; // The index of the current position
   positions: KnobPosition[];
   onChange?: (value: number) => void;
-  bottomLabel?: string;
   style?: React.CSSProperties;
   labelRadius?: number;
 }
@@ -44,16 +43,9 @@ const styles = {
     transform: 'translateX(-50%)',
     cursor: 'pointer',
   },
-  bottomLabel: {
-    color: 'white',
-    fontSize: '11px',
-    fontWeight: 'bold' as const,
-    letterSpacing: '0.3em',
-    textAlign: 'center' as const,
-  },
 };
 
-const LabeledKnob: React.FC<LabeledKnobProps> = ({ value, positions, onChange, bottomLabel, style, labelRadius }) => {
+const LabeledKnob: React.FC<LabeledKnobProps> = ({ value, positions, onChange, style, labelRadius }) => {
   const id = useId();
   const rotation = positions[value]?.angle ?? 0;
 
@@ -118,7 +110,6 @@ const LabeledKnob: React.FC<LabeledKnobProps> = ({ value, positions, onChange, b
           </svg>
         </div>
       </div>
-      {bottomLabel && <span style={styles.bottomLabel}>{bottomLabel}</span>}
     </div>
   );
 };

@@ -10,6 +10,36 @@ interface FrontPanelProps {
 
 const unlitBulb = '⚪';
 
+// Knob position configurations
+const STOP_RUN_POS = [{label: 'STOP', angle: -30}, {label: 'RUN', angle: 30}];
+const HALF_RUN_POS = [{label: 'HALF', angle: -30}, {label: 'RUN', angle: 30}];
+const CONTROL_POS = [{label: 'ADDR STOP', angle: -45}, {label: 'RUN', angle: 0}, {label: 'MANUAL OP', angle: 45}];
+const OVERFLOW_POS = [{label: 'STOP', angle: -30}, {label: 'SENSE', angle: 30}];
+const ERROR_POS = [{label: 'STOP', angle: -30}, {label: 'SENSE', angle: 30}];
+const SIGN_POS = [{label: '-', angle: -30}, {label: '+', angle: 30}];
+const DISPLAY_POS = [
+  {label: 'LOWER ACCUM', angle: -90},
+  {label: 'UPPER ACCUM', angle: -65},
+  {label: 'DISTRIBUTOR', angle: -35},
+  {label: 'PROGRAM REGISTER', angle: 35},
+  {label: 'READ-OUT STORAGE', angle: 65},
+  {label: 'READ-IN STORAGE', angle: 90},
+];
+
+// Indicator labels
+const OPERATING_LABELS = [
+  ["DATA ADDRESS", "PROGRAM", "INPUT-OUTPUT"],
+  ["INQUIRY", "RAMAC", "MAGNETIC TAPE"],
+  ["INST ADDRESS", "ACCUMULATOR", "OVERFLOW"]
+];
+
+const CHECKING_LABELS = [
+  ["PROGRAM REGISTER", "CONTROL UNIT"],
+  ["STORAGE SELECTION", "STORAGE UNIT"],
+  ["DISTRIBUTOR", "CLOCKING"],
+  ["ACCUMULATOR", "ERROR SENSE"]
+];
+
 const styles = {
   container: {
     display: 'inline-grid',
@@ -170,57 +200,35 @@ const styles = {
     alignItems: 'center',
     gap: '4px',
   },
-    checkingLabel: {
-      color: 'white',
-      fontSize: '8px',
-      fontWeight: 'bold' as const,
-      textAlign: 'center' as const,
-      whiteSpace: 'pre-wrap', // To handle long labels with spaces
-    },
-    finalKnobsRow: {
-      gridColumn: '1 / 12',
-      display: 'grid',
-      gridTemplateColumns: 'subgrid',
-      gridTemplateRows: 'auto auto',
-      backgroundColor: '#002244',
-      padding: '12px',
-      gap: '12px',
-      alignItems: 'end',
-    },
-  };
+  checkingLabel: {
+    color: 'white',
+    fontSize: '8px',
+    fontWeight: 'bold' as const,
+    textAlign: 'center' as const,
+    whiteSpace: 'pre-wrap' as const,
+  },
+  finalKnobsRow: {
+    gridColumn: '1 / 12',
+    display: 'grid',
+    gridTemplateColumns: 'subgrid',
+    gridTemplateRows: 'auto auto',
+    backgroundColor: '#002244',
+    padding: '12px',
+    gap: '12px',
+    alignItems: 'end',
+  },
+  knobLabel: {
+    color: 'white',
+    fontSize: '11px',
+    fontWeight: 'bold' as const,
+    textAlign: 'center' as const,
+  },
+};
 
 const FrontPanel: React.FC<FrontPanelProps> = ({ value }) => {
   const sign = value[0] === '-' ? '-' : '+';
   const digitsStr = value.substring(1).padStart(10, '0');
   const digits = digitsStr.split('').map(d => parseInt(d, 10));
-
-  const labelsGrid = [
-    ["DATA ADDRESS", "PROGRAM", "INPUT-OUTPUT"],
-    ["INQUIRY", "RAMAC", "MAGNETIC TAPE"],
-    ["INST ADDRESS", "ACCUMULATOR", "OVERFLOW"]
-  ];
-
-  const checkingLabels = [
-    ["PROGRAM REGISTER", "CONTROL UNIT"],
-    ["STORAGE SELECTION", "STORAGE UNIT"],
-    ["DISTRIBUTOR", "CLOCKING"],
-    ["ACCUMULATOR", "ERROR SENSE"]
-  ];
-
-  const stopRunPos = [{label: 'STOP', angle: -30}, {label: 'RUN', angle: 30}];
-  const halfRunPos = [{label: 'HALF', angle: -30}, {label: 'RUN', angle: 30}];
-  const controlPos = [{label: 'ADDR STOP', angle: -45}, {label: 'RUN', angle: 0}, {label: 'MANUAL OP', angle: 45}];
-  const overflowPos = [{label: 'STOP', angle: -30}, {label: 'SENSE', angle: 30}];
-  const signPos = [{label: '-', angle: -30}, {label: '+', angle: 30}];
-  const displayLabelsPos = [
-    {label: 'LOWER ACCUM', angle: -90}, // 9 o'clock
-    {label: 'UPPER ACCUM', angle: -65}, // 10 o'clock
-    {label: 'DISTRIBUTOR', angle: -35}, // 11 o'clock
-    {label: 'PROGRAM REGISTER', angle: 35}, // 1 o'clock
-    {label: 'READ-OUT STORAGE', angle: 65}, // 2 o'clock
-    {label: 'READ-IN STORAGE', angle: 90}, // 3 o'clock
-  ];
-
 
   return (
     <div style={styles.container}>
@@ -275,7 +283,7 @@ const FrontPanel: React.FC<FrontPanelProps> = ({ value }) => {
 
       <div style={styles.signKnobCell}>
         <div style={styles.cell}>
-          <LabeledKnob value={sign === '+' ? 1 : 0} positions={signPos} />
+          <LabeledKnob value={sign === '+' ? 1 : 0} positions={SIGN_POS} />
         </div>
         <div style={{ color: 'white', fontSize: '11px', fontWeight: 'bold', textAlign: 'center', alignSelf: 'end' }}>
           SIGN
@@ -316,7 +324,7 @@ const FrontPanel: React.FC<FrontPanelProps> = ({ value }) => {
               {Array.from({ length: 3 }).map((_, rowIndex) => (
                 <div key={rowIndex} style={styles.ledUnit}>
                   <div style={styles.bulb}>{unlitBulb}</div>
-                  <div style={styles.ledLabel}>{labelsGrid[rowIndex][colIndex]}</div>
+                  <div style={styles.ledLabel}>{OPERATING_LABELS[rowIndex][colIndex]}</div>
                 </div>
               ))}
             </div>
@@ -334,7 +342,7 @@ const FrontPanel: React.FC<FrontPanelProps> = ({ value }) => {
               {Array.from({ length: 4 }).map((_, rowIndex) => (
                 <div key={rowIndex} style={styles.checkingUnit}>
                   <div style={styles.bulb}>{unlitBulb}</div>
-                  <div style={styles.checkingLabel}>{checkingLabels[rowIndex][colIndex]}</div>
+                  <div style={styles.checkingLabel}>{CHECKING_LABELS[rowIndex][colIndex]}</div>
                 </div>
               ))}
             </div>
@@ -344,37 +352,23 @@ const FrontPanel: React.FC<FrontPanelProps> = ({ value }) => {
 
       {/* Final Knobs Row */}
       <div style={styles.finalKnobsRow}>
-        <LabeledKnob value={0} positions={stopRunPos} />
-        <LabeledKnob value={0} positions={halfRunPos} />
+        <LabeledKnob value={0} positions={STOP_RUN_POS} />
+        <LabeledKnob value={0} positions={HALF_RUN_POS} />
         <DecimalKnob value={0} />
         <DecimalKnob value={0} />
         <DecimalKnob value={0} />
         <DecimalKnob value={0} />
-        <LabeledKnob value={0} positions={controlPos} />
-        <LabeledKnob value={0} positions={displayLabelsPos} style={{ gridColumn: 'span 2' }} />
-        <LabeledKnob value={0} positions={overflowPos} />
-        <LabeledKnob value={0} positions={overflowPos} />
-        <div style={{ gridColumn: '1 / 2', color: 'white', fontSize: '11px', fontWeight: 'bold', textAlign: 'center' }}>
-          PROGRAMMED
-        </div>
-        <div style={{ gridColumn: '2 / 3', color: 'white', fontSize: '11px', fontWeight: 'bold', textAlign: 'center', paddingLeft: '1.2em' }}>
-          HALF CYCLE
-        </div>
-        <div style={{ gridColumn: '3 / 7', color: 'white', fontSize: '11px', fontWeight: 'bold', letterSpacing: '1.2em', textAlign: 'center', paddingLeft: '1.2em' }}>
-          ADDRESS SELECTION
-        </div>
-        <div style={{ gridColumn: '7 / 8', color: 'white', fontSize: '11px', fontWeight: 'bold', textAlign: 'center', paddingLeft: '1.2em' }}>
-          CONTROL
-        </div>
-        <div style={{ gridColumn: '8 / 10', color: 'white', fontSize: '11px', fontWeight: 'bold', textAlign: 'center', paddingLeft: '1.2em' }}>
-          DISPLAY
-        </div>
-        <div style={{ gridColumn: '10 / 11', color: 'white', fontSize: '11px', fontWeight: 'bold', textAlign: 'center', paddingLeft: '1.2em' }}>
-          OVERFLOW
-        </div>
-        <div style={{ gridColumn: '11 / 12', color: 'white', fontSize: '11px', fontWeight: 'bold', textAlign: 'center', paddingLeft: '1.2em' }}>
-          ERROR
-        </div>
+        <LabeledKnob value={0} positions={CONTROL_POS} />
+        <LabeledKnob value={0} positions={DISPLAY_POS} style={{ gridColumn: 'span 2' }} />
+        <LabeledKnob value={0} positions={OVERFLOW_POS} />
+        <LabeledKnob value={0} positions={ERROR_POS} />
+        <div style={{ ...styles.knobLabel, gridColumn: '1 / 2' }}>PROGRAMMED</div>
+        <div style={{ ...styles.knobLabel, gridColumn: '2 / 3' }}>HALF CYCLE</div>
+        <div style={{ ...styles.knobLabel, gridColumn: '3 / 7', letterSpacing: '1.2em' }}>ADDRESS SELECTION</div>
+        <div style={{ ...styles.knobLabel, gridColumn: '7 / 8' }}>CONTROL</div>
+        <div style={{ ...styles.knobLabel, gridColumn: '8 / 10' }}>DISPLAY</div>
+        <div style={{ ...styles.knobLabel, gridColumn: '10 / 11' }}>OVERFLOW</div>
+        <div style={{ ...styles.knobLabel, gridColumn: '11 / 12' }}>ERROR</div>
       </div>
     </div>
   );
