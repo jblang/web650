@@ -32,9 +32,8 @@ const styles = {
     fontFamily: 'monospace',
     fontWeight: 'bold' as const,
     transform: 'translate(-50%, -50%)',
-    whiteSpace: 'normal' as const,
-    width: '50px', // Adjust as needed
     textAlign: 'center' as const,
+    maxWidth: '60px',
   },
   knobWrapper: {
     position: 'absolute' as const,
@@ -63,7 +62,9 @@ const LabeledKnob: React.FC<LabeledKnobProps> = ({ value, positions, onChange, s
 
   const currentRadius = labelRadius ?? 40;
   const centerX = 82.34 / 2;
-  const knobCenterY = 34;
+  // Knob is 48px tall, positioned at bottom of 68px container
+  // So knob center is at 68 - 24 = 44px from top
+  const knobCenterY = 44;
 
   return (
     <div style={{...styles.container, ...style}}>
@@ -72,6 +73,7 @@ const LabeledKnob: React.FC<LabeledKnobProps> = ({ value, positions, onChange, s
           const angleRad = (p.angle - 90) * (Math.PI / 180);
           const x = Math.round(centerX + currentRadius * Math.cos(angleRad));
           const y = Math.round(knobCenterY + currentRadius * Math.sin(angleRad));
+
           return (
             <span key={i} style={{ ...styles.label, top: y, left: x }}>
               {p.label}

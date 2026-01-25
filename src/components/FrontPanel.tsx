@@ -13,7 +13,7 @@ const unlitBulb = '⚪';
 // Knob position configurations
 const STOP_RUN_POS = [{label: 'STOP', angle: -30}, {label: 'RUN', angle: 30}];
 const HALF_RUN_POS = [{label: 'HALF', angle: -30}, {label: 'RUN', angle: 30}];
-const CONTROL_POS = [{label: 'ADDR STOP', angle: -45}, {label: 'RUN', angle: 0}, {label: 'MANUAL OP', angle: 45}];
+const CONTROL_POS = [{label: 'ADDRESS STOP', angle: -45}, {label: 'RUN', angle: 0}, {label: 'MANUAL OP', angle: 45}];
 const OVERFLOW_POS = [{label: 'STOP', angle: -30}, {label: 'SENSE', angle: 30}];
 const ERROR_POS = [{label: 'STOP', angle: -30}, {label: 'SENSE', angle: 30}];
 const SIGN_POS = [{label: '-', angle: -30}, {label: '+', angle: 30}];
@@ -22,8 +22,8 @@ const DISPLAY_POS = [
   {label: 'UPPER ACCUM', angle: -65},
   {label: 'DISTRIBUTOR', angle: -35},
   {label: 'PROGRAM REGISTER', angle: 35},
-  {label: 'READ-OUT STORAGE', angle: 65},
-  {label: 'READ-IN STORAGE', angle: 90},
+  {label: 'READ‑OUT STORAGE', angle: 65},
+  {label: 'READ‑IN STORAGE', angle: 90},
 ];
 
 // Indicator labels
@@ -454,13 +454,13 @@ const FrontPanel: React.FC<FrontPanelProps> = ({ value }) => {
         <DecimalKnob value={addressSelection[1]} onChange={handleAddressChange(1)} />
         <DecimalKnob value={addressSelection[2]} onChange={handleAddressChange(2)} />
         <DecimalKnob value={addressSelection[3]} onChange={handleAddressChange(3)} />
-        <LabeledKnob value={control} positions={CONTROL_POS} onChange={setControl} />
-        <LabeledKnob value={display} positions={DISPLAY_POS} onChange={setDisplay} style={{ gridColumn: 'span 2' }} />
+        <LabeledKnob value={control} positions={CONTROL_POS} onChange={setControl} labelRadius={43} />
+        <LabeledKnob value={display} positions={DISPLAY_POS} onChange={setDisplay} style={{ gridColumn: 'span 2' }} labelRadius={56} />
         <LabeledKnob value={overflow} positions={OVERFLOW_POS} onChange={setOverflow} />
         <LabeledKnob value={error} positions={ERROR_POS} onChange={setError} />
         <div style={{ ...styles.knobLabel, gridColumn: '1 / 2' }}>PROGRAMMED</div>
         <div style={{ ...styles.knobLabel, gridColumn: '2 / 3' }}>HALF CYCLE</div>
-        <div style={{ ...styles.knobLabel, gridColumn: '3 / 7', letterSpacing: '1.2em' }}>ADDRESS SELECTION</div>
+        <div style={{ ...styles.knobLabel, gridColumn: '3 / 7', letterSpacing: '0.6em' }}>ADDRESS SELECTION</div>
         <div style={{ ...styles.knobLabel, gridColumn: '7 / 8' }}>CONTROL</div>
         <div style={{ ...styles.knobLabel, gridColumn: '8 / 10' }}>DISPLAY</div>
         <div style={{ ...styles.knobLabel, gridColumn: '10 / 11' }}>OVERFLOW</div>
