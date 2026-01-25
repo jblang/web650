@@ -177,7 +177,7 @@ export default function ProgramPage() {
                   onDragEnd={handleDragEnd}
                   style={{ cursor: isLastRow ? 'default' : 'grab' }}
                 >
-                  <TableCell>
+                  <TableCell key={`${row.id}-drag`}>
                     <Draggable
                       style={{
                         cursor: isLastRow ? 'default' : 'grab',
@@ -185,7 +185,7 @@ export default function ProgramPage() {
                       }}
                     />
                   </TableCell>
-                  <TableCell>
+                  <TableCell key={`${row.id}-delete`}>
                     <Button
                       kind="ghost"
                       size="sm"

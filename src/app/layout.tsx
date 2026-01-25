@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import AppHeader from '@/components/Header';
+import Providers from '@/components/Providers';
 import { Content } from '@carbon/react';
 import './globals.scss';
 
@@ -14,10 +15,12 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
-      <body>
-        <AppHeader />
-        <Content>{children}</Content>
+    <html lang="en" suppressHydrationWarning>
+      <body suppressHydrationWarning>
+        <Providers>
+          <AppHeader />
+          <Content>{children}</Content>
+        </Providers>
       </body>
     </html>
   );

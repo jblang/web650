@@ -93,7 +93,7 @@ const LabeledKnob: React.FC<LabeledKnobProps> = ({ value, positions, onChange, s
           return (
             <span
               key={i}
-              style={{ ...styles.label, top: y, left: x }}
+              style={{ ...styles.label, top: `${y}px`, left: `${x}px` }}
               onClick={() => onChange?.(i)}
             >
               {p.label}
@@ -110,8 +110,8 @@ const LabeledKnob: React.FC<LabeledKnobProps> = ({ value, positions, onChange, s
               key={`tick-${i}`}
               style={{
                 ...styles.tickmark,
-                top: y,
-                left: x,
+                top: `${y.toFixed(2)}px`,
+                left: `${x.toFixed(2)}px`,
                 transform: `translate(-50%, -50%) rotate(${p.angle}deg)`,
               }}
             />

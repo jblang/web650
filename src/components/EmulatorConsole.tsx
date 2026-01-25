@@ -9,11 +9,11 @@ import {
   Stack,
 } from '@carbon/react';
 import { Send } from '@carbon/icons-react';
+import { useEmulator } from './EmulatorProvider';
 
 export default function EmulatorConsole() {
   const [command, setCommand] = useState('');
-  const [output, setOutput] = useState('');
-  const [loading, setLoading] = useState(false);
+  const { output, appendOutput, loading, setLoading } = useEmulator();
   const textAreaRef = useRef<HTMLTextAreaElement>(null);
   const commandInputRef = useRef<HTMLInputElement>(null);
 
@@ -22,6 +22,12 @@ export default function EmulatorConsole() {
       textAreaRef.current.scrollTop = textAreaRef.current.scrollHeight;
     }
   }, [output]);
+
+  useEffect(() => {
+    if (!loading) {
+      commandInputRef.current?.focus();
+    }
+  }, [loading]);
 
   const sendCommand = async () => {
     if (!command.trim() || loading) return;
@@ -37,17 +43,16 @@ export default function EmulatorConsole() {
       const data = await response.json();
 
       if (data.output) {
-        setOutput((prev) => prev + data.output);
+        appendOutput(data.output);
       } else if (data.error) {
-        setOutput((prev) => prev + `Error: ${data.error}\n`);
+        appendOutput(`Error: ${data.error}\n`);
       }
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Unknown error';
-      setOutput((prev) => prev + `Error: ${msg}\n`);
+      appendOutput(`Error: ${msg}\n`);
     } finally {
       setLoading(false);
       setCommand('');
-      commandInputRef.current?.focus();
     }
   };
 
