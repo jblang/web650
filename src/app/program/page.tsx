@@ -202,7 +202,9 @@ export default function ProgramPage() {
                     const isAddressField = ['location', 'addrData', 'addrInstruction'].includes(cell.info.header);
                     return (
                       <TableCell key={cell.id}>
-                        {isOpCode ? (
+                        {isInstrNo ? (
+                          cell.value
+                        ) : isOpCode ? (
                           <div style={{ width: '9rem' }}>
                             <ComboBox
                               id={`op-${row.id}`}
@@ -229,8 +231,6 @@ export default function ProgramPage() {
                                 updateCell(row.id, cell.info.header as keyof ProgramRow, value);
                               }}
                               maxLength={isAddressField ? 4 : undefined}
-                              readOnly={isInstrNo}
-                              tabIndex={isInstrNo ? -1 : undefined}
                               size="sm"
                               labelText=""
                             />
