@@ -1,13 +1,42 @@
 import React from 'react';
 
 const unlitBulb = '⚪';
+const litBulb = '🟡';
 
-const CHECKING_LABELS = [
-  ["PROGRAM REGISTER", "CONTROL UNIT"],
-  ["STORAGE SELECTION", "STORAGE UNIT"],
-  ["DISTRIBUTOR", "CLOCKING"],
-  ["ACCUMULATOR", "ERROR SENSE"]
+export interface CheckingState {
+  programRegister: boolean;
+  controlUnit: boolean;
+  storageSelection: boolean;
+  storageUnit: boolean;
+  distributor: boolean;
+  clocking: boolean;
+  accumulator: boolean;
+  errorSense: boolean;
+}
+
+// Indicator labels and corresponding state keys
+const CHECKING_CONFIG: Array<Array<{ label: string; key: keyof CheckingState }>> = [
+  [
+    { label: "PROGRAM REGISTER", key: "programRegister" },
+    { label: "CONTROL UNIT", key: "controlUnit" },
+  ],
+  [
+    { label: "STORAGE SELECTION", key: "storageSelection" },
+    { label: "STORAGE UNIT", key: "storageUnit" },
+  ],
+  [
+    { label: "DISTRIBUTOR", key: "distributor" },
+    { label: "CLOCKING", key: "clocking" },
+  ],
+  [
+    { label: "ACCUMULATOR", key: "accumulator" },
+    { label: "ERROR SENSE", key: "errorSense" },
+  ],
 ];
+
+interface CheckingStatusProps {
+  state: CheckingState;
+}
 
 const styles = {
   checkingBox: {
@@ -53,20 +82,24 @@ const styles = {
   },
 };
 
-const CheckingStatus: React.FC = () => {
+const CheckingStatus: React.FC<CheckingStatusProps> = ({ state }) => {
   return (
     <div style={styles.checkingBox}>
       <div style={styles.checkingTitle}>CHECKING</div>
-      
+
       <div style={{ gridColumn: 'span 2', display: 'grid', gridTemplateColumns: 'subgrid', gap: '12px' }}>
         {Array.from({ length: 2 }).map((_, colIndex) => (
           <div key={colIndex} style={styles.ledColumn}>
-            {Array.from({ length: 4 }).map((_, rowIndex) => (
-              <div key={rowIndex} style={styles.checkingUnit}>
-                <div style={styles.bulb}>{unlitBulb}</div>
-                <div style={styles.checkingLabel}>{CHECKING_LABELS[rowIndex][colIndex]}</div>
-              </div>
-            ))}
+            {Array.from({ length: 4 }).map((_, rowIndex) => {
+              const config = CHECKING_CONFIG[rowIndex][colIndex];
+              const isLit = state[config.key];
+              return (
+                <div key={rowIndex} style={styles.checkingUnit}>
+                  <div style={styles.bulb}>{isLit ? litBulb : unlitBulb}</div>
+                  <div style={styles.checkingLabel}>{config.label}</div>
+                </div>
+              );
+            })}
           </div>
         ))}
       </div>

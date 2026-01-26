@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import OperatingStatus from './OperatingStatus';
-import CheckingStatus from './CheckingStatus';
+import OperatingStatus, { OperatingState } from './OperatingStatus';
+import CheckingStatus, { CheckingState } from './CheckingStatus';
 import DisplaySection from './DisplaySection';
 import OperationDisplay from './OperationDisplay';
 import AddressDisplay from './AddressDisplay';
@@ -11,6 +11,47 @@ import ControlSection from './ControlSection';
 interface FrontPanelProps {
   value: string; // e.g., "+1234567890"
 }
+
+// Programmed switch positions
+const Programmed = {
+  STOP: 0,
+  RUN: 1,
+} as const;
+
+// Half Cycle switch positions
+const HalfCycle = {
+  HALF: 0,
+  RUN: 1,
+} as const;
+
+// Control switch positions
+const Control = {
+  ADDRESS_STOP: 0,
+  RUN: 1,
+  MANUAL_OP: 2,
+} as const;
+
+// Display switch positions
+const Display = {
+  LOWER_ACCUM: 0,
+  UPPER_ACCUM: 1,
+  DISTRIBUTOR: 2,
+  PROGRAM_REGISTER: 3,
+  READ_OUT_STORAGE: 4,
+  READ_IN_STORAGE: 5,
+} as const;
+
+// Overflow switch positions
+const Overflow = {
+  STOP: 0,
+  SENSE: 1,
+} as const;
+
+// Error switch positions
+const Error = {
+  STOP: 0,
+  SENSE: 1,
+} as const;
 
 const styles = {
   container: {
@@ -34,63 +75,62 @@ const styles = {
 };
 
 const FrontPanel: React.FC<FrontPanelProps> = ({ value }) => {
-  // Parse initial value
-  const initialSign = value[0] === '-' ? 0 : 1; // 0 = minus, 1 = plus
+  // Storage entry state as a single integer
+  const [storageEntry, setStorageEntry] = useState(0);
 
-  // Storage entry knobs state (initialized to 0-9)
-  const [storageDigits, setStorageDigits] = useState([0, 1, 2, 3, 4, 5, 6, 7, 8, 9]);
-  const [storageSign, setStorageSign] = useState(initialSign);
+  // Operation code display (read-only for now)
+  const [operation, setOperation] = useState(0);
+
+  // Status indicator lights
+  const [operatingState, setOperatingState] = useState<OperatingState>({
+    dataAddress: false,
+    program: false,
+    inputOutput: false,
+    inquiry: false,
+    ramac: false,
+    magneticTape: false,
+    instAddress: false,
+    accumulator: false,
+    overflow: false,
+  });
+
+  const [checkingState, setCheckingState] = useState<CheckingState>({
+    programRegister: false,
+    controlUnit: false,
+    storageSelection: false,
+    storageUnit: false,
+    distributor: false,
+    clocking: false,
+    accumulator: false,
+    errorSense: false,
+  });
 
   // Final row knobs state
-  const [programmed, setProgrammed] = useState(0);
-  const [halfCycle, setHalfCycle] = useState(0);
-  const [addressSelection, setAddressSelection] = useState([1, 9, 5, 4]);
-  const [control, setControl] = useState(0);
-  const [display, setDisplay] = useState(0);
-  const [overflow, setOverflow] = useState(0);
-  const [error, setError] = useState(0);
-
-  // Derived values for display
-  const sign = storageSign === 1 ? '+' : '-';
-  const digits = storageDigits;
-
-  // Handler for storage digit changes
-  const handleStorageDigitChange = (index: number) => (newValue: number) => {
-    setStorageDigits(prev => {
-      const next = [...prev];
-      next[index] = newValue;
-      return next;
-    });
-  };
-
-  // Handler for address selection changes
-  const handleAddressChange = (index: number) => (newValue: number) => {
-    setAddressSelection(prev => {
-      const next = [...prev];
-      next[index] = newValue;
-      return next;
-    });
-  };
+  const [programmed, setProgrammed] = useState<number>(Programmed.STOP);
+  const [halfCycle, setHalfCycle] = useState<number>(HalfCycle.HALF);
+  const [addressSelection, setAddressSelection] = useState(0);
+  const [control, setControl] = useState<number>(Control.RUN);
+  const [display, setDisplay] = useState<number>(Display.LOWER_ACCUM);
+  const [overflow, setOverflow] = useState<number>(Overflow.STOP);
+  const [error, setError] = useState<number>(Error.STOP);
 
   return (
     <div style={styles.container}>
-      <DisplaySection digits={digits} sign={sign} />
+      <DisplaySection value={storageEntry} />
 
       <EntrySection
-        digits={digits}
-        storageSign={storageSign}
-        onStorageDigitChange={handleStorageDigitChange}
-        onSignChange={setStorageSign}
+        value={storageEntry}
+        onChange={setStorageEntry}
       />
 
-      <OperationDisplay operationDigits={[6, 9]} />
-      <AddressDisplay addressDigits={addressSelection} />
+      <OperationDisplay value={operation} />
+      <AddressDisplay value={addressSelection} />
 
       {/* Operating Box */}
-      <OperatingStatus />
+      <OperatingStatus state={operatingState} />
 
       {/* Checking Box */}
-      <CheckingStatus />
+      <CheckingStatus state={checkingState} />
 
       <ConfigSection
         programmed={programmed}
@@ -102,7 +142,7 @@ const FrontPanel: React.FC<FrontPanelProps> = ({ value }) => {
         error={error}
         onProgrammedChange={setProgrammed}
         onHalfCycleChange={setHalfCycle}
-        onAddressChange={handleAddressChange}
+        onAddressChange={setAddressSelection}
         onControlChange={setControl}
         onDisplayChange={setDisplay}
         onOverflowChange={setOverflow}

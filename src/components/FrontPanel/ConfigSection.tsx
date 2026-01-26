@@ -21,7 +21,7 @@ interface ConfigSectionProps {
   // Values
   programmed: number;
   halfCycle: number;
-  addressSelection: number[];
+  addressSelection: number;
   control: number;
   display: number;
   overflow: number;
@@ -29,7 +29,7 @@ interface ConfigSectionProps {
   // Handlers
   onProgrammedChange: (value: number) => void;
   onHalfCycleChange: (value: number) => void;
-  onAddressChange: (index: number) => (newValue: number) => void;
+  onAddressChange: (value: number) => void;
   onControlChange: (value: number) => void;
   onDisplayChange: (value: number) => void;
   onOverflowChange: (value: number) => void;
@@ -63,7 +63,7 @@ const ConfigSection: React.FC<ConfigSectionProps> = ({
     <div style={styles.finalKnobsRow}>
       <LabeledKnob value={programmed} positions={STOP_RUN_POS} onChange={onProgrammedChange} />
       <LabeledKnob value={halfCycle} positions={HALF_RUN_POS} onChange={onHalfCycleChange} />
-      <AddressSelection addressSelection={addressSelection} onAddressChange={onAddressChange} />
+      <AddressSelection value={addressSelection} onChange={onAddressChange} />
       <LabeledKnob value={control} positions={CONTROL_POS} onChange={onControlChange} labelRadius={48} />
       <LabeledKnob value={display} positions={DISPLAY_POS} onChange={onDisplayChange} style={{ gridColumn: 'span 2' }} labelRadius={56} />
       <LabeledKnob value={overflow} positions={OVERFLOW_POS} onChange={onOverflowChange} />

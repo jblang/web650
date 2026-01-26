@@ -5,10 +5,8 @@ import LabeledKnob from './LabeledKnob';
 const SIGN_POS = [{label: '-', angle: -30}, {label: '+', angle: 30}];
 
 interface EntrySectionProps {
-  digits: number[];
-  storageSign: number;
-  onStorageDigitChange: (index: number) => (newValue: number) => void;
-  onSignChange: (newValue: number) => void;
+  value: number;
+  onChange: (newValue: number) => void;
 }
 
 const styles = {
@@ -56,11 +54,30 @@ const styles = {
 };
 
 const EntrySection: React.FC<EntrySectionProps> = ({
-  digits,
-  storageSign,
-  onStorageDigitChange,
-  onSignChange,
+  value,
+  onChange,
 }) => {
+  // Extract sign and 10 least significant digits from the integer
+  const isNegative = value < 0;
+  const storageSign = isNegative ? 0 : 1; // 0 = minus, 1 = plus
+  const absValue = Math.abs(value);
+  const paddedString = absValue.toString().padStart(10, '0').slice(-10);
+  const digits = paddedString.split('').map(Number);
+
+  // Handler for digit changes
+  const handleDigitChange = (index: number) => (newDigit: number) => {
+    const newDigits = [...digits];
+    newDigits[index] = newDigit;
+    const newAbsValue = parseInt(newDigits.join(''), 10);
+    onChange(isNegative ? -newAbsValue : newAbsValue);
+  };
+
+  // Handler for sign changes
+  const handleSignChange = (newSign: number) => {
+    const newIsNegative = newSign === 0;
+    onChange(newIsNegative ? -absValue : absValue);
+  };
+
   return (
     <>
       {/* Knobs row */}
@@ -68,7 +85,7 @@ const EntrySection: React.FC<EntrySectionProps> = ({
         <div style={{ gridColumn: '1 / 11', display: 'grid', gridTemplateColumns: 'subgrid', gap: '12px' }}>
           {digits.map((digit, i) => (
             <div key={i} style={styles.cell}>
-              <DecimalKnob value={digit} onChange={onStorageDigitChange(i)} />
+              <DecimalKnob value={digit} onChange={handleDigitChange(i)} />
             </div>
           ))}
         </div>
@@ -79,7 +96,7 @@ const EntrySection: React.FC<EntrySectionProps> = ({
 
       <div style={styles.signKnobCell}>
         <div style={styles.cell}>
-          <LabeledKnob value={storageSign} positions={SIGN_POS} onChange={onSignChange} />
+          <LabeledKnob value={storageSign} positions={SIGN_POS} onChange={handleSignChange} />
         </div>
         <div style={styles.signLabel}>
           SIGN

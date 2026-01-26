@@ -3,8 +3,7 @@ import BiQuinaryDigit from './BiQuinaryDigit';
 import SignDisplay from './SignDisplay';
 
 interface DisplaySectionProps {
-  digits: number[];
-  sign: string;
+  value: number;
 }
 
 const styles = {
@@ -71,7 +70,13 @@ const styles = {
   },
 };
 
-const DisplaySection: React.FC<DisplaySectionProps> = ({ digits, sign }) => {
+const DisplaySection: React.FC<DisplaySectionProps> = ({ value }) => {
+  // Extract sign and 10 least significant digits from the integer
+  const sign = value < 0 ? '-' : '+';
+  const absValue = Math.abs(value);
+  const paddedString = absValue.toString().padStart(10, '0').slice(-10);
+  const digits = paddedString.split('').map(Number);
+
   return (
     <>
       {/* Labels row */}
