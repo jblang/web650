@@ -1,0 +1,18 @@
+@use '@carbon/react' with (
+  $font-path: '../../../../@ibm/plex'
+);
+@use '@carbon/type';
+html,
+body {
+  max-width: 100vw;
+  overflow-x: hidden;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+}
+
+.mono-textarea textarea {
+  @include type.font-family('mono');
+}

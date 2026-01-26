@@ -6,12 +6,17 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "parse-ini": "node scripts/parse-ini.js"
   },
   "dependencies": {
+    "@carbon/react": "^1.99.0",
+    "@ibm/plex": "^6.4.1",
     "next": "16.1.4",
+    "node-pty": "^1.1.0",
     "react": "19.2.3",
-    "react-dom": "19.2.3"
+    "react-dom": "19.2.3",
+    "sass": "^1.97.3"
   },
   "devDependencies": {
     "@types/node": "^20",
