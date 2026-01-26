@@ -70,7 +70,7 @@ export default function PunchPage() {
             {cardDeck.map((cardText, index) => (
               <AccordionItem
                 key={index}
-                title={<><span>{index + 1}: </span><span style={{ fontFamily: 'monospace' }}>{cardText}</span></>}
+                title={<><span>{index + 1}: </span><code style={{ whiteSpace: 'pre' }}>{cardText}</code></>}
                 onHeadingClick={(isExpanded) => handleHeadingClick(index, isExpanded)}
               >
 

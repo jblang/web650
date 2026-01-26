@@ -77,8 +77,7 @@ const PUNCH_ENCODING: Record<string, number[]> = {
   '"': [11, 7, 8],  // same as apostrophe
 };
 
-// Row labels in order from top to bottom
-const ROW_LABELS = ['12', '11', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9'];
+// Row values in order from top to bottom (12, 11, 0, 1-9)
 const ROW_VALUES = [12, 11, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9];
 
 // Convert character to punch positions
@@ -87,46 +86,60 @@ function getColumnPunches(char: string): number[] {
   return PUNCH_ENCODING[upper] || [];
 }
 
-// Define new constants for font and physical card dimensions
-const CARBON_MONO_FONT_FAMILY = "'IBM Plex Mono', monospace";
-const BASE_PRINTED_CHAR_FONT_SIZE = 10; // px
-const CHAR_WIDTH_TO_FONT_SIZE_RATIO = 0.6; // Approximate for monospaced fonts
-const CHAR_HEIGHT_TO_FONT_SIZE_RATIO = 1.0; // Line height relative to font size
+// Carbon Design System monospace font CSS variables
+const CARBON_MONO_FONT = "var(--cds-code-01-font-family, 'IBM Plex Mono', monospace)";
+const CARBON_CODE_01_FONT_SIZE = "var(--cds-code-01-font-size, 0.75rem)";
+const CARBON_CODE_02_FONT_SIZE = "var(--cds-code-02-font-size, 0.875rem)";
+const CARBON_MONO_FONT_WEIGHT = "var(--cds-code-01-font-weight, 400)";
+const COLUMN_NUMBER_FONT_SIZE = '7px'; // Small enough for 2 digits to fit in column width
 
+// Real IBM punched card dimensions (inches)
 const REAL_CARD_WIDTH_INCHES = 7.375;
 const REAL_CARD_HEIGHT_INCHES = 3.25;
+const REAL_MARGIN_TO_COL1_CENTER_INCHES = 0.2865;
+const REAL_TOP_MARGIN_TO_ROW12_CENTER_INCHES = 0.250;
+const REAL_BOTTOM_MARGIN_TO_ROW9_CENTER_INCHES = 0.250;
+const REAL_COLUMN_PITCH_INCHES = 0.087;
+const REAL_ROW_PITCH_INCHES = 0.250;
 const REAL_HOLE_WIDTH_INCHES = 0.055;
 const REAL_HOLE_HEIGHT_INCHES = 0.125;
 
-const targetAspectRatio = REAL_CARD_WIDTH_INCHES / REAL_CARD_HEIGHT_INCHES; // Use real card aspect ratio
+// Column width = 1em of code-02 font (14px / 0.875rem)
+const COLUMN_WIDTH_PX = 14;
+
+// Scale factor: column width represents one column pitch
+const SCALE_FACTOR = COLUMN_WIDTH_PX / REAL_COLUMN_PITCH_INCHES;
+
+// Card dimensions scaled from real measurements
+const CARD_WIDTH = REAL_CARD_WIDTH_INCHES * SCALE_FACTOR;
+const CARD_HEIGHT = REAL_CARD_HEIGHT_INCHES * SCALE_FACTOR;
+
+// Row dimensions scaled from real measurements
+const ROW_HEIGHT_PX = REAL_ROW_PITCH_INCHES * SCALE_FACTOR;
+const COLUMN_HEIGHT_PX = ROW_HEIGHT_PX;
+
+// Margins scaled from real measurements
+const CARD_MARGIN_LEFT_RIGHT_PX = (REAL_MARGIN_TO_COL1_CENTER_INCHES * SCALE_FACTOR) - (COLUMN_WIDTH_PX / 2);
+const CARD_MARGIN_TOP_PX = (REAL_TOP_MARGIN_TO_ROW12_CENTER_INCHES * SCALE_FACTOR) - (ROW_HEIGHT_PX / 2);
+const CARD_MARGIN_BOTTOM_PX = (REAL_BOTTOM_MARGIN_TO_ROW9_CENTER_INCHES * SCALE_FACTOR) - (ROW_HEIGHT_PX / 2);
+
+// Hole dimensions scaled from real measurements
+const HOLE_WIDTH_PX = REAL_HOLE_WIDTH_INCHES * SCALE_FACTOR;
+const HOLE_HEIGHT_PX = REAL_HOLE_HEIGHT_INCHES * SCALE_FACTOR;
 
 const styles = {
   cardContainer: {
     display: 'inline-block',
+    boxSizing: 'border-box' as const,
     backgroundColor: '#f5e6c8', // cream/manila card color
     borderRadius: '4px',
     position: 'relative' as const,
     overflow: 'hidden',
-    clipPath: 'polygon(23px 0, 100% 0, 100% 100%, 0 100%, 0 40px)', // corner cut with 60 degree angle, 40px down vertical edge
+    clipPath: 'polygon(23px 0, 100% 0, 100% 100%, 0 100%, 0 40px)',
   },
   cardInner: {
     display: 'flex',
     flexDirection: 'row' as const,
-    gap: '2px',
-  },
-  rowLabels: {
-    display: 'flex',
-    flexDirection: 'column' as const,
-    justifyContent: 'flex-start',
-    // paddingTop and marginRight will be set dynamically
-  },
-  rowLabel: {
-    // height, fontSize, fontFamily, width will be set dynamically
-    color: '#666',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'flex-end',
-    paddingRight: '2px',
   },
   columnsContainer: {
     display: 'flex',
@@ -136,41 +149,49 @@ const styles = {
     display: 'flex',
     flexDirection: 'column' as const,
     alignItems: 'center',
-    // width will be set dynamically
+  },
+  printedCharRow: {
+    position: 'absolute' as const,
+    top: 0,
+    left: 0,
+    right: 0,
+    display: 'flex',
+    flexDirection: 'row' as const,
   },
   printedChar: {
-    // fontSize, fontFamily, height will be set dynamically
-    fontWeight: 'bold' as const,
     color: '#333',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
   },
   punchCell: {
-    // width, height will be set dynamically
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
   },
   unpunched: {
-    // width, height will be set dynamically
     backgroundColor: 'transparent',
     borderRadius: '1px',
   },
   punched: {
-    // width, height will be set dynamically
-    backgroundColor: '#002244', // dark hole
+    backgroundColor: '#002244',
     borderRadius: '1px',
   },
-  columnNumbers: {
+  rowDigit: {
+    color: '#666',
     display: 'flex',
-    flexDirection: 'row' as const,
-    // marginTop and marginLeft will be set dynamically
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   columnNumber: {
-    // width, fontSize, fontFamily will be set dynamically
-    color: '#888',
-    textAlign: 'center' as const,
+    color: '#555',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    fontFamily: CARBON_MONO_FONT,
+    fontSize: COLUMN_NUMBER_FONT_SIZE,
+    fontWeight: CARBON_MONO_FONT_WEIGHT,
+    lineHeight: 1,
   },
   cornerCut: {
     position: 'absolute' as const,
@@ -178,8 +199,8 @@ const styles = {
     left: 0,
     width: '23px',
     height: '40px',
-    backgroundColor: '#002244', // Dark color for the cut corner
-    clipPath: 'polygon(0 0, 100% 0, 0 100%)', // Triangle cut
+    backgroundColor: '#002244',
+    clipPath: 'polygon(0 0, 100% 0, 0 100%)',
   }
 };
 
@@ -190,107 +211,104 @@ const PunchedCard: React.FC<PunchedCardProps> = ({ text, style }) => {
   // Pre-compute punches for all columns
   const columnPunches = paddedText.split('').map(char => getColumnPunches(char));
 
-  // --- Calculate new dimensions based on font and real card specs ---
-  // Core character/row dimensions
-  const newColumnWidth = BASE_PRINTED_CHAR_FONT_SIZE * CHAR_WIDTH_TO_FONT_SIZE_RATIO; // e.g., 6px
-  const newPrintedCharHeight = BASE_PRINTED_CHAR_FONT_SIZE * CHAR_HEIGHT_TO_FONT_SIZE_RATIO; // e.g., 10px
-
-  // Fixed dimensions (unchanged from previous calculations, or adjusted if needed)
-  const columnGap = 2;
-  const rowLabelsWidth = 12; // Width for "12" or "11" label
-  const rowLabelsMarginRight = 4;
-  const cardPaddingHorizontal = 12 * 2; // Left + Right
-  const cardPaddingVertical = 8 * 2;     // Top + Bottom
-  const columnNumbersMarginTop = 4;
-  const columnNumberHeight = 5; // Assuming font size of column numbers makes this height
-
-  // Recalculate total card width based on new columnWidth
-  const calculatedContentWidth = rowLabelsWidth + rowLabelsMarginRight + (80 * newColumnWidth) + (79 * columnGap);
-  const newCardWidth = calculatedContentWidth + cardPaddingHorizontal;
-
-  // Recalculate total card height based on newCardWidth and targetAspectRatio
-  const newCardHeight = newCardWidth / targetAspectRatio;
-
-  // Calculate scaled hole dimensions
-  const scaledHoleWidth = (REAL_HOLE_WIDTH_INCHES / REAL_CARD_WIDTH_INCHES) * newCardWidth;
-  const scaledHoleHeight = (REAL_HOLE_HEIGHT_INCHES / REAL_CARD_HEIGHT_INCHES) * newCardHeight;
-
-  // Determine newPunchCellHeight to distribute newCardHeight
-  const remainingVerticalSpaceForPunches = newCardHeight - cardPaddingVertical - newPrintedCharHeight - columnNumbersMarginTop - columnNumberHeight;
-  const newPunchCellHeight = remainingVerticalSpaceForPunches / 12; // 12 punch rows
-
-  // Adjust font sizes for other text elements proportionally or based on new BASE_PRINTED_CHAR_FONT_SIZE
-  const printedCharFontSize = BASE_PRINTED_CHAR_FONT_SIZE;
-  const rowLabelFontSize = BASE_PRINTED_CHAR_FONT_SIZE * (6 / 10); // Maintain original relative size to printed char
-  const columnNumberFontSize = BASE_PRINTED_CHAR_FONT_SIZE * (5 / 10); // Maintain original relative size to printed char
-
-  // Adjust padding for row labels to align with printed characters
-  // Align the top of row labels with the top of the printed character
-  const rowLabelsPaddingTop = newPrintedCharHeight;
-
   return (
     <div style={{
       ...styles.cardContainer,
       ...style,
-      width: `${newCardWidth}px`,
-      height: `${newCardHeight}px`,
-      padding: `${cardPaddingVertical / 2}px ${cardPaddingHorizontal / 2}px`,
-        }}>
-          {/* Corner cut indicator */}
-          <div style={styles.cornerCut} />
-    
-          <div style={styles.cardInner}>
-        {/* Row labels */}
-        <div style={{ ...styles.rowLabels, paddingTop: `${rowLabelsPaddingTop}px`, marginRight: `${rowLabelsMarginRight}px` }}>
-          {ROW_LABELS.map((label, i) => (
-            <div key={i} style={{
-              ...styles.rowLabel,
-              height: `${newPunchCellHeight}px`, // Each row label should correspond to a punch cell row
-              fontSize: `${rowLabelFontSize}px`,
-              fontFamily: CARBON_MONO_FONT_FAMILY,
-              width: `${rowLabelsWidth}px`,
-            }}>{label}</div>
-          ))}
-        </div>
+      width: `${CARD_WIDTH}px`,
+      height: `${CARD_HEIGHT}px`,
+      paddingLeft: `${CARD_MARGIN_LEFT_RIGHT_PX}px`,
+      paddingRight: `${CARD_MARGIN_LEFT_RIGHT_PX}px`,
+      paddingTop: `${CARD_MARGIN_TOP_PX}px`,
+      paddingBottom: `${CARD_MARGIN_BOTTOM_PX}px`,
+    }}>
+      {/* Corner cut indicator */}
+      <div style={styles.cornerCut} />
 
-        {/* Columns */}
-        <div style={styles.columnsContainer}>
-          {paddedText.split('').map((char, colIndex) => (
-            <div key={colIndex} style={{ ...styles.column, width: `${newColumnWidth}px` }}>
-              {/* Printed character at top */}
-              <div style={{ ...styles.printedChar, height: `${newPrintedCharHeight}px`, fontSize: `${printedCharFontSize}px`, fontFamily: CARBON_MONO_FONT_FAMILY }}>
-                {char !== ' ' ? char.toUpperCase() : ''}
-              </div>
-
-              {/* Punch positions */}
-              {ROW_VALUES.map((rowValue, rowIndex) => {
-                const isPunched = columnPunches[colIndex].includes(rowValue);
-                return (
-                  <div key={rowIndex} style={{ ...styles.punchCell, height: `${newPunchCellHeight}px`, width: `${newColumnWidth}px` }}>
-                    <div style={isPunched ? {
-                      ...styles.punched,
-                      height: `${scaledHoleHeight}px`,
-                      width: `${scaledHoleWidth}px`,
-                    } : {
-                      ...styles.unpunched,
-                      height: `${scaledHoleHeight}px`,
-                      width: `${scaledHoleWidth}px`,
-                    }} />
-                  </div>
-                );
-              })}
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* Column numbers at bottom (every 10) */}
-      <div style={{ ...styles.columnNumbers, marginTop: `${columnNumbersMarginTop}px`, marginLeft: `${rowLabelsWidth + rowLabelsMarginRight}px` }}>
-        {Array.from({ length: 80 }, (_, i) => (
-          <div key={i} style={{ ...styles.columnNumber, width: `${newColumnWidth}px`, fontSize: `${columnNumberFontSize}px`, fontFamily: CARBON_MONO_FONT_FAMILY }}>
-            {(i + 1) % 10 === 0 ? (i + 1) : ''}
+      {/* Printed characters at top - absolutely positioned */}
+      <div style={{
+        ...styles.printedCharRow,
+        left: `${CARD_MARGIN_LEFT_RIGHT_PX}px`,
+        height: `${CARD_MARGIN_TOP_PX}px`,
+      }}>
+        {paddedText.split('').map((char, colIndex) => (
+          <div key={colIndex} style={{
+            ...styles.printedChar,
+            width: `${COLUMN_WIDTH_PX}px`,
+            height: `${CARD_MARGIN_TOP_PX}px`,
+            fontFamily: CARBON_MONO_FONT,
+            fontSize: CARBON_CODE_02_FONT_SIZE,
+            fontWeight: CARBON_MONO_FONT_WEIGHT,
+          }}>
+            {char !== ' ' ? char.toUpperCase() : ''}
           </div>
         ))}
+      </div>
+
+      <div style={styles.cardInner}>
+        {/* Columns */}
+        <div style={styles.columnsContainer}>
+          {paddedText.split('').map((_, colIndex) => {
+            const colNumber = colIndex + 1;
+            return (
+              <div key={colIndex} style={{ ...styles.column, width: `${COLUMN_WIDTH_PX}px`, position: 'relative' as const }}>
+                {/* Column number between row 0 and 1 - absolutely positioned */}
+                <div style={{
+                  ...styles.columnNumber,
+                  position: 'absolute' as const,
+                  top: `${3 * COLUMN_HEIGHT_PX - 4}px`, // After rows 12, 11, 0
+                  width: `${COLUMN_WIDTH_PX}px`,
+                }}>
+                  {colNumber}
+                </div>
+                {/* Column number after row 9 - absolutely positioned */}
+                <div style={{
+                  ...styles.columnNumber,
+                  position: 'absolute' as const,
+                  top: `${12 * COLUMN_HEIGHT_PX - 4}px`, // After all 12 rows
+                  width: `${COLUMN_WIDTH_PX}px`,
+                }}>
+                  {colNumber}
+                </div>
+                {/* Punch positions */}
+                {ROW_VALUES.map((rowValue, rowIndex) => {
+                  const isPunched = columnPunches[colIndex].includes(rowValue);
+                  const showDigit = rowValue >= 0 && rowValue <= 9;
+                  return (
+                    <div key={rowIndex} style={{
+                      ...styles.punchCell,
+                      height: `${COLUMN_HEIGHT_PX}px`,
+                      width: `${COLUMN_WIDTH_PX}px`,
+                    }}>
+                      {isPunched ? (
+                        <div style={{
+                          ...styles.punched,
+                          height: `${HOLE_HEIGHT_PX}px`,
+                          width: `${HOLE_WIDTH_PX}px`,
+                        }} />
+                      ) : showDigit ? (
+                        <div style={{
+                          ...styles.rowDigit,
+                          fontFamily: CARBON_MONO_FONT,
+                          fontSize: CARBON_CODE_01_FONT_SIZE,
+                          fontWeight: CARBON_MONO_FONT_WEIGHT,
+                        }}>
+                          {rowValue}
+                        </div>
+                      ) : (
+                        <div style={{
+                          ...styles.unpunched,
+                          height: `${HOLE_HEIGHT_PX}px`,
+                          width: `${HOLE_WIDTH_PX}px`,
+                        }} />
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            );
+          })}
+        </div>
       </div>
     </div>
   );
