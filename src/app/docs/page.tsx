@@ -1,11 +1,17 @@
-import fs from 'fs';
-import path from 'path';
+'use client';
+
+import { useEffect, useState } from 'react';
 import Markdown from 'react-markdown';
 import './docs.scss';
 
 export default function DocsPage() {
-  const readmePath = path.join(process.cwd(), 'README.md');
-  const content = fs.readFileSync(readmePath, 'utf-8');
+  const [content, setContent] = useState('');
+
+  useEffect(() => {
+    fetch('/assets/about.md')
+      .then((res) => res.text())
+      .then(setContent);
+  }, []);
 
   return (
     <div className="docs-container">

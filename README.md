@@ -4,6 +4,10 @@ This project provides a web-based user interface for the Open SIMH IBM 650 simul
 
 ⚠️ ***Warning: the code in this repo is a work in progress and is not fully functional yet.***
 
+![Front Panel](front_panel.png)
+
+![Punched Card](punched_card.png)
+
 ## Getting Started
 
 ### Build the Simulator
