@@ -13,7 +13,8 @@ import { useEmulator } from './EmulatorProvider';
 
 export default function EmulatorConsole() {
   const [command, setCommand] = useState('');
-  const { output, appendOutput, loading, setLoading } = useEmulator();
+  const [sending, setSending] = useState(false);
+  const { output, sendCommand } = useEmulator();
   const textAreaRef = useRef<HTMLTextAreaElement>(null);
   const commandInputRef = useRef<HTMLInputElement>(null);
 
@@ -24,42 +25,24 @@ export default function EmulatorConsole() {
   }, [output]);
 
   useEffect(() => {
-    if (!loading) {
+    if (!sending) {
       commandInputRef.current?.focus();
     }
-  }, [loading]);
+  }, [sending]);
 
-  const sendCommand = async () => {
-    if (!command.trim() || loading) return;
+  const handleSend = async () => {
+    if (!command.trim() || sending) return;
 
-    setLoading(true);
-    try {
-      const response = await fetch('/api/command', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ command: command.trim() }),
-      });
-
-      const data = await response.json();
-
-      if (data.output) {
-        appendOutput(data.output);
-      } else if (data.error) {
-        appendOutput(`Error: ${data.error}\n`);
-      }
-    } catch (err) {
-      const msg = err instanceof Error ? err.message : 'Unknown error';
-      appendOutput(`Error: ${msg}\n`);
-    } finally {
-      setLoading(false);
-      setCommand('');
-    }
+    setSending(true);
+    await sendCommand(command.trim());
+    setSending(false);
+    setCommand('');
   };
 
   const handleKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter') {
       e.preventDefault();
-      sendCommand();
+      handleSend();
     }
   };
 
@@ -83,17 +66,17 @@ export default function EmulatorConsole() {
             value={command}
             onChange={(e) => setCommand(e.target.value)}
             onKeyDown={handleKeyDown}
-            disabled={loading}
+            disabled={sending}
             size="lg"
             ref={commandInputRef}
           />
         </div>
-        {loading ? (
+        {sending ? (
           <InlineLoading description="Sending..." />
         ) : (
           <Button
             renderIcon={Send}
-            onClick={sendCommand}
+            onClick={handleSend}
             disabled={!command.trim()}
             size="lg"
           >

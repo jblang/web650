@@ -14,6 +14,7 @@ export const unlitBulb = '⚪';
 export interface FrontPanelProps {
   // Values for displays and lights
   storageEntry: string;
+  addressDisplay: string;
   operation: number;
   operatingState: OperatingState;
   checkingState: CheckingState;
@@ -66,7 +67,7 @@ const FrontPanel: React.FC<FrontPanelProps> = (props) => {
       />
 
       <OperationDisplay value={props.operation} />
-      <AddressDisplay value={props.addressSelection} />
+      <AddressDisplay value={props.addressDisplay} />
       <OperatingStatus state={props.operatingState} />
       <CheckingStatus state={props.checkingState} />
 

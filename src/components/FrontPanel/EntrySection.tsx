@@ -64,27 +64,27 @@ const EntrySection: React.FC<EntrySectionProps> = ({
     setNormalizedValue(normalizeValue(value));
   }, [value]);
 
-  // Extract sign and 10 least significant digits from the integer
-  const isNegative = normalizedValue.startsWith('-');
+  // Extract 10 digits and sign (sign is at end: 0000000000+)
+  const isNegative = normalizedValue.endsWith('-');
   const signKnobPosition = isNegative ? 0 : 1; // 0 = minus, 1 = plus
-  const digits = normalizedValue.substring(1).split('').map(Number);
+  const digits = normalizedValue.substring(0, 10).split('').map(Number);
 
   // Handler for digit changes
   const handleDigitChange = (index: number) => (newDigit: number) => {
-    const currentNumericPart = normalizedValue.substring(1);
+    const currentNumericPart = normalizedValue.substring(0, 10);
     const newNumericPartArray = currentNumericPart.split('');
     newNumericPartArray[index] = String(newDigit);
     const newNumericPart = newNumericPartArray.join('');
 
-    const newCanonicalValue = (isNegative ? '-' : '+') + newNumericPart;
+    const newCanonicalValue = newNumericPart + (isNegative ? '-' : '+');
     onChange(normalizeValue(newCanonicalValue));
   };
 
   // Handler for sign changes
   const handleSignChange = (newSign: number) => {
     const newSignChar = newSign === 0 ? '-' : '+';
-    const numericPart = normalizedValue.substring(1);
-    onChange(normalizeValue(newSignChar + numericPart));
+    const numericPart = normalizedValue.substring(0, 10);
+    onChange(normalizeValue(numericPart + newSignChar));
   };
 
   return (

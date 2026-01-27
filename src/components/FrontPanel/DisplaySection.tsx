@@ -73,9 +73,9 @@ const styles = {
 
 const DisplaySection: React.FC<DisplaySectionProps> = ({ value }) => {
   const normalizedValue = normalizeValue(value);
-  // Extract sign and 10 least significant digits from the string value
-  const sign = normalizedValue.charAt(0) as '+' | '-';
-  const digits = normalizedValue.substring(1).split('').map(Number);
+  // Extract 10 digits and sign (sign is at end: 0000000000+)
+  const sign = normalizedValue.charAt(10) as '+' | '-';
+  const digits = normalizedValue.substring(0, 10).split('').map(Number);
 
   return (
     <>

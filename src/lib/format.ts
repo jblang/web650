@@ -8,7 +8,12 @@ export const normalizeValue = (value: string | number): string => {
     }
     numericPart = String(Math.abs(value));
   } else { // typeof value === 'string'
-    if (value.startsWith('+') || value.startsWith('-')) {
+    // Check for sign at the end (emulator format: 0000000000+)
+    if (value.endsWith('+') || value.endsWith('-')) {
+      sign = value[value.length - 1];
+      numericPart = value.substring(0, value.length - 1);
+    // Also accept sign at the beginning for backwards compatibility
+    } else if (value.startsWith('+') || value.startsWith('-')) {
       sign = value[0];
       numericPart = value.substring(1);
     } else {
@@ -21,5 +26,6 @@ export const normalizeValue = (value: string | number): string => {
   // If the number is less than 10 digits, pad with '0' from the left
   const paddedNumericPart = numericPart.padStart(10, '0');
 
-  return sign + paddedNumericPart;
+  // Return with sign at end (emulator format)
+  return paddedNumericPart + sign;
 };

@@ -3,8 +3,13 @@ import { getEmulator, SimhEmulator } from '@/lib/simh';
 
 export async function POST() {
   try {
-    // Stop any existing emulator
+    // Reuse existing emulator if running
     const existingEmulator = getEmulator();
+    if (existingEmulator?.isRunning()) {
+      return NextResponse.json({ output: '', alreadyRunning: true });
+    }
+
+    // Stop any stale emulator
     if (existingEmulator) {
       existingEmulator.stop();
     }
