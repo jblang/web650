@@ -92,7 +92,7 @@ class SimhEmulator {
     });
   }
 
-  sendCommand(command: string, timeoutMs: number = DEFAULT_TIMEOUT_MS): Promise<string> {
+  sendCommand(command: string, timeoutMs: number = DEFAULT_TIMEOUT_MS, expectPrompt: boolean = true, appendCR: boolean = true): Promise<string> {
     if (!this.process || !this.ready) {
       return Promise.reject(new Error('Emulator not running'));
     }
@@ -105,16 +105,24 @@ class SimhEmulator {
       this.pendingResolve = resolve;
       this.pendingReject = reject;
 
-      this.pendingTimeout = setTimeout(() => {
-        this.pendingTimeout = null;
+      if (expectPrompt) {
+        this.pendingTimeout = setTimeout(() => {
+          this.pendingTimeout = null;
+          this.pendingResolve = null;
+          this.pendingReject = null;
+          const partial = this.outputBuffer;
+          this.outputBuffer = '';
+          reject(new Error(`Timeout. Partial output: ${partial}`));
+        }, timeoutMs);
+      }
+
+      this.process!.write(command + (appendCR ? '\r' : ''));
+
+      if (!expectPrompt) {
         this.pendingResolve = null;
         this.pendingReject = null;
-        const partial = this.outputBuffer;
-        this.outputBuffer = '';
-        reject(new Error(`Timeout. Partial output: ${partial}`));
-      }, timeoutMs);
-
-      this.process!.write(command + '\r');
+        resolve(''); // Resolve immediately if no prompt is expected
+      }
     });
   }
 

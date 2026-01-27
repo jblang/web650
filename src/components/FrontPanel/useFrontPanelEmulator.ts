@@ -31,16 +31,22 @@ function parseExamineOutput(output: string): string {
   return match ? match[1] : '0000000000+';
 }
 
+// Parse single-digit switch output, e.g., "CSWPS: 1." -> 1
+function parseSwitchOutput(output: string): number {
+  const match = output.match(/:\s+(\d)/);
+  return match ? parseInt(match[1], 10) : 0;
+}
+
 export const useFrontPanelEmulator = () => {
   const { displayValue, addressRegister, sendCommand, examineRegister, refreshAddressRegister, initialized } = useEmulator();
 
   // Local state for knob positions
   const [programmed, setProgrammed] = useState<number>(Programmed.STOP);
-  const [halfCycle, setHalfCycle] = useState<number>(HalfCycle.HALF);
+  const [halfCycle, setHalfCycle] = useState<number>(HalfCycle.RUN);
   const [addressSelection, setAddressSelection] = useState<string>('0000');
   const [control, setControl] = useState<number>(Control.RUN);
   const [display, setDisplay] = useState<number>(Display.LOWER_ACCUM);
-  const [overflow, setOverflow] = useState<number>(Overflow.STOP);
+  const [overflow, setOverflow] = useState<number>(Overflow.SENSE);
   const [error, setError] = useState<number>(Error.STOP);
   const [entryValue, setEntryValue] = useState('0000000000+');
 
@@ -58,7 +64,7 @@ export const useFrontPanelEmulator = () => {
   // Fetch register value when display knob changes or emulator initializes
   const refreshDisplay = useCallback(async () => {
     if (!initialized) return;
-    const register = getRegisterForDisplay(display, addressSelection);
+    const register = getRegisterForDisplay(display, addressRegister);
     await examineRegister(register);
   }, [display, addressSelection, initialized, examineRegister]);
 
@@ -71,6 +77,36 @@ export const useFrontPanelEmulator = () => {
     }
   }, [initialized, sendCommand]);
 
+  const refreshProgrammedSwitch = useCallback(async () => {
+    if (!initialized) return;
+    const output = await sendCommand('EXAMINE CSWPS');
+    if (output) {
+      const cswpsValue = parseSwitchOutput(output);
+      // Invert: emulator 0 is RUN (1), emulator 1 is STOP (0)
+      setProgrammed(cswpsValue === 0 ? Programmed.RUN : Programmed.STOP);
+    }
+  }, [initialized, sendCommand]);
+
+  const refreshOverflowSwitch = useCallback(async () => {
+    if (!initialized) return;
+    const output = await sendCommand('EXAMINE CSWOS');
+    if (output) {
+      const cswosValue = parseSwitchOutput(output);
+      // Invert: emulator 0 is SENSE (1), emulator 1 is STOP (0)
+      setOverflow(cswosValue === 0 ? Overflow.SENSE : Overflow.STOP);
+    }
+  }, [initialized, sendCommand]);
+
+  const refreshHalfCycleSwitch = useCallback(async () => {
+    if (!initialized) return;
+    const output = await sendCommand('EXAMINE HALF');
+    if (output) {
+      const halfValue = parseSwitchOutput(output);
+      // Invert: emulator 0 is RUN (1), emulator 1 is HALF (0)
+      setHalfCycle(halfValue === 0 ? HalfCycle.RUN : HalfCycle.HALF);
+    }
+  }, [initialized, sendCommand]);
+
   useEffect(() => {
     refreshDisplay();
   }, [refreshDisplay]);
@@ -80,8 +116,11 @@ export const useFrontPanelEmulator = () => {
     if (initialized) {
       refreshAddressRegister();
       refreshEntryValue();
+      refreshProgrammedSwitch();
+      refreshOverflowSwitch();
+      refreshHalfCycleSwitch();
     }
-  }, [initialized, refreshAddressRegister, refreshEntryValue]);
+  }, [initialized, refreshAddressRegister, refreshEntryValue, refreshProgrammedSwitch, refreshOverflowSwitch, refreshHalfCycleSwitch]);
 
   // Knob change handlers
   const onDisplayChange = (newDisplayValue: number) => {
@@ -97,21 +136,62 @@ export const useFrontPanelEmulator = () => {
     }
   };
 
-  const onProgrammedChange = (value: number) => setProgrammed(value);
-  const onHalfCycleChange = (value: number) => setHalfCycle(value);
+  const onProgrammedChange = async (value: number) => {
+    // Invert: RUN (1) deposits 0, STOP (0) deposits 1
+    const cswpsValue = value === Programmed.RUN ? 0 : 1;
+    await sendCommand(`DEPOSIT CSWPS ${cswpsValue}`);
+    await refreshProgrammedSwitch();
+  };
+  const onHalfCycleChange = async (value: number) => {
+    // Invert: RUN (1) deposits 0, HALF (0) deposits 1
+    const halfValue = value === HalfCycle.RUN ? 0 : 1;
+    await sendCommand(`DEPOSIT HALF ${halfValue}`);
+    await refreshHalfCycleSwitch();
+  };
   const onControlChange = (value: number) => setControl(value);
-  const onOverflowChange = (value: number) => setOverflow(value);
+  const onOverflowChange = async (value: number) => {
+    // Invert: SENSE (1) deposits 0, STOP (0) deposits 1
+    const cswosValue = value === Overflow.SENSE ? 0 : 1;
+    await sendCommand(`DEPOSIT CSWOS ${cswosValue}`);
+    await refreshOverflowSwitch();
+  };
   const onErrorChange = (value: number) => setError(value);
+
+  // Effect to manage breakpoints based on Control and Address Selection
+  useEffect(() => {
+    if (!initialized) return;
+
+    const manageBreakpoint = async () => {
+      if (control === Control.ADDRESS_STOP) {
+        await sendCommand('NOBREAK'); // Clear existing breakpoints first
+        await sendCommand(`BREAK ${addressSelection}`);
+      } else {
+        await sendCommand('NOBREAK'); // Clear all breakpoints
+      }
+    };
+    manageBreakpoint();
+  }, [control, addressSelection, initialized, sendCommand]);
 
   // Button click handlers
   const onTransferClick = async () => {
     await sendCommand(`DEPOSIT AR ${addressSelection}`);
     await refreshAddressRegister();
   };
-  const onProgramStartClick = () => {};
-  const onProgramStopClick = () => {};
+  const onProgramStartClick = async () => {
+    if (control === Control.MANUAL_OP) {
+      await sendCommand('STEP'); // Do not wait for prompt after STEP
+    } else {
+      await sendCommand('GO', false); // Do not wait for prompt after GO
+    }
+  };
+  const onProgramStopClick = async () => {
+    // Send CTRL+E (ASCII 0x05) to the emulator, expecting a prompt but not appending a carriage return.
+    await sendCommand('\x05', true, false);
+  };
   const onProgramResetClick = () => {};
-  const onComputerResetClick = () => {};
+  const onComputerResetClick = async () => {
+    await sendCommand('RESET');
+  };
   const onAccumResetClick = () => {};
   const onErrorResetClick = () => {};
   const onErrorSenseResetClick = () => {};

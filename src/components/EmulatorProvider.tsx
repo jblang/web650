@@ -10,7 +10,7 @@ interface EmulatorContextType {
   initialized: boolean;
   displayValue: string;
   addressRegister: string;
-  sendCommand: (command: string) => Promise<string>;
+  sendCommand: (command: string, expectPrompt?: boolean, appendCR?: boolean) => Promise<string>;
   examineRegister: (register: string) => Promise<string>;
   refreshAddressRegister: () => Promise<string>;
 }
@@ -53,14 +53,14 @@ export default function EmulatorProvider({ children }: { children: ReactNode }) 
     setOutput((prev) => prev + text);
   };
 
-  const sendCommand = useCallback(async (command: string): Promise<string> => {
+  const sendCommand = useCallback(async (command: string, expectPrompt: boolean = true, appendCR: boolean = true): Promise<string> => {
     // Chain onto the command queue to serialize requests
     const result = commandQueue.current.then(async () => {
       try {
         const response = await fetch('/api/command', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ command }),
+          body: JSON.stringify({ command, expectPrompt, appendCR }),
         });
         const data = await response.json();
         if (data.output) {
@@ -126,3 +126,4 @@ export default function EmulatorProvider({ children }: { children: ReactNode }) 
     </EmulatorContext.Provider>
   );
 }
+
