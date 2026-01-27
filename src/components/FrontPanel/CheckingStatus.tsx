@@ -1,7 +1,5 @@
 import React from 'react';
-
-const unlitBulb = '⚪';
-const litBulb = '🟡';
+import { litBulb, unlitBulb } from './FrontPanel';
 
 export interface CheckingState {
   programRegister: boolean;

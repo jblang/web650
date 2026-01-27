@@ -1,9 +1,10 @@
 import React from 'react';
 import BiQuinaryDigit from './BiQuinaryDigit';
 import SignDisplay from './SignDisplay';
+import { normalizeValue } from '../../lib/format';
 
 interface DisplaySectionProps {
-  value: number;
+  value: string | number;
 }
 
 const styles = {
@@ -71,11 +72,10 @@ const styles = {
 };
 
 const DisplaySection: React.FC<DisplaySectionProps> = ({ value }) => {
-  // Extract sign and 10 least significant digits from the integer
-  const sign = value < 0 ? '-' : '+';
-  const absValue = Math.abs(value);
-  const paddedString = absValue.toString().padStart(10, '0').slice(-10);
-  const digits = paddedString.split('').map(Number);
+  const normalizedValue = normalizeValue(value);
+  // Extract sign and 10 least significant digits from the string value
+  const sign = normalizedValue.charAt(0) as '+' | '-';
+  const digits = normalizedValue.substring(1).split('').map(Number);
 
   return (
     <>

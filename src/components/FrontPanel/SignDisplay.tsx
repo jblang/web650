@@ -1,11 +1,10 @@
 import React from 'react';
+import { litBulb, unlitBulb } from './FrontPanel';
 
 interface SignDisplayProps {
   value: '+' | '-';
 }
 
-const litBulb = '🟡';
-const unlitBulb = '⚪';
 
 const styles = {
   container: {

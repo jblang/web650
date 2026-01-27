@@ -1,12 +1,9 @@
 import React from 'react';
+import { litBulb, unlitBulb } from './FrontPanel';
 
 interface BiQuinaryDigitProps {
   value: number; // A single digit from 0-9
 }
-
-
-const litBulb = '🟡';
-const unlitBulb = '⚪';
 
 const styles = {
   container: {

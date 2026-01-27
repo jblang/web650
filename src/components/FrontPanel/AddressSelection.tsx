@@ -2,21 +2,20 @@ import React from 'react';
 import DecimalKnob from './DecimalKnob';
 
 interface AddressSelectionProps {
-  value: number;
-  onChange: (newValue: number) => void;
+  value: string | number;
+  onChange: (newValue: string) => void;
 }
 
 const AddressSelection: React.FC<AddressSelectionProps> = ({ value, onChange }) => {
-  // Extract 4 least significant digits from the integer
-  const absValue = Math.abs(value);
-  const paddedString = absValue.toString().padStart(4, '0').slice(-4);
-  const digits = paddedString.split('').map(Number);
+  // Ensure value is a string and pad to 4 digits
+  const displayValue = String(Math.abs(Number(value))).padStart(4, '0').slice(-4);
+  const digits = displayValue.split('').map(Number);
 
   // Handler for digit changes
   const handleDigitChange = (index: number) => (newDigit: number) => {
     const newDigits = [...digits];
     newDigits[index] = newDigit;
-    onChange(parseInt(newDigits.join(''), 10));
+    onChange(newDigits.join(''));
   };
 
   return (

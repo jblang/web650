@@ -1,12 +1,13 @@
 import React from 'react';
 import DecimalKnob from './DecimalKnob';
 import LabeledKnob from './LabeledKnob';
+import { normalizeValue } from '../../lib/format';
 
 const SIGN_POS = [{label: '-', angle: -30}, {label: '+', angle: 30}];
 
 interface EntrySectionProps {
-  value: number;
-  onChange: (newValue: number) => void;
+  value: string | number;
+  onChange: (newValue: string) => void;
 }
 
 const styles = {
@@ -57,25 +58,33 @@ const EntrySection: React.FC<EntrySectionProps> = ({
   value,
   onChange,
 }) => {
+  const [normalizedValue, setNormalizedValue] = React.useState(() => normalizeValue(value));
+
+  React.useEffect(() => {
+    setNormalizedValue(normalizeValue(value));
+  }, [value]);
+
   // Extract sign and 10 least significant digits from the integer
-  const isNegative = value < 0;
-  const storageSign = isNegative ? 0 : 1; // 0 = minus, 1 = plus
-  const absValue = Math.abs(value);
-  const paddedString = absValue.toString().padStart(10, '0').slice(-10);
-  const digits = paddedString.split('').map(Number);
+  const isNegative = normalizedValue.startsWith('-');
+  const signKnobPosition = isNegative ? 0 : 1; // 0 = minus, 1 = plus
+  const digits = normalizedValue.substring(1).split('').map(Number);
 
   // Handler for digit changes
   const handleDigitChange = (index: number) => (newDigit: number) => {
-    const newDigits = [...digits];
-    newDigits[index] = newDigit;
-    const newAbsValue = parseInt(newDigits.join(''), 10);
-    onChange(isNegative ? -newAbsValue : newAbsValue);
+    const currentNumericPart = normalizedValue.substring(1);
+    const newNumericPartArray = currentNumericPart.split('');
+    newNumericPartArray[index] = String(newDigit);
+    const newNumericPart = newNumericPartArray.join('');
+
+    const newCanonicalValue = (isNegative ? '-' : '+') + newNumericPart;
+    onChange(normalizeValue(newCanonicalValue));
   };
 
   // Handler for sign changes
   const handleSignChange = (newSign: number) => {
-    const newIsNegative = newSign === 0;
-    onChange(newIsNegative ? -absValue : absValue);
+    const newSignChar = newSign === 0 ? '-' : '+';
+    const numericPart = normalizedValue.substring(1);
+    onChange(normalizeValue(newSignChar + numericPart));
   };
 
   return (
@@ -96,7 +105,7 @@ const EntrySection: React.FC<EntrySectionProps> = ({
 
       <div style={styles.signKnobCell}>
         <div style={styles.cell}>
-          <LabeledKnob value={storageSign} positions={SIGN_POS} onChange={handleSignChange} />
+          <LabeledKnob position={signKnobPosition} positions={SIGN_POS} onChange={handleSignChange} />
         </div>
         <div style={styles.signLabel}>
           SIGN

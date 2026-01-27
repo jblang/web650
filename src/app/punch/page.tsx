@@ -71,7 +71,7 @@ export default function PunchPage() {
               <AccordionItem
                 key={index}
                 title={<><span>{index + 1}: </span><code style={{ whiteSpace: 'pre' }}>{cardText}</code></>}
-                onHeadingClick={(isExpanded) => handleHeadingClick(index, isExpanded)}
+                onHeadingClick={({ isOpen }) => handleHeadingClick(index, isOpen)}
               >
 
                 {expandedItems.has(index) && <PunchedCard text={cardText} />}

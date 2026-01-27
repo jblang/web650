@@ -6,9 +6,9 @@ interface KnobPosition {
 }
 
 interface LabeledKnobProps {
-  value: number; // The index of the current position
+  position: number; // The index of the current position
   positions: KnobPosition[];
-  onChange?: (value: number) => void;
+  onChange?: (position: number) => void;
   style?: React.CSSProperties;
   labelRadius?: number;
 }
@@ -62,16 +62,16 @@ const styles = {
   },
 };
 
-const LabeledKnob: React.FC<LabeledKnobProps> = ({ value, positions, onChange, style, labelRadius }) => {
+const LabeledKnob: React.FC<LabeledKnobProps> = ({ position, positions, onChange, style, labelRadius }) => {
   const id = useId();
-  const rotation = positions[value]?.angle ?? 0;
+  const rotation = positions[position]?.angle ?? 0;
 
   const handleLeftClick = () => {
-    onChange?.((value + positions.length - 1) % positions.length);
+    onChange?.((position + positions.length - 1) % positions.length);
   };
 
   const handleRightClick = () => {
-    onChange?.((value + 1) % positions.length);
+    onChange?.((position + 1) % positions.length);
   };
 
   const currentRadius = labelRadius ?? 40;

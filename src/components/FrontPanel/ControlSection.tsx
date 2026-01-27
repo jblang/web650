@@ -7,6 +7,33 @@ const BUTTON_GROUPS = [
   ["ERROR RESET", "ERROR SENSE RESET", "MASTER POWER"],
 ];
 
+// Prop interface for button callbacks
+interface ControlSectionProps {
+  onTransferClick?: () => void;
+  onProgramStartClick?: () => void;
+  onProgramStopClick?: () => void;
+  onProgramResetClick?: () => void;
+  onComputerResetClick?: () => void;
+  onAccumResetClick?: () => void;
+  onErrorResetClick?: () => void;
+  onErrorSenseResetClick?: () => void;
+  onMasterPowerClick?: () => void;
+}
+
+// Mapping from label to prop handler key
+const handlerMap: { [key: string]: keyof ControlSectionProps } = {
+  "TRANSFER": "onTransferClick",
+  "PROGRAM START": "onProgramStartClick",
+  "PROGRAM STOP": "onProgramStopClick",
+  "PROGRAM RESET": "onProgramResetClick",
+  "COMPUTER RESET": "onComputerResetClick",
+  "ACCUM RESET": "onAccumResetClick",
+  "ERROR RESET": "onErrorResetClick",
+  "ERROR SENSE RESET": "onErrorSenseResetClick",
+  "MASTER POWER": "onMasterPowerClick",
+};
+
+
 const styles = {
   buttonsRow: {
     gridColumn: '1 / 12',
@@ -65,15 +92,20 @@ const styles = {
   },
 };
 
-const ControlSection: React.FC = () => {
+const ControlSection: React.FC<ControlSectionProps> = (props) => {
   return (
     <div style={styles.buttonsRow}>
       {BUTTON_GROUPS.map((group, groupIndex) => (
         <div key={groupIndex} style={groupIndex === 2 ? styles.buttonGroupRed : styles.buttonGroup}>
           {group.map((label, buttonIndex) => {
             const isRedButton = label === "MASTER POWER";
+            const handler = props[handlerMap[label]];
             return (
-              <button key={buttonIndex} style={isRedButton ? styles.buttonRed : styles.button}>
+              <button
+                key={buttonIndex}
+                style={isRedButton ? styles.buttonRed : styles.button}
+                onClick={handler}
+              >
                 {label}
               </button>
             );

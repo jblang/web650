@@ -2,7 +2,7 @@ import React from 'react';
 import BiQuinaryDigit from './BiQuinaryDigit';
 
 interface OperationDisplayProps {
-  value: number;
+  value: string | number;
 }
 
 const styles = {
@@ -21,10 +21,9 @@ const styles = {
 };
 
 const OperationDisplay: React.FC<OperationDisplayProps> = ({ value }) => {
-  // Extract 2 least significant digits from the integer
-  const absValue = Math.abs(value);
-  const paddedString = absValue.toString().padStart(2, '0').slice(-2);
-  const digits = paddedString.split('').map(Number);
+  // Ensure value is a string and pad to 2 digits
+  const displayValue = String(Math.abs(Number(value))).padStart(2, '0').slice(-2);
+  const digits = displayValue.split('').map(Number);
 
   return (
     <div style={{ ...styles.digitGroup1, gridTemplateRows: 'auto 1fr' }}>

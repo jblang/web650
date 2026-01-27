@@ -17,11 +17,52 @@ const DISPLAY_POS = [
   {label: 'READ‑IN STORAGE', angle: 90},
 ];
 
+// Programmed switch positions
+export const Programmed = {
+  STOP: 0,
+  RUN: 1,
+} as const;
+
+// Half Cycle switch positions
+export const HalfCycle = {
+  HALF: 0,
+  RUN: 1,
+} as const;
+
+// Control switch positions
+export const Control = {
+  ADDRESS_STOP: 0,
+  RUN: 1,
+  MANUAL_OP: 2,
+} as const;
+
+// Display switch positions
+export const Display = {
+  LOWER_ACCUM: 0,
+  UPPER_ACCUM: 1,
+  DISTRIBUTOR: 2,
+  PROGRAM_REGISTER: 3,
+  READ_OUT_STORAGE: 4,
+  READ_IN_STORAGE: 5,
+} as const;
+
+// Overflow switch positions
+export const Overflow = {
+  STOP: 0,
+  SENSE: 1,
+} as const;
+
+// Error switch positions
+export const Error = {
+  STOP: 0,
+  SENSE: 1,
+} as const;
+
 interface ConfigSectionProps {
   // Values
   programmed: number;
   halfCycle: number;
-  addressSelection: number;
+  addressSelection: string;
   control: number;
   display: number;
   overflow: number;
@@ -29,7 +70,7 @@ interface ConfigSectionProps {
   // Handlers
   onProgrammedChange: (value: number) => void;
   onHalfCycleChange: (value: number) => void;
-  onAddressChange: (value: number) => void;
+  onAddressChange: (value: string) => void;
   onControlChange: (value: number) => void;
   onDisplayChange: (value: number) => void;
   onOverflowChange: (value: number) => void;
@@ -61,13 +102,13 @@ const ConfigSection: React.FC<ConfigSectionProps> = ({
 }) => {
   return (
     <div style={styles.finalKnobsRow}>
-      <LabeledKnob value={programmed} positions={STOP_RUN_POS} onChange={onProgrammedChange} />
-      <LabeledKnob value={halfCycle} positions={HALF_RUN_POS} onChange={onHalfCycleChange} />
+      <LabeledKnob position={programmed} positions={STOP_RUN_POS} onChange={onProgrammedChange} />
+      <LabeledKnob position={halfCycle} positions={HALF_RUN_POS} onChange={onHalfCycleChange} />
       <AddressSelection value={addressSelection} onChange={onAddressChange} />
-      <LabeledKnob value={control} positions={CONTROL_POS} onChange={onControlChange} labelRadius={48} />
-      <LabeledKnob value={display} positions={DISPLAY_POS} onChange={onDisplayChange} style={{ gridColumn: 'span 2' }} labelRadius={56} />
-      <LabeledKnob value={overflow} positions={OVERFLOW_POS} onChange={onOverflowChange} />
-      <LabeledKnob value={error} positions={ERROR_POS} onChange={onErrorChange} />
+      <LabeledKnob position={control} positions={CONTROL_POS} onChange={onControlChange} labelRadius={48} />
+      <LabeledKnob position={display} positions={DISPLAY_POS} onChange={onDisplayChange} style={{ gridColumn: 'span 2' }} labelRadius={56} />
+      <LabeledKnob position={overflow} positions={OVERFLOW_POS} onChange={onOverflowChange} />
+      <LabeledKnob position={error} positions={ERROR_POS} onChange={onErrorChange} />
       <div style={{ ...styles.knobLabel, gridColumn: '1 / 2' }}>PROGRAMMED</div>
       <div style={{ ...styles.knobLabel, gridColumn: '2 / 3' }}>HALF CYCLE</div>
       <div style={{ ...styles.knobLabel, gridColumn: '3 / 7', letterSpacing: '0.6em' }}>ADDRESS SELECTION</div>
