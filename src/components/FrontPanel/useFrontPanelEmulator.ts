@@ -23,6 +23,14 @@ function getRegisterForDisplay(displayPosition: number, address: string): string
   }
 }
 
+// Parse EXAMINE output format: "ACCLO:\t 0000000000+." -> "0000000000+"
+function parseExamineOutput(output: string): string {
+  // Match the value after the colon, handling tabs and spaces
+  // Format is: REGISTER:\t VALUE.
+  const match = output.match(/:\s+(\d{10}[+-])/);
+  return match ? match[1] : '0000000000+';
+}
+
 export const useFrontPanelEmulator = () => {
   const { displayValue, addressRegister, sendCommand, examineRegister, refreshAddressRegister, initialized } = useEmulator();
 
@@ -34,6 +42,7 @@ export const useFrontPanelEmulator = () => {
   const [display, setDisplay] = useState<number>(Display.LOWER_ACCUM);
   const [overflow, setOverflow] = useState<number>(Overflow.STOP);
   const [error, setError] = useState<number>(Error.STOP);
+  const [entryValue, setEntryValue] = useState('0000000000+');
 
   // Placeholder state (will be connected to emulator later)
   const [operation, setOperation] = useState(0);
@@ -53,6 +62,15 @@ export const useFrontPanelEmulator = () => {
     await examineRegister(register);
   }, [display, addressSelection, initialized, examineRegister]);
 
+  const refreshEntryValue = useCallback(async () => {
+    if (!initialized) return;
+    const output = await sendCommand('EXAMINE CSW');
+    if (output) {
+      const value = parseExamineOutput(output);
+      setEntryValue(value);
+    }
+  }, [initialized, sendCommand]);
+
   useEffect(() => {
     refreshDisplay();
   }, [refreshDisplay]);
@@ -61,8 +79,9 @@ export const useFrontPanelEmulator = () => {
   useEffect(() => {
     if (initialized) {
       refreshAddressRegister();
+      refreshEntryValue();
     }
-  }, [initialized, refreshAddressRegister]);
+  }, [initialized, refreshAddressRegister, refreshEntryValue]);
 
   // Knob change handlers
   const onDisplayChange = (newDisplayValue: number) => {
@@ -99,8 +118,9 @@ export const useFrontPanelEmulator = () => {
   const onMasterPowerClick = () => {};
 
   return {
-    // Display value comes from emulator
-    storageEntry: displayValue,
+    // Display values
+    displayValue,
+    entryValue,
     addressDisplay: addressRegister,
     operation,
     operatingState,
@@ -114,7 +134,10 @@ export const useFrontPanelEmulator = () => {
     overflow,
     error,
     // Handlers
-    onStorageEntryChange: () => {}, // Read-only for now
+    onEntryValueChange: async (newValue: string) => {
+      await sendCommand(`DEPOSIT CSW ${newValue}`);
+      await refreshEntryValue();
+    },
     onProgrammedChange,
     onHalfCycleChange,
     onAddressChange,

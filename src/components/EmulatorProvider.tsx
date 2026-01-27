@@ -1,6 +1,6 @@
 'use client';
 
-import { createContext, useContext, useState, useEffect, useRef, ReactNode } from 'react';
+import { createContext, useContext, useState, useEffect, useRef, ReactNode, useCallback } from 'react';
 
 interface EmulatorContextType {
   output: string;
@@ -53,7 +53,7 @@ export default function EmulatorProvider({ children }: { children: ReactNode }) 
     setOutput((prev) => prev + text);
   };
 
-  const sendCommand = async (command: string): Promise<string> => {
+  const sendCommand = useCallback(async (command: string): Promise<string> => {
     // Chain onto the command queue to serialize requests
     const result = commandQueue.current.then(async () => {
       try {
@@ -77,9 +77,9 @@ export default function EmulatorProvider({ children }: { children: ReactNode }) 
     });
     commandQueue.current = result.catch(() => {});
     return result;
-  };
+  }, []);
 
-  const examineRegister = async (register: string): Promise<string> => {
+  const examineRegister = useCallback(async (register: string): Promise<string> => {
     const output = await sendCommand(`EXAMINE ${register}`);
     if (output) {
       const value = parseExamineOutput(output);
@@ -87,9 +87,9 @@ export default function EmulatorProvider({ children }: { children: ReactNode }) 
       return value;
     }
     return displayValue;
-  };
+  }, [sendCommand]);
 
-  const refreshAddressRegister = async (): Promise<string> => {
+  const refreshAddressRegister = useCallback(async (): Promise<string> => {
     const output = await sendCommand('EXAMINE AR');
     if (output) {
       const value = parseAddressRegister(output);
@@ -97,7 +97,7 @@ export default function EmulatorProvider({ children }: { children: ReactNode }) 
       return value;
     }
     return addressRegister;
-  };
+  }, [sendCommand]);
 
   useEffect(() => {
     const initEmulator = async () => {

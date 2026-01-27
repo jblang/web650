@@ -13,7 +13,8 @@ export const unlitBulb = '⚪';
 
 export interface FrontPanelProps {
   // Values for displays and lights
-  storageEntry: string;
+  displayValue: string;
+  entryValue: string;
   addressDisplay: string;
   operation: number;
   operatingState: OperatingState;
@@ -27,7 +28,7 @@ export interface FrontPanelProps {
   error: number;
 
   // Callbacks for user interactions
-  onStorageEntryChange: (value: string) => void;
+  onEntryValueChange: (value: string) => void;
   onProgrammedChange: (value: number) => void;
   onHalfCycleChange: (value: number) => void;
   onAddressChange: (value: string) => void;
@@ -59,11 +60,11 @@ const styles = {
 const FrontPanel: React.FC<FrontPanelProps> = (props) => {
   return (
     <div style={styles.container}>
-      <DisplaySection value={props.storageEntry} />
+      <DisplaySection value={props.displayValue} />
 
       <EntrySection
-        value={props.storageEntry}
-        onChange={props.onStorageEntryChange}
+        value={props.entryValue}
+        onChange={props.onEntryValueChange}
       />
 
       <OperationDisplay value={props.operation} />

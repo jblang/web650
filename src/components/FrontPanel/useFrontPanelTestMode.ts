@@ -4,7 +4,7 @@ import { CheckingState } from './CheckingStatus';
 import { Programmed, HalfCycle, Control, Display, Overflow, Error } from './ConfigSection';
 
 export const useFrontPanelTestMode = () => {
-  const [storageEntry, setStorageEntry] = useState<string>('0000000000+');
+  const [entryValue, setEntryValue] = useState<string>('0000000000+');
   const [operation, setOperation] = useState(0);
   const [programmed, setProgrammed] = useState<number>(Programmed.STOP);
   const [halfCycle, setHalfCycle] = useState<number>(HalfCycle.HALF);
@@ -99,7 +99,7 @@ export const useFrontPanelTestMode = () => {
   };
 
   // Button click handlers
-  const onTransferClick = () => setStorageEntry('0000000000+');
+  const onTransferClick = () => setEntryValue('0000000000+');
   const onProgramStartClick = () => {
     setOperation(prevOp => prevOp % 10);
     setProgrammed(Programmed.STOP);
@@ -150,7 +150,8 @@ export const useFrontPanelTestMode = () => {
   };
 
   return {
-    storageEntry,
+    displayValue: entryValue,
+    entryValue,
     addressDisplay: addressSelection, // In test mode, knobs control the display
     operation,
     operatingState,
@@ -162,7 +163,7 @@ export const useFrontPanelTestMode = () => {
     display,
     overflow,
     error,
-    onStorageEntryChange: setStorageEntry,
+    onEntryValueChange: setEntryValue,
     onProgrammedChange,
     onHalfCycleChange,
     onAddressChange: setAddressSelection,
