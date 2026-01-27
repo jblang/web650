@@ -12,7 +12,8 @@ import {
 const links = [
   { href: '/front-panel', text: 'Front Panel' },
   { href: '/program', text: 'Programming' },
-  { href: '/punch', text: 'Reader / Punch' },
+  { href: '/reader', text: 'Reader' },
+  { href: '/punch', text: 'Punch' },
   { href: '/printer', text: 'Printer' },
   { href: '/tape', text: 'Magnetic Tape' },
   { href: '/ramac', text: 'RAMAC' },
