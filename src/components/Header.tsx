@@ -11,11 +11,11 @@ import {
 
 const links = [
   { href: '/front-panel', text: 'Front Panel' },
-  { href: '/program', text: 'Programming' },
+  { href: '/programming', text: 'Programming' },
   { href: '/reader', text: 'Reader' },
   { href: '/punch', text: 'Punch' },
   { href: '/printer', text: 'Printer' },
-  { href: '/tape', text: 'Magnetic Tape' },
+  { href: '/tape', text: 'Tape' },
   { href: '/ramac', text: 'RAMAC' },
   { href: '/emulator', text: 'Emulator' },
   { href: '/docs', text: 'Documentation' },

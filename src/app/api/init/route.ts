@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { getEmulator, SimhEmulator } from '@/lib/simh';
+import { attachConsoleBuffer, getEmulator, SimhEmulator } from '@/lib/simh';
 
 export async function POST() {
   try {
@@ -16,6 +16,7 @@ export async function POST() {
 
     // Start a fresh emulator instance
     const emulator = new SimhEmulator('i650');
+    attachConsoleBuffer(emulator); // capture startup output and prompt
     const output = await emulator.start();
 
     // Store the emulator in globalThis

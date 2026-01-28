@@ -4,7 +4,7 @@ import { getEmulator } from '@/lib/simh';
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { command, timeout, expectPrompt, appendCR } = body;
+    const { command, appendCR, expectResponse } = body;
 
     if (typeof command !== 'string') {
       return NextResponse.json(
@@ -22,16 +22,15 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const timeoutMs = typeof timeout === 'number' ? timeout : undefined;
-    const output = await emulator.sendCommand(command, timeoutMs, expectPrompt, appendCR);
+    const output = await emulator.sendCommand(command, {
+      appendCR,
+      // Default to stream-only responses to avoid duplicate output (SSE already delivers lines).
+      expectResponse: expectResponse !== undefined ? expectResponse : false,
+    });
 
     return NextResponse.json({ output });
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unknown error';
-    const isTimeout = message.includes('Timeout');
-    return NextResponse.json(
-      { error: message },
-      { status: isTimeout ? 504 : 500 }
-    );
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }

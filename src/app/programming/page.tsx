@@ -65,7 +65,7 @@ const createEmptyRow = (id: number): ProgramRow => ({
   remarks: '',
 });
 
-export default function ProgramPage() {
+export default function ProgrammingPage() {
   const [rows, setRows] = useState<ProgramRow[]>(() => [createEmptyRow(1)]);
   const [draggedRowId, setDraggedRowId] = useState<string | null>(null);
 

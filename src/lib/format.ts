@@ -1,8 +1,10 @@
-export const normalizeValue = (value: string | number): string => {
+export const normalizeValue = (value: string | number | null | undefined): string => {
   let sign = '+';
   let numericPart = '';
 
-  if (typeof value === 'number') {
+  if (value === null || value === undefined) {
+    numericPart = '0';
+  } else if (typeof value === 'number') {
     if (value < 0) {
       sign = '-';
     }
