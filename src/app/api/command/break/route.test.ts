@@ -53,4 +53,26 @@ describe('/api/command/break', () => {
     expect(res.status).toBe(200);
     expect(sendCommand).toHaveBeenCalledWith('NOBREAK 0-9999', { expectResponse: false });
   });
+
+  it('GET returns 500 on error', async () => {
+    const getBreakpoints = vi.fn(async () => {
+      throw new Error('boom');
+    });
+    emulator = { isRunning: () => true, sendCommand: vi.fn(), getBreakpoints };
+    const res = await GET();
+    expect(res.status).toBe(500);
+    const json = await res.json();
+    expect(json.error).toMatch(/boom/);
+  });
+
+  it('DELETE returns 500 on error', async () => {
+    const sendCommand = vi.fn(async () => {
+      throw new Error('fail');
+    });
+    emulator = { isRunning: () => true, sendCommand, getBreakpoints: vi.fn() };
+    const res = await DELETE(makeReq());
+    expect(res.status).toBe(500);
+    const json = await res.json();
+    expect(json.error).toMatch(/fail/);
+  });
 });

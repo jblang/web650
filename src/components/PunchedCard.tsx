@@ -232,7 +232,7 @@ const PunchedCard: React.FC<PunchedCardProps> = ({ text, style }) => {
         height: `${CARD_MARGIN_TOP_PX}px`,
       }}>
         {paddedText.split('').map((char, colIndex) => (
-          <div key={colIndex} style={{
+          <div key={colIndex} data-testid={`printed-char-${colIndex}`} style={{
             ...styles.printedChar,
             width: `${COLUMN_WIDTH_PX}px`,
             height: `${CARD_MARGIN_TOP_PX}px`,
@@ -251,7 +251,11 @@ const PunchedCard: React.FC<PunchedCardProps> = ({ text, style }) => {
           {paddedText.split('').map((_, colIndex) => {
             const colNumber = colIndex + 1;
             return (
-              <div key={colIndex} style={{ ...styles.column, width: `${COLUMN_WIDTH_PX}px`, position: 'relative' as const }}>
+              <div
+                key={colIndex}
+                data-testid={`card-column-${colNumber}`}
+                style={{ ...styles.column, width: `${COLUMN_WIDTH_PX}px`, position: 'relative' as const }}
+              >
                 {/* Column number between row 0 and 1 - absolutely positioned */}
                 <div style={{
                   ...styles.columnNumber,
@@ -275,11 +279,15 @@ const PunchedCard: React.FC<PunchedCardProps> = ({ text, style }) => {
                   const isPunched = columnPunches[colIndex].includes(rowValue);
                   const showDigit = rowValue >= 0 && rowValue <= 9;
                   return (
-                    <div key={rowIndex} style={{
-                      ...styles.punchCell,
-                      height: `${COLUMN_HEIGHT_PX}px`,
-                      width: `${COLUMN_WIDTH_PX}px`,
-                    }}>
+                    <div
+                      key={rowIndex}
+                      data-row-value={rowValue}
+                      data-col-index={colNumber}
+                      style={{
+                        ...styles.punchCell,
+                        height: `${COLUMN_HEIGHT_PX}px`,
+                        width: `${COLUMN_WIDTH_PX}px`,
+                      }}>
                       {isPunched ? (
                         <div style={{
                           ...styles.punched,

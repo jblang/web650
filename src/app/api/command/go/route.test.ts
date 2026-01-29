@@ -30,4 +30,15 @@ describe('/api/command/go', () => {
     expect(sendCommand).toHaveBeenCalledWith('GO', { expectResponse: false });
     expect(res.status).toBe(200);
   });
+
+  it('returns 500 on emulator error', async () => {
+    const sendCommand = vi.fn(async () => {
+      throw new Error('fail');
+    });
+    emulator = { isRunning: () => true, sendCommand };
+    const res = await POST();
+    expect(res.status).toBe(500);
+    const json = await res.json();
+    expect(json.error).toMatch(/fail/);
+  });
 });

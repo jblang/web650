@@ -49,4 +49,35 @@ describe('command route sendCommand compatibility', () => {
     const res = await POST(makeRequest({ command: 'EXAMINE AR' }));
     expect(res.status).toBe(503);
   });
+
+  it('rejects non-string command', async () => {
+    emulator = {
+      sendCommand: vi.fn(),
+      isRunning: () => true,
+    };
+
+    const res = await POST(makeRequest({ command: 123 }));
+    expect(res.status).toBe(400);
+  });
+
+  it('returns 400 for missing/invalid body', async () => {
+    emulator = {
+      sendCommand: vi.fn(),
+      isRunning: () => true,
+    };
+    const res = await POST(makeRequest(undefined as unknown as object));
+    expect(res.status).toBe(400);
+  });
+
+  it('returns 500 when sendCommand throws', async () => {
+    const sendCommand = vi.fn(async () => {
+      throw new Error('boom');
+    });
+    emulator = { sendCommand, isRunning: () => true };
+
+    const res = await POST(makeRequest({ command: 'EXAMINE AR' }));
+    expect(res.status).toBe(500);
+    const json = await res.json();
+    expect(json.error).toMatch(/boom/);
+  });
 });

@@ -62,4 +62,26 @@ describe('/api/command/break/[address]', () => {
     expect(res.status).toBe(200);
     expect(sendCommand).toHaveBeenCalledWith('NOBREAK 500-600', { expectResponse: false });
   });
+
+  it('PUT returns 500 on emulator error', async () => {
+    const sendCommand = vi.fn(async () => {
+      throw new Error('boom');
+    });
+    emulator = { isRunning: () => true, sendCommand };
+    const res = await PUT(makeReq(), { params: { address: '1234' } });
+    expect(res.status).toBe(500);
+    const json = await res.json();
+    expect(json.error).toMatch(/boom/);
+  });
+
+  it('DELETE returns 500 on emulator error', async () => {
+    const sendCommand = vi.fn(async () => {
+      throw new Error('oops');
+    });
+    emulator = { isRunning: () => true, sendCommand };
+    const res = await DELETE(makeReq(), { params: { address: '1234' } });
+    expect(res.status).toBe(500);
+    const json = await res.json();
+    expect(json.error).toMatch(/oops/);
+  });
 });

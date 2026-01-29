@@ -1,6 +1,15 @@
 import { describe, expect, it, vi, beforeEach } from 'vitest';
 import type { IPty } from 'node-pty';
-import { SimhEmulator, attachConsoleBuffer, onConsoleLine, onConsoleExit, __resetConsoleBufferForTests } from './simh';
+import {
+  SimhEmulator,
+  attachConsoleBuffer,
+  detachConsoleBuffer,
+  onConsoleLine,
+  onConsoleExit,
+  __resetConsoleBufferForTests,
+  initializeEmulator,
+  getEmulator,
+} from './simh';
 
 // Mocked PTY implementation
 type DataHandler = (data: string) => void;
@@ -9,12 +18,14 @@ type ExitHandler = (event: { exitCode: number }) => void;
 let dataHandler: DataHandler | null = null;
 let exitHandler: ExitHandler | null = null;
 let writes: string[] = [];
+let killed = false;
 
 vi.mock('node-pty', () => ({
   spawn: vi.fn((): IPty => {
     dataHandler = null;
     exitHandler = null;
     writes = [];
+    killed = false;
     return {
       onData: (cb: DataHandler) => {
         dataHandler = cb;
@@ -24,6 +35,9 @@ vi.mock('node-pty', () => ({
       },
       write: (chunk: string) => {
         writes.push(chunk);
+      },
+      kill: () => {
+        killed = true;
       },
     } as unknown as IPty;
   }),
@@ -174,6 +188,7 @@ describe('SimhEmulator command dispatching', () => {
     const result = await cmd;
     expect(result).toBe('OK');
   });
+
 });
 
 describe('state primitives', () => {
@@ -181,10 +196,20 @@ describe('state primitives', () => {
     vi.clearAllMocks();
   });
 
+  it('rejects sendCommand when emulator not running', async () => {
+    const emulator = new SimhEmulator('dummy');
+    await expect(emulator.sendCommand('NOPE')).rejects.toThrow(/not running/);
+  });
+
+  it('rejects escape when emulator not running', async () => {
+    const emulator = new SimhEmulator('dummy');
+    await expect(emulator.sendEscape()).rejects.toThrow(/not running/);
+  });
+
   it('examineState parses memory output with slash delimiter', async () => {
     const emulator = new SimhEmulator('dummy');
     const sendCommand = vi.fn(async () => '03000/ 12345\n');
-    // @ts-expect-error overriding for test
+    // @ts-expect-error test override: inject mock sendCommand
     emulator.sendCommand = sendCommand;
 
     const result = await emulator.examineState('03000');
@@ -198,7 +223,7 @@ describe('state primitives', () => {
     const emulator = new SimhEmulator('dummy');
     // sendCommand now returns only the command's output (stripCommandOutput handles echo removal)
     const sendCommand = vi.fn(async () => '03000/ 00042\n');
-    // @ts-expect-error overriding for test
+    // @ts-expect-error test override: inject mock sendCommand
     emulator.sendCommand = sendCommand;
 
     const result = await emulator.examineState('03000');
@@ -210,7 +235,7 @@ describe('state primitives', () => {
   it('examineState ignores prompt-prefixed echoed command line', async () => {
     const emulator = new SimhEmulator('dummy');
     const sendCommand = vi.fn(async () => 'PR:\t 0000000000+\n');
-    // @ts-expect-error overriding for test
+    // @ts-expect-error test override: inject mock sendCommand
     emulator.sendCommand = sendCommand;
 
     const result = await emulator.examineState('PR');
@@ -222,7 +247,7 @@ describe('state primitives', () => {
   it('examineState surfaces simulation stopped banner as error', async () => {
     const emulator = new SimhEmulator('dummy');
     const sendCommand = vi.fn(async () => 'Simulation stopped, IC: 00000 ( 0000000001+   NOOP  0000  0001 )\nACCLO: 00000\nsim> ');
-    // @ts-expect-error overriding for test
+    // @ts-expect-error test override: inject mock sendCommand
     emulator.sendCommand = sendCommand;
 
     await expect(emulator.examineState('ACCLO')).rejects.toThrow('Simulation stopped');
@@ -232,7 +257,7 @@ describe('state primitives', () => {
   it('depositState sends fire-and-forget command', async () => {
     const emulator = new SimhEmulator('dummy');
     const sendCommand = vi.fn(async () => '');
-    // @ts-expect-error overriding for test
+    // @ts-expect-error test override: inject mock sendCommand
     emulator.sendCommand = sendCommand;
 
     await emulator.depositState('03000', '99999');
@@ -243,7 +268,7 @@ describe('state primitives', () => {
   it('examineState accepts address ranges without label matching', async () => {
     const emulator = new SimhEmulator('dummy');
     const sendCommand = vi.fn(async () => '1: 00000\n2: 00001\n');
-    // @ts-expect-error overriding for test
+    // @ts-expect-error test override: inject mock sendCommand
     emulator.sendCommand = sendCommand;
 
     const result = await emulator.examineState('1-2');
@@ -255,16 +280,93 @@ describe('state primitives', () => {
   it('examineState throws when emulator returns an error line', async () => {
     const emulator = new SimhEmulator('dummy');
     const sendCommand = vi.fn(async () => 'No such register ARX\n');
-    // @ts-expect-error overriding for test
+    // @ts-expect-error test override: inject mock sendCommand
     emulator.sendCommand = sendCommand;
 
     await expect(emulator.examineState('ARX')).rejects.toThrow('No such register ARX');
   });
 
+  it('examineState throws when output cannot be parsed', async () => {
+    const emulator = new SimhEmulator('dummy');
+    const sendCommand = vi.fn(async () => 'BADLINE');
+    // @ts-expect-error test override: inject mock sendCommand
+    emulator.sendCommand = sendCommand;
+
+    await expect(emulator.examineState('FOO')).rejects.toThrow('BADLINE');
+  });
+
+  it('rejects quit when emulator not running', async () => {
+    const emulator = new SimhEmulator('dummy');
+    await expect(emulator.quit()).rejects.toThrow(/not running/);
+  });
+
+  it('stripCommandOutput removes echo and prompt', () => {
+    const emulator = new SimhEmulator('dummy') as unknown as { stripCommandOutput: (cmd: string, raw: string) => string };
+    const raw = 'sim> SHOW DEV\nDZ  enabled\nsim> ';
+    const payload = emulator.stripCommandOutput('SHOW DEV', raw);
+    expect(payload).toBe('DZ  enabled');
+  });
+
+  it('quit kills emulator when timeout elapses', async () => {
+    vi.useFakeTimers();
+    const emulator = new SimhEmulator('dummy');
+    const startPromise = emulator.start();
+    emitPrompt('');
+    await startPromise;
+
+    const quitPromise = emulator.quit(10);
+    await vi.runAllTimersAsync();
+    await quitPromise;
+
+    expect(killed).toBe(true);
+    vi.useRealTimers();
+  });
+
+  it('attach/detachConsoleBuffer toggles line delivery', async () => {
+    const emulator = new SimhEmulator('dummy');
+    attachConsoleBuffer(emulator);
+    const received: string[] = [];
+    const off = onConsoleLine((line) => received.push(line));
+
+    const startPromise = emulator.start();
+    emitPrompt('');
+    await startPromise;
+
+    // emit line -> delivered
+    dataHandler?.('HELLO\n');
+    expect(received.join('')).toContain('HELLO');
+
+    detachConsoleBuffer(emulator);
+    dataHandler?.('WORLD\n');
+    expect(received.join('')).not.toContain('WORLD');
+    off();
+  });
+
+  it('initializeEmulator is a singleton and skips when already running', async () => {
+    const runningMock = { isRunning: () => true };
+    const globalShim = globalThis as { simhEmulator?: unknown };
+    globalShim.simhEmulator = runningMock;
+    await initializeEmulator('dummy');
+    expect(getEmulator()).toBe(runningMock);
+    // reset
+    globalShim.simhEmulator = undefined;
+  });
+
+  it('sendEscape resolves immediately when already at prompt', async () => {
+    const emulator = new SimhEmulator('dummy');
+    const startPromise = emulator.start();
+    emitPrompt('');
+    await startPromise;
+    // @ts-expect-error test override: force prompt state
+    emulator['atPrompt'] = true;
+    const result = await emulator.sendEscape();
+    expect(result).toBe('');
+  });
+
   it('getBreakpoints parses show break output', async () => {
     const emulator = new SimhEmulator('dummy');
     const sendCommand = vi.fn(async () => '1000:\tE\n2000:\tE\n');
-    // @ts-expect-error overriding for test
+    // @ts-expect-error test override: inject mock sendCommand
     emulator.sendCommand = sendCommand;
 
     const breaks = await emulator.getBreakpoints();
