@@ -284,16 +284,16 @@ class SimhEmulator {
   }
 
   /**
-   * Sends Ctrl-E (SIMH stop) immediately, capturing its output separately.
+   * Sends Ctrl-E (SIMH escape) immediately, capturing its output separately.
    * Interrupts any in-flight command, rejecting it so subsequent commands
-   * don't inherit the stop banner.
+   * don't inherit the escape banner.
    */
-  sendStop(): Promise<string> {
+  sendEscape(): Promise<string> {
     if (!this.process || !this.ready) {
       return Promise.reject(new Error('Emulator not running'));
     }
 
-    // If a command is in-flight, park it back on the front of the queue so it runs after STOP completes.
+    // If a command is in-flight, park it back on the front of the queue so it runs after simulation stops.
     if (this.pendingResolve && this.pendingCommand) {
       this.commandQueue.unshift({
         command: this.pendingCommand,
@@ -310,7 +310,7 @@ class SimhEmulator {
       this.outputBuffer = '';
     }
 
-    debugLog('sending immediate stop (Ctrl-E)');
+    debugLog('sending simulation escape (Ctrl-E)');
     this.atPrompt = false;
     this.outputBuffer = '';
     this.stopPending = true;

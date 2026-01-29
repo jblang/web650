@@ -3,7 +3,7 @@ import { POST } from './route';
 
 type EmulatorMock = {
   isRunning: () => boolean;
-  sendStop: () => Promise<string>;
+  sendEscape: () => Promise<string>;
 };
 
 let emulator: EmulatorMock | undefined;
@@ -12,22 +12,22 @@ vi.mock('@/lib/simh', () => ({
   getEmulator: () => emulator,
 }));
 
-describe('/api/control/stop', () => {
+describe('/api/control/escape', () => {
   beforeEach(() => {
     emulator = undefined;
   });
 
   it('returns 503 if emulator not running', async () => {
-    emulator = { isRunning: () => false, sendStop: vi.fn(async () => '') };
+    emulator = { isRunning: () => false, sendEscape: vi.fn(async () => '') };
     const res = await POST();
     expect(res.status).toBe(503);
   });
 
   it('sends ctrl-e stop', async () => {
-    const sendStop = vi.fn(async () => 'Simulation stopped');
-    emulator = { isRunning: () => true, sendStop };
+    const sendEscape = vi.fn(async () => 'Simulation stopped');
+    emulator = { isRunning: () => true, sendEscape };
     const res = await POST();
-    expect(sendStop).toHaveBeenCalledTimes(1);
+    expect(sendEscape).toHaveBeenCalledTimes(1);
     expect(res.status).toBe(200);
   });
 });

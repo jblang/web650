@@ -7,7 +7,7 @@ export async function POST() {
     if (!emulator?.isRunning()) {
       return NextResponse.json({ error: 'Emulator not running' }, { status: 503 });
     }
-    emulator.sendStop();
+    emulator.sendEscape();
     return NextResponse.json({ ok: true });
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unknown error';

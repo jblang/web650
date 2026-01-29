@@ -168,7 +168,7 @@ function createEmulatorApi(
     await setState(reg, value ? '1' : '0');
   };
 
-  type ControlAction = 'step' | 'go' | 'stop' | 'reset';
+  type ControlAction = 'step' | 'go' | 'escape' | 'reset';
   const control = async (action: ControlAction): Promise<void> => {
     const res = await request(`/api/control/${action}`, { method: 'POST' });
     if (!res.ok) {
@@ -192,7 +192,7 @@ function createEmulatorApi(
     },
     step: () => control('step'),
     go: () => control('go'),
-    stop: () => control('stop'),
+    stop: () => control('escape'),
     reset: () => control('reset'),
     setAddressRegister: (address: string) => setState('AR', address),
     getLowerAccumulator: () => getState('ACCLO') as Promise<string>,
