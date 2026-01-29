@@ -271,6 +271,9 @@ export default function EmulatorProvider({ children }: { children: ReactNode }) 
         const data = response.ok ? await parseJson<{ error?: string }>(response) : undefined;
         if (data && data.error) {
           setOutput((prev) => prev + `Error: ${data.error}\n`);
+        } else {
+          // Set storage size to 1k; memory access fails without this
+          await api.sendCommand('SET CPU 1K', { appendCR: true, expectResponse: false });
         }
       } catch (err) {
         const msg = err instanceof Error ? err.message : 'Unknown error';
