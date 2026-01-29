@@ -260,9 +260,9 @@ export default function EmulatorProvider({ children }: { children: ReactNode }) 
   );
 
   useEffect(() => {
-    const initEmulator = async () => {
+    const startEmulator = async () => {
       try {
-        const response = await request('/api/init', { method: 'POST' });
+        const response = await request('/api/start', { method: 'POST' });
         const data = response.ok ? await parseJson<{ error?: string }>(response) : undefined;
         if (data && data.error) {
           setOutput((prev) => prev + `Error: ${data.error}\n`);
@@ -275,7 +275,7 @@ export default function EmulatorProvider({ children }: { children: ReactNode }) 
         setInitialized(true);
       }
     };
-    initEmulator();
+    startEmulator();
   }, []);
 
   // Subscribe to streaming emulator output via SSE

@@ -55,7 +55,7 @@ Zero JSDoc comments found in the codebase. Complex logic lacks inline explanatio
 Unsafe type casting patterns that defeat TypeScript's protection.
 
 **Issues:**
-- `src/app/api/init/route.ts:17` - `globalThis as unknown as { simhEmulator?: SimhEmulator }`
+- `src/app/api/start/route.ts:17` - `globalThis as unknown as { simhEmulator?: SimhEmulator }`
 - `src/lib/simh.ts:135` - Same unsafe casting pattern
 - `src/lib/simh.ts:40` - `process.env as Record<string, string>` ignores undefined values
 
@@ -210,5 +210,5 @@ Several patterns could cause performance issues over time.
 1. `src/lib/simh.ts` - Core logic, needs types, docs, error handling
 2. `src/components/EmulatorProvider.tsx` - Needs cleanup, error handling
 3. `src/components/DecimalKnob.tsx` + `LabeledKnob.tsx` - Consolidate duplicated code
-4. `src/app/api/init/route.ts` + `command/route.ts` - Type safety fixes
+4. `src/app/api/start/route.ts` + `command/route.ts` - Type safety fixes
 5. `src/components/FrontPanel.tsx` - Accessibility, state consolidation
