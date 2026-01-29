@@ -395,8 +395,28 @@ class SimhEmulator {
       shared.consoleEmitter.once('exit', () => resolve());
     });
 
-    await this.sendEscape();
-    await this.sendCommand('QUIT', { expectResponse: false });
+    // Try to get to the prompt, but don't hang if escape is ignored.
+    await Promise.race([
+      this.sendEscape().catch(() => ''),
+      new Promise<void>((resolve) => setTimeout(resolve, 300)),
+    ]);
+
+    // Clear any in-flight command so QUIT doesn't get blocked.
+    this.pendingResolve = null;
+    this.pendingReject = null;
+    this.pendingCommand = null;
+    this.pendingAppendCR = false;
+    this.pendingExpectResponse = false;
+    this.outputBuffer = '';
+    this.stopPending = false;
+    this.stopBuffer = '';
+
+    // Drop queued commands—they belong to the old session.
+    this.commandQueue = [];
+
+    // Send QUIT directly to the process regardless of prompt state.
+    debugLog('writing QUIT to simulator');
+    this.process.write('QUIT\r');
 
     let timeoutHandle: NodeJS.Timeout | undefined;
     const timeoutPromise = new Promise<void>((resolve) => {
@@ -407,10 +427,15 @@ class SimhEmulator {
       }, effectiveTimeout);
     });
 
-    await Promise.race([exitPromise, timeoutPromise]);
+    const winner = await Promise.race([
+      exitPromise.then(() => 'exit'),
+      timeoutPromise.then(() => 'timeout'),
+    ]);
+    debugLog('quit wait completed', { winner });
     if (timeoutHandle) {
       clearTimeout(timeoutHandle);
     }
+    debugLog('quit completed');
   }
 
   isRunning(): boolean {

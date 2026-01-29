@@ -1,6 +1,6 @@
 'use client';
 
-import { createContext, useContext, useState, useEffect, useRef, ReactNode, useMemo, type Dispatch, type SetStateAction } from 'react';
+import { createContext, useContext, useState, useEffect, useRef, useCallback, ReactNode, useMemo, type Dispatch, type SetStateAction } from 'react';
 
 interface EmulatorContextType {
   initialized: boolean;
@@ -43,6 +43,7 @@ interface EmulatorContextType {
   setLoading: (loading: boolean) => void;
   setOverflowStop: (value: boolean) => Promise<void>;
   setProgrammedStop: (value: boolean) => Promise<void>;
+  restart: () => Promise<void>;
   step: () => Promise<void>;
   stop: () => Promise<void>;
   go: () => Promise<void>;
@@ -234,6 +235,7 @@ export default function EmulatorProvider({ children }: { children: ReactNode }) 
   const [output, setOutput] = useState('');
   const [loading, setLoading] = useState(true);
   const [initialized, setInitialized] = useState(false);
+  const [consoleStreamVersion, setConsoleStreamVersion] = useState(0);
   // Panel-only switch state (not backed by emulator registers)
   const [displaySwitch, setDisplaySwitch] = useState<number>(0);
   const [controlSwitch, setControlSwitch] = useState<number>(0);
@@ -244,6 +246,29 @@ export default function EmulatorProvider({ children }: { children: ReactNode }) 
   const commandQueue = useRef<Promise<void>>(Promise.resolve());
 
   const api = useMemo(() => createEmulatorApi(commandQueue, setOutput), [setOutput]);
+
+  const restart = useCallback(async () => {
+    setLoading(true);
+    setInitialized(false);
+    setOutput('');
+
+    // Reset queue and schedule console reconnect immediately
+    commandQueue.current = Promise.resolve();
+    setConsoleStreamVersion((v) => v + 1);
+
+    try {
+      const res = await request('/api/restart', { method: 'POST' });
+      if (!res.ok) {
+        throw new Error(`Restart failed (${res.status})`);
+      }
+
+      // Reapply expected CPU speed
+      await api.sendCommand('set cpu 1k', { appendCR: true, expectResponse: false });
+    } finally {
+      setLoading(false);
+      setInitialized(true);
+    }
+  }, [api]);
 
   const value = useMemo(
     () => ({
@@ -260,8 +285,9 @@ export default function EmulatorProvider({ children }: { children: ReactNode }) 
       addressSwitches,
       setAddressSwitches,
       ...api,
+      restart,
     }),
-    [output, loading, initialized, displaySwitch, controlSwitch, errorSwitch, addressSwitches, api]
+    [output, loading, initialized, displaySwitch, controlSwitch, errorSwitch, addressSwitches, api, restart]
   );
 
   useEffect(() => {
@@ -326,7 +352,7 @@ export default function EmulatorProvider({ children }: { children: ReactNode }) 
       source?.close();
       if (retryTimer) clearTimeout(retryTimer);
     };
-  }, [initialized]);
+  }, [initialized, consoleStreamVersion]);
 
   return (
     <EmulatorContext.Provider value={value}>

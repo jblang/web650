@@ -46,7 +46,7 @@ export interface FrontPanelProps {
   onAccumResetClick?: () => void;
   onErrorResetClick?: () => void;
   onErrorSenseResetClick?: () => void;
-  onMasterPowerClick?: () => void;
+  onRestartClick?: () => void;
 }
 
 const styles = {
@@ -93,12 +93,12 @@ const FrontPanel: React.FC<FrontPanelProps> = (props) => {
         onTransferClick={props.onTransferClick}
         onProgramStartClick={props.onProgramStartClick}
         onProgramStopClick={props.onProgramStopClick}
-        onProgramResetClick={props.onProgramResetClick}
-        onComputerResetClick={props.onComputerResetClick}
-        onAccumResetClick={props.onAccumResetClick}
-        onErrorResetClick={props.onErrorResetClick}
-        onErrorSenseResetClick={props.onErrorSenseResetClick}
-        onMasterPowerClick={props.onMasterPowerClick}
+      onProgramResetClick={props.onProgramResetClick}
+      onComputerResetClick={props.onComputerResetClick}
+      onAccumResetClick={props.onAccumResetClick}
+      onErrorResetClick={props.onErrorResetClick}
+      onErrorSenseResetClick={props.onErrorSenseResetClick}
+      onRestartClick={props.onRestartClick}
       />
     </div>
   );

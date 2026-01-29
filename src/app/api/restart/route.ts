@@ -16,14 +16,19 @@ export async function POST() {
     const timeoutMs = parseTimeout();
 
     if (existing?.isRunning()) {
+      console.log('[restart] quitting existing emulator');
       await existing.quit(timeoutMs);
+      console.log('[restart] quit complete');
     } else if (existing) {
+      console.log('[restart] killing stale emulator');
       existing.kill();
     }
 
     const emulator = new SimhEmulator('i650');
+    console.log('[restart] starting new emulator');
     attachConsoleBuffer(emulator);
     const output = await emulator.start();
+    console.log('[restart] new emulator started');
 
     const g = globalThis as unknown as { simhEmulator?: SimhEmulator };
     g.simhEmulator = emulator;

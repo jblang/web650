@@ -42,6 +42,7 @@ export const useFrontPanelControls = () => {
     setErrorSwitch,
     addressSwitches,
     setAddressSwitches,
+    restart,
   } = useEmulator();
 
   // Lights / indicators
@@ -332,7 +333,10 @@ export const useFrontPanelControls = () => {
   };
   const onErrorResetClick = () => {};
   const onErrorSenseResetClick = () => {};
-  const onMasterPowerClick = () => {};
+  const onRestartClick = async () => {
+    await restart();
+    setIsRunning(false);
+  };
 
   return {
     // Display values
@@ -371,6 +375,6 @@ export const useFrontPanelControls = () => {
     onAccumResetClick,
     onErrorResetClick,
     onErrorSenseResetClick,
-    onMasterPowerClick,
+    onRestartClick,
   };
 };
