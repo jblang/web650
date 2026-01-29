@@ -1,43 +1,50 @@
 'use client';
 
 import { createContext, useContext, useState, useEffect, useRef, useCallback, ReactNode, useMemo, type Dispatch, type SetStateAction } from 'react';
+import { Display, Control, Programmed, HalfCycle, Overflow } from './FrontPanel/ConfigSection';
+import type { OperatingState } from './FrontPanel/OperatingStatus';
+import type { CheckingState } from './FrontPanel/CheckingStatus';
+// Maps display switch position to the register string shown on the lights.
+function getDisplayValue(
+  displaySwitch: number,
+  regs: {
+    lowerAccumulator: string;
+    upperAccumulator: string;
+    distributor: string;
+    programRegister: string;
+  }
+): string {
+  switch (displaySwitch) {
+    case Display.LOWER_ACCUM:
+      return regs.lowerAccumulator;
+    case Display.UPPER_ACCUM:
+      return regs.upperAccumulator;
+    case Display.DISTRIBUTOR:
+      return regs.distributor;
+    case Display.PROGRAM_REGISTER:
+      return regs.programRegister;
+    case Display.READ_OUT_STORAGE:
+    case Display.READ_IN_STORAGE:
+      return regs.distributor;
+    default:
+      return '0000000000+';
+  }
+}
 
 interface EmulatorContextType {
   initialized: boolean;
-  loading: boolean;
   output: string;
-  appendOutput: (text: string) => void;
   sendCommand: (command: string, options?: { appendCR?: boolean; expectResponse?: boolean }) => Promise<string>;
-  clearBreakpoints: () => Promise<void>;
-  deleteBreakpoint: (address: string) => Promise<void>;
-  setBreakpoint: (address: string) => Promise<void>;
-  getDrumLocation: (address: string) => Promise<string>;
-  setDrumLocation: (address: string, value: string) => Promise<void>;
-  setProgramRegister: (value: string) => Promise<void>;
-  setOverflowFlag: (value: string) => Promise<void>;
-  setLowerAccumulator: (value: string) => Promise<void>;
-  setUpperAccumulator: (value: string) => Promise<void>;
-  setDistributor: (value: string) => Promise<void>;
-  setAddressRegister: (address: string) => Promise<void>;
-  setConsoleSwitches: (value: string) => Promise<void>;
-  setHalfCycle: (value: boolean) => Promise<void>;
-  setLoading: (loading: boolean) => void;
-  setOverflowStop: (value: boolean) => Promise<void>;
-  setProgrammedStop: (value: boolean) => Promise<void>;
-  restart: () => Promise<void>;
-  step: () => Promise<void>;
-  stop: () => Promise<void>;
-  go: () => Promise<void>;
-  reset: () => Promise<void>;
+  // Derived display value (kept in provider)
+  displayValue: string;
+  operation: string;
+  operatingState: OperatingState;
+  checkingState: CheckingState;
   // Panel-only state (not backed by emulator registers)
   displaySwitch: number;
-  setDisplaySwitch: Dispatch<SetStateAction<number>>;
   controlSwitch: number;
-  setControlSwitch: Dispatch<SetStateAction<number>>;
   errorSwitch: number;
-  setErrorSwitch: Dispatch<SetStateAction<number>>;
   addressSwitches: string;
-  setAddressSwitches: Dispatch<SetStateAction<string>>;
   // Emulator register snapshot (maintained locally)
   addressRegister: string;
   programRegister: string;
@@ -49,32 +56,40 @@ interface EmulatorContextType {
   overflowStop: boolean;
   halfCycle: boolean;
   refreshRegisters: () => Promise<void>;
+  // Front panel handlers (business logic)
+  onDisplayChange: (value: number) => void;
+  onAddressChange: (value: string) => Promise<void>;
+  onProgrammedChange: (value: number) => Promise<void>;
+  onHalfCycleChange: (value: number) => Promise<void>;
+  onControlChange: (value: number) => void;
+  onOverflowChange: (value: number) => Promise<void>;
+  onErrorChange: (value: number) => void;
+  onEntryValueChange: (value: string) => Promise<void>;
+  onTransferClick: () => Promise<void>;
+  onProgramStartClick: () => Promise<void>;
+  onProgramStopClick: () => Promise<void>;
+  onProgramResetClick: () => Promise<void>;
+  onComputerResetClick: () => Promise<void>;
+  onAccumResetClick: () => Promise<void>;
+  onErrorResetClick: () => void;
+  onErrorSenseResetClick: () => void;
+  onRestartClick: () => Promise<void>;
 }
 
 const EmulatorContext = createContext<EmulatorContextType | null>(null);
 
 type EmulatorApi = {
-  appendOutput: EmulatorContextType['appendOutput'];
-  sendCommand: EmulatorContextType['sendCommand'];
-  clearBreakpoints: EmulatorContextType['clearBreakpoints'];
-  deleteBreakpoint: EmulatorContextType['deleteBreakpoint'];
-  setBreakpoint: EmulatorContextType['setBreakpoint'];
-  getDrumLocation: EmulatorContextType['getDrumLocation'];
-  setDrumLocation: EmulatorContextType['setDrumLocation'];
-  setProgramRegister: EmulatorContextType['setProgramRegister'];
-  setOverflowFlag: EmulatorContextType['setOverflowFlag'];
-  setLowerAccumulator: EmulatorContextType['setLowerAccumulator'];
-  setUpperAccumulator: EmulatorContextType['setUpperAccumulator'];
-  setDistributor: EmulatorContextType['setDistributor'];
-  setAddressRegister: EmulatorContextType['setAddressRegister'];
-  setConsoleSwitches: EmulatorContextType['setConsoleSwitches'];
-  setHalfCycle: EmulatorContextType['setHalfCycle'];
-  setOverflowStop: EmulatorContextType['setOverflowStop'];
-  setProgrammedStop: EmulatorContextType['setProgrammedStop'];
-  step: EmulatorContextType['step'];
-  go: EmulatorContextType['go'];
-  stop: EmulatorContextType['stop'];
-  reset: EmulatorContextType['reset'];
+  appendOutput: (text: string) => void;
+  sendCommand: (command: string, options?: { appendCR?: boolean; expectResponse?: boolean }) => Promise<string>;
+  setProgramRegister: (value: string) => Promise<void>;
+  setLowerAccumulator: (value: string) => Promise<void>;
+  setUpperAccumulator: (value: string) => Promise<void>;
+  setDistributor: (value: string) => Promise<void>;
+  setAddressRegister: (address: string) => Promise<void>;
+  setConsoleSwitches: (value: string) => Promise<void>;
+  setHalfCycle: (value: boolean) => Promise<void>;
+  setOverflowStop: (value: boolean) => Promise<void>;
+  setProgrammedStop: (value: boolean) => Promise<void>;
 };
 
 type CommandQueueRef = { current: Promise<void> };
@@ -135,35 +150,9 @@ function createEmulatorApi(
     return result;
   };
 
-  type CommandAction = 'step' | 'go' | 'reset';
-  const command = async (action: CommandAction): Promise<void> => {
-    const res = await request(`/api/command/${action}`, { method: 'POST' });
-    if (!res.ok) {
-      throw new Error(`Control ${action} failed (${res.status})`);
-    }
-  };
-
   return {
     appendOutput,
     sendCommand,
-    setBreakpoint: async (address: string) => {
-      await request(`/api/command/break/${address}`, { method: 'PUT' });
-    },
-    deleteBreakpoint: async (address: string) => {
-      await request(`/api/command/break/${address}`, { method: 'DELETE' });
-    },
-    clearBreakpoints: async () => {
-      await request('/api/command/break', { method: 'DELETE' });
-    },
-    step: () => command('step'),
-    go: () => command('go'),
-    stop: async () => {
-      const res = await request('/api/escape', { method: 'POST' });
-      if (!res.ok) {
-        throw new Error(`Escape failed (${res.status})`);
-      }
-    },
-    reset: () => command('reset'),
     setAddressRegister: async (address: string) => {
       await request(`/api/state/AR`, {
         method: 'PUT',
@@ -192,30 +181,8 @@ function createEmulatorApi(
         body: JSON.stringify({ value }),
       });
     },
-    setOverflowFlag: async (value: string) => {
-      await request(`/api/state/OV`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ value }),
-      });
-    },
     setProgramRegister: async (value: string) => {
       await request(`/api/state/PR`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ value }),
-      });
-    },
-    getDrumLocation: async (address: string) => {
-      const res = await request(`/api/state/${address}`, { method: 'GET' });
-      if (!res.ok) throw new Error(`State request failed (${res.status})`);
-      const data = await parseJson<{ registers?: Record<string, string> }>(res);
-      const registers = data?.registers ?? {};
-      const numeric = String(parseInt(address, 10));
-      return registers[address] ?? registers[numeric] ?? registers[numeric.padStart(4, '0')] ?? '';
-    },
-    setDrumLocation: async (address: string, value: string) => {
-      await request(`/api/state/${address}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ value }),
@@ -262,7 +229,6 @@ export function useEmulator() {
 
 export default function EmulatorProvider({ children }: { children: ReactNode }) {
   const [output, setOutput] = useState('');
-  const [loading, setLoading] = useState(true);
   const [initialized, setInitialized] = useState(false);
   const [consoleStreamVersion, setConsoleStreamVersion] = useState(0);
   // Emulator register snapshot (kept in provider so consumers don't fetch on demand)
@@ -275,6 +241,30 @@ export default function EmulatorProvider({ children }: { children: ReactNode }) 
   const [programmedStop, setProgrammedStopState] = useState<boolean>(false);
   const [overflowStop, setOverflowStopState] = useState<boolean>(false);
   const [halfCycle, setHalfCycleState] = useState<boolean>(false);
+  const [displayValue, setDisplayValue] = useState<string>('0000000000+');
+  const [isRunning, setIsRunning] = useState<boolean>(false);
+  const [operation, setOperation] = useState<string>('00');
+  const [operatingState] = useState<OperatingState>({
+    dataAddress: false,
+    program: false,
+    inputOutput: false,
+    inquiry: false,
+    ramac: false,
+    magneticTape: false,
+    instAddress: false,
+    accumulator: false,
+    overflow: false,
+  });
+  const [checkingState] = useState<CheckingState>({
+    programRegister: false,
+    controlUnit: false,
+    storageSelection: false,
+    storageUnit: false,
+    distributor: false,
+    clocking: false,
+    accumulator: false,
+    errorSense: false,
+  });
   // Panel-only switch state (not backed by emulator registers)
   const [displaySwitch, setDisplaySwitch] = useState<number>(0);
   const [controlSwitch, setControlSwitch] = useState<number>(0);
@@ -304,8 +294,24 @@ export default function EmulatorProvider({ children }: { children: ReactNode }) 
     setHalfCycleState(getBool('HALF'));
   }, [addressRegister, programRegister, lowerAccumulator, upperAccumulator, distributor, consoleSwitches]);
 
+  const getDrumLocation = useCallback(async (address: string): Promise<string> => {
+    const res = await request(`/api/state/${address}`, { method: 'GET' });
+    if (!res.ok) throw new Error(`State request failed (${res.status})`);
+    const data = await parseJson<{ registers?: Record<string, string> }>(res);
+    const registers = data?.registers ?? {};
+    const numeric = String(parseInt(address, 10));
+    return registers[address] ?? registers[numeric] ?? registers[numeric.padStart(4, '0')] ?? '';
+  }, []);
+
+  const setDrumLocation = useCallback(async (address: string, value: string): Promise<void> => {
+    await request(`/api/state/${address}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ value }),
+    });
+  }, []);
+
   const restart = useCallback(async () => {
-    setLoading(true);
     setInitialized(false);
     setOutput('');
 
@@ -323,10 +329,30 @@ export default function EmulatorProvider({ children }: { children: ReactNode }) 
       await api.sendCommand('set cpu 1k', { appendCR: true, expectResponse: false });
       await refreshRegisters();
     } finally {
-      setLoading(false);
       setInitialized(true);
     }
   }, [api, refreshRegisters]);
+
+  const goCommand = useCallback(async () => {
+    const res = await request(`/api/command/go`, { method: 'POST' });
+    if (!res.ok) {
+      throw new Error(`Control go failed (${res.status})`);
+    }
+  }, []);
+
+  const escape = useCallback(async () => {
+    const res = await request('/api/escape', { method: 'POST' });
+    if (!res.ok) {
+      throw new Error(`Escape failed (${res.status})`);
+    }
+  }, []);
+
+  const resetCommand = useCallback(async () => {
+    const res = await request(`/api/command/reset`, { method: 'POST' });
+    if (!res.ok) {
+      throw new Error(`Control reset failed (${res.status})`);
+    }
+  }, []);
 
   const setAddressRegister = useCallback(
     async (value: string) => {
@@ -400,20 +426,165 @@ export default function EmulatorProvider({ children }: { children: ReactNode }) 
     [api]
   );
 
+  // Derived display value mirrors current knob and register snapshot.
+  useEffect(() => {
+    if (!initialized) return;
+    setDisplayValue(
+      getDisplayValue(displaySwitch, {
+        lowerAccumulator,
+        upperAccumulator,
+        distributor,
+        programRegister,
+      })
+    );
+  }, [initialized, displaySwitch, lowerAccumulator, upperAccumulator, distributor, programRegister]);
+
+  // Derive operation register display (first two digits of PR numeric portion).
+  useEffect(() => {
+    setOperation(programRegister.slice(0, 2));
+  }, [programRegister]);
+
+  const handleDrumTransfer = useCallback(async () => {
+    const targetAddress = addressRegister;
+
+    if (displaySwitch === Display.READ_OUT_STORAGE) {
+      const value = await getDrumLocation(targetAddress);
+      await setDistributor(value);
+    } else if (displaySwitch === Display.READ_IN_STORAGE) {
+      await setDistributor(consoleSwitches);
+      await setDrumLocation(targetAddress, consoleSwitches);
+    }
+  }, [addressRegister, displaySwitch, consoleSwitches, setDistributor, getDrumLocation, setDrumLocation]);
+
+  const onDisplayChange = useCallback((value: number) => {
+    setDisplaySwitch(value);
+  }, []);
+
+  const onAddressChange = useCallback(
+    async (value: string) => {
+      setAddressSwitches(value);
+    },
+    []
+  );
+
+  const onProgrammedChange = useCallback(
+    async (value: number) => {
+      const stopSelected = value === Programmed.STOP;
+      await setProgrammedStop(stopSelected);
+    },
+    [setProgrammedStop]
+  );
+
+  const onHalfCycleChange = useCallback(
+    async (value: number) => {
+      const halfSelected = value === HalfCycle.HALF;
+      await setHalfCycle(halfSelected);
+    },
+    [setHalfCycle]
+  );
+
+  const onControlChange = useCallback((value: number) => {
+    setControlSwitch(value);
+  }, []);
+
+  const onOverflowChange = useCallback(
+    async (value: number) => {
+      const stopSelected = value === Overflow.STOP;
+      await setOverflowStop(stopSelected);
+    },
+    [setOverflowStop]
+  );
+
+  const onErrorChange = useCallback((value: number) => {
+    setErrorSwitch(value);
+  }, []);
+
+  const onEntryValueChange = useCallback(
+    async (value: string) => {
+      await setConsoleSwitches(value);
+    },
+    [setConsoleSwitches]
+  );
+
+  const handleProgramStart = useCallback(async () => {
+    await goCommand();
+  }, [goCommand]);
+
+  const onProgramStartClick = useCallback(async () => {
+    if (isRunning) return;
+    if (controlSwitch === Control.MANUAL_OP) {
+      await handleDrumTransfer();
+    } else {
+      await handleProgramStart();
+      setIsRunning(true);
+    }
+  }, [controlSwitch, handleDrumTransfer, handleProgramStart, isRunning]);
+
+  const onProgramStopClick = useCallback(async () => {
+    await escape();
+    setIsRunning(false);
+    await refreshRegisters();
+  }, [escape, refreshRegisters]);
+
+  const onProgramResetClick = useCallback(async () => {
+    if (isRunning) {
+      await escape();
+      setIsRunning(false);
+    }
+    await setProgramRegister('00000');
+    const addressValue = controlSwitch === Control.MANUAL_OP ? '0000' : '8000';
+    await setAddressRegister(addressValue);
+    await refreshRegisters();
+  }, [escape, controlSwitch, isRunning, setAddressRegister, setProgramRegister, refreshRegisters]);
+
+  const onComputerResetClick = useCallback(async () => {
+    if (isRunning) {
+      await escape();
+      setIsRunning(false);
+    }
+    await resetCommand();
+    setIsRunning(false);
+    await refreshRegisters();
+  }, [isRunning, resetCommand, escape, refreshRegisters]);
+
+  const onAccumResetClick = useCallback(async () => {
+    const zeroWord = '0000000000+';
+    await Promise.all([
+      setDistributor(zeroWord),
+      setLowerAccumulator(zeroWord),
+      setUpperAccumulator(zeroWord),
+      request(`/api/state/OV`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ value: '0' }),
+      }),
+    ]);
+    await refreshRegisters();
+  }, [setDistributor, setLowerAccumulator, setUpperAccumulator, refreshRegisters]);
+
+  const onTransferClick = useCallback(async () => {
+    if (controlSwitch === Control.MANUAL_OP) {
+      await setAddressRegister(addressSwitches);
+    }
+  }, [addressSwitches, controlSwitch, setAddressRegister]);
+
+  const onRestartClick = useCallback(async () => {
+    await restart();
+    setIsRunning(false);
+  }, [restart]);
+
+  const onErrorResetClick = useCallback(() => {}, []);
+
+  const onErrorSenseResetClick = useCallback(() => {}, []);
+
   const value = useMemo(
     () => ({
       output,
-      loading,
       initialized,
-      setLoading,
       displaySwitch,
-      setDisplaySwitch,
       controlSwitch,
-      setControlSwitch,
       errorSwitch,
-      setErrorSwitch,
       addressSwitches,
-      setAddressSwitches,
       addressRegister,
       programRegister,
       lowerAccumulator,
@@ -423,34 +594,35 @@ export default function EmulatorProvider({ children }: { children: ReactNode }) 
       programmedStop,
       overflowStop,
       halfCycle,
+      displayValue,
+      operation,
+      // expose frozen copies so consumers can't mutate internal state objects
+      operatingState: Object.freeze({ ...operatingState }),
+      checkingState: Object.freeze({ ...checkingState }),
       refreshRegisters,
       // API actions (wrapped to keep local state in sync)
-      appendOutput: api.appendOutput,
       sendCommand: api.sendCommand,
-      clearBreakpoints: api.clearBreakpoints,
-      deleteBreakpoint: api.deleteBreakpoint,
-      setBreakpoint: api.setBreakpoint,
-      getDrumLocation: api.getDrumLocation,
-      setDrumLocation: api.setDrumLocation,
-      setProgramRegister,
-      setOverflowFlag: api.setOverflowFlag,
-      setLowerAccumulator,
-      setUpperAccumulator,
-      setDistributor,
-      setAddressRegister,
-      setConsoleSwitches,
-      setHalfCycle,
-      setOverflowStop,
-      setProgrammedStop,
-      step: api.step,
-      go: api.go,
-      stop: api.stop,
-      reset: api.reset,
-      restart,
+      onDisplayChange,
+      onAddressChange,
+      onProgrammedChange,
+      onHalfCycleChange,
+      onControlChange,
+      onOverflowChange,
+      onErrorChange,
+      onEntryValueChange,
+      onTransferClick,
+      onProgramStartClick,
+      onProgramStopClick,
+      onProgramResetClick,
+      onComputerResetClick,
+      onAccumResetClick,
+      onErrorResetClick,
+      onErrorSenseResetClick,
+      onRestartClick,
     }),
     [
+      api.sendCommand,
       output,
-      loading,
       initialized,
       displaySwitch,
       controlSwitch,
@@ -465,18 +637,28 @@ export default function EmulatorProvider({ children }: { children: ReactNode }) 
       programmedStop,
       overflowStop,
       halfCycle,
+      displayValue,
+      operation,
+      operatingState,
+      checkingState,
       refreshRegisters,
-      api,
-      setProgramRegister,
-      setLowerAccumulator,
-      setUpperAccumulator,
-      setDistributor,
-      setAddressRegister,
-      setConsoleSwitches,
-      setHalfCycle,
-      setOverflowStop,
-      setProgrammedStop,
-      restart,
+      onDisplayChange,
+      onAddressChange,
+      onProgrammedChange,
+      onHalfCycleChange,
+      onControlChange,
+      onOverflowChange,
+      onErrorChange,
+      onEntryValueChange,
+      onTransferClick,
+      onProgramStartClick,
+      onProgramStopClick,
+      onProgramResetClick,
+      onComputerResetClick,
+      onAccumResetClick,
+      onErrorResetClick,
+      onErrorSenseResetClick,
+      onRestartClick,
     ]
   );
 
@@ -496,7 +678,6 @@ export default function EmulatorProvider({ children }: { children: ReactNode }) 
         const msg = err instanceof Error ? err.message : 'Unknown error';
         setOutput((prev) => prev + `Error initializing emulator: ${msg}\n`);
       } finally {
-        setLoading(false);
         setInitialized(true);
       }
     };

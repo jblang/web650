@@ -64,8 +64,9 @@ describe('SimhEmulator command dispatching', () => {
     emitPrompt('OUT1\n');
     await expect(first).resolves.toContain('OUT1');
 
-    // second command should dispatch immediately and resolve without waiting
+    // second command should dispatch immediately after prompt and resolve once prompt returns
     expect(writes).toEqual(['CMD1\r', 'CMD2\r']);
+    emitPrompt('');
     await expect(second).resolves.toBe('');
     expect(emulator.isAtPrompt()).toBe(true);
 

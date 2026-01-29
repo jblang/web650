@@ -16,7 +16,7 @@ export interface FrontPanelProps {
   displayValue: string;
   entryValue: string;
   addressDisplay: string;
-  operation: number;
+  operation: string;
   operatingState: OperatingState;
   checkingState: CheckingState;
   programmed: number;

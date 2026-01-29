@@ -13,20 +13,37 @@ export async function GET(req: NextRequest) {
 
   const stream = new ReadableStream<Uint8Array>({
     start(controller) {
+      let closed = false;
+      const safeEnqueue = (payload: string) => {
+        if (closed) return;
+        try {
+          controller.enqueue(encoder.encode(payload));
+        } catch {
+          closed = true;
+          offLine();
+          offExit();
+        }
+      };
+
       const send = (line: string) => {
-        controller.enqueue(encoder.encode(`data: ${JSON.stringify(line)}\n\n`));
+        safeEnqueue(`data: ${JSON.stringify(line)}\n\n`);
       };
 
       const offLine = onConsoleLine(send);
       const offExit = onConsoleExit((code) => {
-        controller.enqueue(encoder.encode(`event: exit\ndata: ${JSON.stringify({ code })}\n\n`));
+        if (closed) return;
+        safeEnqueue(`event: exit\ndata: ${JSON.stringify({ code })}\n\n`);
+        closed = true;
         controller.close();
+        offLine();
+        offExit();
       });
 
-      controller.enqueue(encoder.encode(': connected\n\n')); // comment to keep connection open
-      controller.enqueue(encoder.encode('retry: 1000\n\n')); // SSE retry suggestion
+      safeEnqueue(': connected\n\n'); // comment to keep connection open
+      safeEnqueue('retry: 1000\n\n'); // SSE retry suggestion
 
       const abortHandler = () => {
+        closed = true;
         offLine();
         offExit();
       };
@@ -34,6 +51,7 @@ export async function GET(req: NextRequest) {
 
       // Ensure cleanup if consumer cancels
       cleanup = () => {
+        closed = true;
         offLine();
         offExit();
         abortSignal.removeEventListener('abort', abortHandler);
