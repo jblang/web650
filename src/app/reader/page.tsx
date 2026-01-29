@@ -6,6 +6,7 @@ import {
   AccordionItem,
   FileUploaderDropContainer,
   Button,
+  Tag,
 } from '@carbon/react';
 import PunchedCard from '@/components/PunchedCard';
 import { useCardDeck } from '@/components/CardDeckProvider';
@@ -70,7 +71,12 @@ export default function ReaderPage() {
             {cardDeck.map((cardText, index) => (
               <AccordionItem
                 key={index}
-                title={<><span>{index + 1}: </span><code style={{ whiteSpace: 'pre' }}>{cardText}</code></>}
+                title={
+                  <>
+                    <Tag type="blue" style={{ marginRight: '8px' }}>{index + 1}</Tag>
+                    <code style={{ whiteSpace: 'pre' }}>{cardText}</code>
+                  </>
+                }
                 onHeadingClick={({ isOpen }) => handleHeadingClick(index, isOpen)}
               >
 
