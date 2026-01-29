@@ -17,7 +17,7 @@ const makeReq = () =>
     json: async () => ({}),
   }) as unknown as Request;
 
-describe('/api/break/[address]', () => {
+describe('/api/command/break/[address]', () => {
   beforeEach(() => {
     emulator = undefined;
   });

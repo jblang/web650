@@ -18,7 +18,7 @@ const makeReq = <T extends object>(body?: T) =>
     json: async () => body ?? ({} as T),
   }) as unknown as Request;
 
-describe('/api/break', () => {
+describe('/api/command/break', () => {
   beforeEach(() => {
     emulator = undefined;
   });

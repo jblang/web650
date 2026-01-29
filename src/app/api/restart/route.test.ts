@@ -1,11 +1,14 @@
 import { describe, expect, it, vi, beforeEach, afterEach } from 'vitest';
 import { POST } from './route';
 
+type EmulatorLike = { start: () => Promise<string> };
+type ExistingEmulator = { isRunning: () => boolean; quit?: (ms: number) => Promise<void>; kill?: () => void };
+
 const hoisted = vi.hoisted(() => {
   return {
     attachConsoleBuffer: vi.fn(),
-    existingRef: { value: undefined as any },
-    newEmulatorRef: { value: undefined as any },
+    existingRef: { value: undefined as ExistingEmulator | undefined },
+    newEmulatorRef: { value: undefined as EmulatorLike | undefined },
   };
 });
 
@@ -23,7 +26,7 @@ vi.mock('@/lib/simh', () => {
 
 const { attachConsoleBuffer, existingRef, newEmulatorRef } = hoisted;
 
-describe('/api/control/restart', () => {
+describe('/api/restart', () => {
   beforeEach(() => {
     existingRef.value = undefined;
     newEmulatorRef.value = {

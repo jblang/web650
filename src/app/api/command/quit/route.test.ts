@@ -12,7 +12,7 @@ vi.mock('@/lib/simh', () => ({
   getEmulator: () => emulator,
 }));
 
-describe('/api/control/quit', () => {
+describe('/api/command/quit', () => {
   beforeEach(() => {
     emulator = undefined;
     delete process.env.SIMH_QUIT_TIMEOUT_MS;

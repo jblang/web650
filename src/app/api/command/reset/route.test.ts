@@ -12,7 +12,7 @@ vi.mock('@/lib/simh', () => ({
   getEmulator: () => emulator,
 }));
 
-describe('/api/control/reset', () => {
+describe('/api/command/reset', () => {
   beforeEach(() => {
     emulator = undefined;
   });

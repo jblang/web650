@@ -12,7 +12,7 @@ vi.mock('@/lib/simh', () => ({
   getEmulator: () => emulator,
 }));
 
-describe('/api/control/go', () => {
+describe('/api/command/step', () => {
   beforeEach(() => {
     emulator = undefined;
   });
@@ -23,11 +23,11 @@ describe('/api/control/go', () => {
     expect(res.status).toBe(503);
   });
 
-  it('invokes GO command', async () => {
+  it('invokes STEP command', async () => {
     const sendCommand = vi.fn(async () => {});
     emulator = { isRunning: () => true, sendCommand };
     const res = await POST();
-    expect(sendCommand).toHaveBeenCalledWith('GO', { expectResponse: false });
+    expect(sendCommand).toHaveBeenCalledWith('STEP', { expectResponse: false });
     expect(res.status).toBe(200);
   });
 });

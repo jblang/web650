@@ -168,9 +168,9 @@ function createEmulatorApi(
     await setState(reg, value ? '1' : '0');
   };
 
-  type ControlAction = 'step' | 'go' | 'escape' | 'reset';
-  const control = async (action: ControlAction): Promise<void> => {
-    const res = await request(`/api/control/${action}`, { method: 'POST' });
+  type CommandAction = 'step' | 'go' | 'reset';
+  const command = async (action: CommandAction): Promise<void> => {
+    const res = await request(`/api/command/${action}`, { method: 'POST' });
     if (!res.ok) {
       throw new Error(`Control ${action} failed (${res.status})`);
     }
@@ -182,18 +182,23 @@ function createEmulatorApi(
     getAllRegisters: async () => (await getState()) as Record<string, string>,
     getAddressRegister: async () => getState('AR') as Promise<string>,
     setBreakpoint: async (address: string) => {
-      await request(`/api/break/${address}`, { method: 'PUT'});
+      await request(`/api/command/break/${address}`, { method: 'PUT'});
     },
     deleteBreakpoint: async (address: string) => {
-      await request(`/api/break/${address}`, { method: 'DELETE' });
+      await request(`/api/command/break/${address}`, { method: 'DELETE' });
     },
     clearBreakpoints: async () => {
-      await request('/api/break', { method: 'DELETE' });
+      await request('/api/command/break', { method: 'DELETE' });
     },
-    step: () => control('step'),
-    go: () => control('go'),
-    stop: () => control('escape'),
-    reset: () => control('reset'),
+    step: () => command('step'),
+    go: () => command('go'),
+    stop: async () => {
+      const res = await request('/api/escape', { method: 'POST' });
+      if (!res.ok) {
+        throw new Error(`Escape failed (${res.status})`);
+      }
+    },
+    reset: () => command('reset'),
     setAddressRegister: (address: string) => setState('AR', address),
     getLowerAccumulator: () => getState('ACCLO') as Promise<string>,
     setLowerAccumulator: (value: string) => setState('ACCLO', value),

@@ -3,7 +3,7 @@ import { POST } from './route';
 
 type EmulatorMock = {
   isRunning: () => boolean;
-  sendCommand: (command: string, options?: { appendCR?: boolean; expectResponse?: boolean }) => Promise<void>;
+  sendEscape: () => Promise<string>;
 };
 
 let emulator: EmulatorMock | undefined;
@@ -12,22 +12,22 @@ vi.mock('@/lib/simh', () => ({
   getEmulator: () => emulator,
 }));
 
-describe('/api/control/step', () => {
+describe('/api/escape', () => {
   beforeEach(() => {
     emulator = undefined;
   });
 
   it('returns 503 if emulator not running', async () => {
-    emulator = { isRunning: () => false, sendCommand: vi.fn() };
+    emulator = { isRunning: () => false, sendEscape: vi.fn(async () => '') };
     const res = await POST();
     expect(res.status).toBe(503);
   });
 
-  it('invokes STEP command', async () => {
-    const sendCommand = vi.fn(async () => {});
-    emulator = { isRunning: () => true, sendCommand };
+  it('sends ctrl-e stop', async () => {
+    const sendEscape = vi.fn(async () => 'Simulation stopped');
+    emulator = { isRunning: () => true, sendEscape };
     const res = await POST();
-    expect(sendCommand).toHaveBeenCalledWith('STEP', { expectResponse: false });
+    expect(sendEscape).toHaveBeenCalledTimes(1);
     expect(res.status).toBe(200);
   });
 });
