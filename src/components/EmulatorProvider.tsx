@@ -66,6 +66,7 @@ type EmulatorApi = Omit<
   | 'setErrorSwitch'
   | 'addressSwitches'
   | 'setAddressSwitches'
+  | 'restart'
 >;
 
 type CommandQueueRef = { current: Promise<void> };
@@ -310,7 +311,7 @@ export default function EmulatorProvider({ children }: { children: ReactNode }) 
       }
     };
     startEmulator();
-  }, []);
+  }, [api]);
 
   // Subscribe to streaming emulator output via SSE
   useEffect(() => {

@@ -35,8 +35,8 @@ export async function PUT(request: NextRequest, paramsWrapper: Params) {
       return NextResponse.json({ error: 'Emulator not running' }, { status: 503 });
     }
 
-    const body = await request.json();
-    const value = body?.value;
+    const body: unknown = await request.json();
+    const value = typeof body === 'object' && body && 'value' in body ? (body as { value?: unknown }).value : undefined;
     if (typeof value !== 'string') {
       return NextResponse.json({ error: 'value must be a string' }, { status: 400 });
     }

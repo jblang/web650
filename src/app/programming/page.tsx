@@ -197,22 +197,25 @@ export default function ProgrammingPage() {
                     />
                   </TableCell>
                   {row.cells.map((cell) => {
-                    const isInstrNo = cell.info.header === 'instrNo';
-                    const isOpCode = cell.info.header === 'opCode';
-                    const isAddressField = ['location', 'addrData', 'addrInstruction'].includes(cell.info.header);
+                    const header = String(cell.info.header);
+                    const isInstrNo = header === 'instrNo';
+                    const isOpCode = header === 'opCode';
+                    const isAddressField = ['location', 'addrData', 'addrInstruction'].includes(header);
+                    const cellValue = typeof cell.value === 'string' ? cell.value : '';
                     return (
                       <TableCell key={cell.id}>
                         {isInstrNo ? (
-                          cell.value
+                          cellValue
                         ) : isOpCode ? (
                           <div style={{ width: '9rem' }}>
                             <ComboBox
                               id={`op-${row.id}`}
                               items={operations}
-                              selectedItem={cell.value || null}
-                              onChange={({ selectedItem }) =>
-                                updateCell(row.id, 'opCode', selectedItem || '')
-                              }
+                              selectedItem={cellValue || null}
+                              onChange={({ selectedItem }) => {
+                                const next = typeof selectedItem === 'string' ? selectedItem : '';
+                                updateCell(row.id, 'opCode', next);
+                              }}
                               placeholder=""
                               size="sm"
                               titleText=""
@@ -222,7 +225,7 @@ export default function ProgrammingPage() {
                           <div style={isAddressField ? { width: '4.25rem' } : undefined}>
                             <TextInput
                               id={`${cell.info.header}-${row.id}`}
-                              value={cell.value || ''}
+                              value={cellValue}
                               onChange={(e) => {
                                 let value = e.target.value;
                                 if (isAddressField) {

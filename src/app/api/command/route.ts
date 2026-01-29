@@ -3,8 +3,16 @@ import { getEmulator } from '@/lib/simh';
 
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json();
-    const { command, appendCR, expectResponse } = body;
+    const body: unknown = await request.json();
+    if (!body || typeof body !== 'object') {
+      return NextResponse.json({ error: 'Invalid request body' }, { status: 400 });
+    }
+
+    const { command, appendCR, expectResponse } = body as {
+      command?: unknown;
+      appendCR?: unknown;
+      expectResponse?: unknown;
+    };
 
     if (typeof command !== 'string') {
       return NextResponse.json(
