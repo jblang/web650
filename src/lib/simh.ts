@@ -8,6 +8,7 @@ const SIMH_DEBUG = (process.env.SIMH_DEBUG || '').toLowerCase() === 'true' || pr
 const PROMPT = 'sim> ';
 const DEFAULT_TIMEOUT_MS = 30000;
 const CONSOLE_QUEUE_LIMIT = 1000;
+const DEFAULT_QUIT_TIMEOUT_MS = 1000;
 
 type SharedState = {
   consolePartial: string;
@@ -368,11 +369,47 @@ class SimhEmulator {
     return result;
   }
 
-  stop(): void {
+  kill(): void {
     if (this.process) {
       this.process.kill();
       this.process = null;
       this.ready = false;
+    }
+  }
+
+  /**
+   * Gracefully quits the emulator: send Ctrl-E to reach the prompt, then QUIT.
+   * If the process hasn't exited within `timeoutMs`, force-kill it.
+   */
+  async quit(timeoutMs?: number): Promise<void> {
+    if (!this.process || !this.ready) {
+      throw new Error('Emulator not running');
+    }
+
+    const effectiveTimeout =
+      typeof timeoutMs === 'number' && timeoutMs > 0 ? timeoutMs : DEFAULT_QUIT_TIMEOUT_MS;
+
+    debugLog('quitting emulator', { timeoutMs: effectiveTimeout });
+
+    const exitPromise = new Promise<void>((resolve) => {
+      shared.consoleEmitter.once('exit', () => resolve());
+    });
+
+    await this.sendEscape();
+    await this.sendCommand('QUIT', { expectResponse: false });
+
+    let timeoutHandle: NodeJS.Timeout | undefined;
+    const timeoutPromise = new Promise<void>((resolve) => {
+      timeoutHandle = setTimeout(() => {
+        debugLog('quit timeout elapsed, killing process', { timeoutMs: effectiveTimeout });
+        this.kill();
+        resolve();
+      }, effectiveTimeout);
+    });
+
+    await Promise.race([exitPromise, timeoutPromise]);
+    if (timeoutHandle) {
+      clearTimeout(timeoutHandle);
     }
   }
 

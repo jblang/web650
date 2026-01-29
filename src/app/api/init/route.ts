@@ -11,7 +11,7 @@ export async function POST() {
 
     // Stop any stale emulator
     if (existingEmulator) {
-      existingEmulator.stop();
+      existingEmulator.kill();
     }
 
     // Start a fresh emulator instance
