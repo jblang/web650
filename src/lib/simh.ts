@@ -111,6 +111,7 @@ class SimhEmulator {
   private pendingReject: ((error: Error) => void) | null = null;
   private stopPending: boolean = false;
   private stopResolve: ((output: string) => void) | null = null;
+  private stopPromise: Promise<string> | null = null;
   private stopBuffer: string = '';
   private pendingAppendCR: boolean = false;
   private pendingExpectResponse: boolean = false;
@@ -179,21 +180,22 @@ class SimhEmulator {
           this.onDataCallback(data);
         }
 
-        // If we're waiting on a STOP (Ctrl-E), capture its output separately so it
-        // doesn't contaminate other command responses.
-        if (this.stopPending) {
-          this.stopBuffer += data;
-          if (this.stopBuffer.endsWith(PROMPT)) {
-            const out = this.stopBuffer;
-            this.stopBuffer = '';
-            this.stopPending = false;
-            this.atPrompt = true;
-            const res = this.stopResolve;
-            this.stopResolve = null;
-            if (res) res(out);
-            this.dispatchQueue();
-          }
-          return;
+    // If we're waiting on a STOP (Ctrl-E), capture its output separately so it
+    // doesn't contaminate other command responses.
+    if (this.stopPending) {
+      this.stopBuffer += data;
+      if (this.stopBuffer.endsWith(PROMPT)) {
+        const out = this.stopBuffer;
+        this.stopBuffer = '';
+        this.stopPending = false;
+        this.atPrompt = true;
+        const res = this.stopResolve;
+        this.stopPromise = null;
+        this.stopResolve = null;
+        if (res) res(out);
+        this.dispatchQueue();
+      }
+      return;
         }
 
         this.outputBuffer += data;
@@ -213,6 +215,7 @@ class SimhEmulator {
             this.outputBuffer = '';
             const res = this.pendingResolve;
             const cmd = this.pendingCommand;
+            const expectResponse = this.pendingExpectResponse;
             debugLog('command resolved', {
               command: cmd,
               rawLength: output.length,
@@ -223,7 +226,16 @@ class SimhEmulator {
             this.pendingCommand = null;
             this.pendingAppendCR = false;
             this.pendingExpectResponse = false;
-            res(cmd ? this.stripCommandOutput(cmd, output) : output);
+            if (expectResponse) {
+              res(cmd ? this.stripCommandOutput(cmd, output) : output);
+            } else {
+              // Ignore fire-and-forget output; prompt sync only.
+              res('');
+            }
+            this.dispatchQueue();
+          } else if (this.pendingResolve === null && this.pendingCommand === null) {
+            // Prompt returned for a fire-and-forget; drop accumulated echo and continue.
+            this.outputBuffer = '';
             this.dispatchQueue();
           }
         } else if (this.atPrompt && this.pendingResolve === null) {
@@ -294,15 +306,29 @@ class SimhEmulator {
       return Promise.reject(new Error('Emulator not running'));
     }
 
+    // If we're already sitting at a prompt (not running), nothing to do.
+    if (this.atPrompt && !this.stopPending) {
+      debugLog('escape ignored: already at prompt');
+      return Promise.resolve('');
+    }
+
+    if (this.stopPending && this.stopPromise) {
+      debugLog('escape already pending, returning existing promise');
+      return this.stopPromise;
+    }
+
     // If a command is in-flight, park it back on the front of the queue so it runs after simulation stops.
     if (this.pendingResolve && this.pendingCommand) {
-      this.commandQueue.unshift({
-        command: this.pendingCommand,
-        appendCR: this.pendingAppendCR,
-        expectResponse: this.pendingExpectResponse,
-        resolve: this.pendingResolve,
-        reject: this.pendingReject ?? (() => {}),
-      });
+      // Drop fire-and-forget commands; requeue only ones expecting a response.
+      if (this.pendingExpectResponse) {
+        this.commandQueue.unshift({
+          command: this.pendingCommand,
+          appendCR: this.pendingAppendCR,
+          expectResponse: this.pendingExpectResponse,
+          resolve: this.pendingResolve,
+          reject: this.pendingReject ?? (() => {}),
+        });
+      }
       this.pendingResolve = null;
       this.pendingReject = null;
       this.pendingCommand = null;
@@ -317,10 +343,12 @@ class SimhEmulator {
     this.stopPending = true;
     this.stopBuffer = '';
 
-    return new Promise((resolve) => {
+    this.stopPromise = new Promise((resolve) => {
       this.stopResolve = resolve;
       this.process?.write('\x05');
     });
+
+    return this.stopPromise;
   }
 
   async examineState(target: string): Promise<Record<string, string>> {
@@ -477,24 +505,17 @@ class SimhEmulator {
       remainingQueue: this.commandQueue.length,
     });
 
-    if (next.expectResponse) {
-      this.pendingResolve = next.resolve;
-      this.pendingReject = next.reject;
-      this.pendingCommand = next.command;
-      this.pendingAppendCR = next.appendCR;
-      this.pendingExpectResponse = next.expectResponse;
-      this.atPrompt = false;
-      this.outputBuffer = '';
-      this.process.write(next.command + (next.appendCR ? '\r' : ''));
-    } else {
-      // Fire-and-forget: write, resolve immediately, and keep prompt available.
-      this.process.write(next.command + (next.appendCR ? '\r' : ''));
-      next.resolve('');
-      this.atPrompt = true;
-      this.pendingResolve = null;
-      this.pendingReject = null;
-      this.dispatchQueue();
-    }
+    // Even for fire-and-forget commands, hold the prompt until it returns so
+    // their echoed output can't leak into the next response. We still resolve
+    // with an empty string when the prompt arrives.
+    this.pendingResolve = next.resolve;
+    this.pendingReject = next.reject;
+    this.pendingCommand = next.command;
+    this.pendingAppendCR = next.appendCR;
+    this.pendingExpectResponse = next.expectResponse;
+    this.atPrompt = false;
+    this.outputBuffer = '';
+    this.process.write(next.command + (next.appendCR ? '\r' : ''));
   }
 
   private stripCommandOutput(command: string, raw: string): string {
