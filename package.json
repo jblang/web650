@@ -8,7 +8,7 @@
     "start": "next start",
     "lint": "eslint",
     "test": "vitest",
-    "parse-ini": "node scripts/parse-ini.js"
+    "postinstall": "node scripts/postinstall.js"
   },
   "dependencies": {
     "@carbon/react": "^1.99.0",
