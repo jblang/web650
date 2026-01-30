@@ -161,7 +161,7 @@ describe('EmulatorProvider', () => {
     global.fetch = fetchMock as unknown as typeof fetch;
 
     await act(async () => {
-      await current?.onRestartClick();
+      await current?.onEmulatorResetClick();
     });
 
     const restartCalls = fetchMock.mock.calls.filter((c) => c[0].toString().includes('/api/restart')).length;

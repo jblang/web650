@@ -1,5 +1,5 @@
-const os = require("os");
-const { exec } = require("child_process");
+import os from "os";
+import { exec } from "child_process";
 
 // This is necessary to fix a bug in node-pty that causes the following error on startup:
 //

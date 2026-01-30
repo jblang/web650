@@ -9,9 +9,7 @@ export default function FrontPanelPage() {
 
   return (
     <div style={{ display: 'flex', justifyContent: 'center' }}>
-      <div style={{ padding: '10px', backgroundColor: '#C0C0C0', color: 'black', display: 'inline-block' }}>
         <FrontPanel {...panelControls} />
-      </div>
     </div>
   );
 }

@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 const BUTTON_GROUPS = [
   ["TRANSFER", "PROGRAM START", "PROGRAM STOP"],
   ["PROGRAM RESET", "COMPUTER RESET", "ACCUM RESET"],
-  ["ERROR RESET", "ERROR SENSE RESET", "RESTART EMULATOR"],
+  ["HELP", "CHEAT", "EMULATOR RESET"],
 ];
 
 // Prop interface for button callbacks
@@ -15,9 +15,9 @@ interface ControlSectionProps {
   onProgramResetClick?: () => void;
   onComputerResetClick?: () => void;
   onAccumResetClick?: () => void;
-  onErrorResetClick?: () => void;
-  onErrorSenseResetClick?: () => void;
-  onRestartClick?: () => void;
+  onHelpClick?: () => void;
+  onCheatClick?: () => void;
+  onEmulatorResetClick?: () => void;
 }
 
 // Mapping from label to prop handler key
@@ -28,9 +28,9 @@ const handlerMap: { [key: string]: keyof ControlSectionProps } = {
   "PROGRAM RESET": "onProgramResetClick",
   "COMPUTER RESET": "onComputerResetClick",
   "ACCUM RESET": "onAccumResetClick",
-  "ERROR RESET": "onErrorResetClick",
-  "ERROR SENSE RESET": "onErrorSenseResetClick",
-  "RESTART EMULATOR": "onRestartClick",
+  "HELP": "onHelpClick",
+  "CHEAT": "onCheatClick",
+  "EMULATOR RESET": "onEmulatorResetClick",
 };
 
 
@@ -147,7 +147,7 @@ const ControlSection: React.FC<ControlSectionProps> = (props) => {
       {BUTTON_GROUPS.map((group, groupIndex) => (
         <div key={groupIndex} style={groupIndex === 2 ? styles.buttonGroupRed : styles.buttonGroup}>
           {group.map((label, buttonIndex) => {
-            const isRedButton = label === "RESTART EMULATOR";
+            const isRedButton = label === "EMULATOR RESET";
             const handler = props[handlerMap[label]];
             const isPressed = pressedButton === label;
             return (

@@ -43,9 +43,9 @@ describe('FrontPanel controls', () => {
       onProgramResetClick: vi.fn(),
       onComputerResetClick: vi.fn(),
       onAccumResetClick: vi.fn(),
-      onErrorResetClick: vi.fn(),
-      onErrorSenseResetClick: vi.fn(),
-      onRestartClick: vi.fn(),
+      onHelpClick: vi.fn(),
+      onCheatClick: vi.fn(),
+      onEmulatorResetClick: vi.fn(),
     };
 
     render(<ControlSection {...handlers} />);
@@ -60,9 +60,9 @@ describe('FrontPanel controls', () => {
     clickByLabel('PROGRAM RESET');
     clickByLabel('COMPUTER RESET');
     clickByLabel('ACCUM RESET');
-    clickByLabel('ERROR RESET');
-    clickByLabel('ERROR SENSE RESET');
-    clickByLabel('RESTART EMULATOR');
+    clickByLabel('HELP');
+    clickByLabel('CHEAT');
+    clickByLabel('EMULATOR RESET');
     clickByLabel('TRANSFER');
 
     expect(handlers.onProgramStartClick).toHaveBeenCalledTimes(1);
@@ -70,9 +70,9 @@ describe('FrontPanel controls', () => {
     expect(handlers.onProgramResetClick).toHaveBeenCalledTimes(1);
     expect(handlers.onComputerResetClick).toHaveBeenCalledTimes(1);
     expect(handlers.onAccumResetClick).toHaveBeenCalledTimes(1);
-    expect(handlers.onErrorResetClick).toHaveBeenCalledTimes(1);
-    expect(handlers.onErrorSenseResetClick).toHaveBeenCalledTimes(1);
-    expect(handlers.onRestartClick).toHaveBeenCalledTimes(1);
+    expect(handlers.onHelpClick).toHaveBeenCalledTimes(1);
+    expect(handlers.onCheatClick).toHaveBeenCalledTimes(1);
+    expect(handlers.onEmulatorResetClick).toHaveBeenCalledTimes(1);
     expect(handlers.onTransferClick).toHaveBeenCalledTimes(1);
   });
 
@@ -80,8 +80,8 @@ describe('FrontPanel controls', () => {
     const onChange = vi.fn();
     render(<DecimalKnob value={3} onChange={onChange} />);
 
-    const dec = container.querySelector('[title=\"Click to rotate counter-clockwise\"]');
-    const inc = container.querySelector('[title=\"Click to rotate clockwise\"]');
+    const dec = container.querySelector('[title="DECREMENT"]');
+    const inc = container.querySelector('[title="INCREMENT"]');
 
     click(dec);
     click(inc);
@@ -99,11 +99,11 @@ describe('FrontPanel controls', () => {
     const onChange = vi.fn();
     render(<LabeledKnob position={0} positions={positions} onChange={onChange} />);
 
-    const dec = container.querySelector('[title=\"Click to rotate counter-clockwise\"]');
-    const inc = container.querySelector('[title=\"Click to rotate clockwise\"]');
+    const ccw = container.querySelector('[title="CCW"]');
+    const cw = container.querySelector('[title="CW"]');
 
-    click(dec); // from 0 to 2
-    click(inc); // from 0 to 1 (note: component doesn't update without parent state)
+    click(ccw); // from 0 to 2
+    click(cw); // from 0 to 1 (note: component doesn't update without parent state)
 
     expect(onChange).toHaveBeenCalledWith(positions.length - 1);
     expect(onChange).toHaveBeenCalledWith(1);

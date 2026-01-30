@@ -71,9 +71,9 @@ interface EmulatorContextType {
   onProgramResetClick: () => Promise<void>;
   onComputerResetClick: () => Promise<void>;
   onAccumResetClick: () => Promise<void>;
-  onErrorResetClick: () => void;
-  onErrorSenseResetClick: () => void;
-  onRestartClick: () => Promise<void>;
+  onHelpClick: () => void;
+  onCheatClick: () => void;
+  onEmulatorResetClick: () => Promise<void>;
 }
 
 const EmulatorContext = createContext<EmulatorContextType | null>(null);
@@ -324,9 +324,8 @@ export default function EmulatorProvider({ children }: { children: ReactNode }) 
       if (!res.ok) {
         throw new Error(`Restart failed (${res.status})`);
       }
-
       // Reapply expected CPU speed
-      await api.sendCommand('set cpu 1k', { appendCR: true, expectResponse: false });
+      await api.sendCommand('SET CPU 1K', { appendCR: true, expectResponse: false });
       await refreshRegisters();
     } finally {
       setInitialized(true);
@@ -568,14 +567,14 @@ export default function EmulatorProvider({ children }: { children: ReactNode }) 
     }
   }, [addressSwitches, controlSwitch, setAddressRegister]);
 
-  const onRestartClick = useCallback(async () => {
+  const onEmulatorResetClick = useCallback(async () => {
     await restart();
     setIsRunning(false);
   }, [restart]);
 
-  const onErrorResetClick = useCallback(() => {}, []);
+  const onHelpClick = useCallback(() => {}, []);
 
-  const onErrorSenseResetClick = useCallback(() => {}, []);
+  const onCheatClick = useCallback(() => {}, []);
 
   const value = useMemo(
     () => ({
@@ -616,9 +615,9 @@ export default function EmulatorProvider({ children }: { children: ReactNode }) 
       onProgramResetClick,
       onComputerResetClick,
       onAccumResetClick,
-      onErrorResetClick,
-      onErrorSenseResetClick,
-      onRestartClick,
+      onHelpClick,
+      onCheatClick,
+      onEmulatorResetClick,
     }),
     [
       api.sendCommand,
@@ -656,9 +655,9 @@ export default function EmulatorProvider({ children }: { children: ReactNode }) 
       onProgramResetClick,
       onComputerResetClick,
       onAccumResetClick,
-      onErrorResetClick,
-      onErrorSenseResetClick,
-      onRestartClick,
+      onHelpClick,
+      onCheatClick,
+      onEmulatorResetClick,
     ]
   );
 

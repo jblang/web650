@@ -9,7 +9,7 @@ import ConfigSection from './ConfigSection';
 import ControlSection from './ControlSection';
 
 export const litBulb = '🟡';
-export const unlitBulb = '⚪';
+export const unlitBulb = '⚫';
 
 export interface FrontPanelProps {
   // Values for displays and lights
@@ -44,9 +44,9 @@ export interface FrontPanelProps {
   onProgramResetClick?: () => void;
   onComputerResetClick?: () => void;
   onAccumResetClick?: () => void;
-  onErrorResetClick?: () => void;
-  onErrorSenseResetClick?: () => void;
-  onRestartClick?: () => void;
+  onHelpClick?: () => void;
+  onCheatClick?: () => void;
+  onEmulatorResetClick?: () => void;
 }
 
 const styles = {
@@ -54,6 +54,21 @@ const styles = {
     display: 'inline-grid',
     gridTemplateColumns: 'repeat(10, auto) auto',
     gap: '4px',
+    padding: '10px', 
+    backgroundColor: '#a6a6a6', // Half-way fallback
+    backgroundImage: `
+      repeating-linear-gradient(to bottom, hsla(0,0%,100%,0) 0%, hsla(0,0%,100%,0) 6%, hsla(0,0%,100%,.08) 7.5%),
+      repeating-linear-gradient(to bottom, hsla(0,0%,0%,0) 0%, hsla(0,0%,0%,0) 4%, hsla(0,0%,0%,.04) 4.5%),
+      repeating-linear-gradient(to bottom, hsla(0,0%,100%,0) 0%, hsla(0,0%,100%,0) 1.2%, hsla(0,0%,100%,.1) 2.2%),
+      linear-gradient(0deg, 
+        hsl(0,0%,65%) 0%,   /* Mid-dark base */
+        hsl(0,0%,72%) 20%, 
+        hsl(0,0%,78%) 50%,  /* Balanced highlight */
+        hsl(0,0%,72%) 80%, 
+        hsl(0,0%,65%) 100%)
+    `,
+    backgroundSize: '100% 2px, 100% 8px, 100% 12px, 100% 100%',
+    boxShadow: 'inset 0 0 6px rgba(0,0,0,0.2)', 
   },
 };
 
@@ -96,9 +111,9 @@ const FrontPanel: React.FC<FrontPanelProps> = (props) => {
       onProgramResetClick={props.onProgramResetClick}
       onComputerResetClick={props.onComputerResetClick}
       onAccumResetClick={props.onAccumResetClick}
-      onErrorResetClick={props.onErrorResetClick}
-      onErrorSenseResetClick={props.onErrorSenseResetClick}
-      onRestartClick={props.onRestartClick}
+      onHelpClick={props.onHelpClick}
+      onCheatClick={props.onCheatClick}
+      onEmulatorResetClick={props.onEmulatorResetClick}
       />
     </div>
   );

@@ -30,9 +30,10 @@ describe('EntrySection', () => {
     const onChange = vi.fn();
     render(<EntrySection value="0000000000+" onChange={onChange} />);
 
-    const inc = container.querySelector('[title="Click to rotate clockwise"]');
+    const incButtons = container.querySelectorAll('[title="INCREMENT"]');
+    const firstDigitInc = incButtons[0];
     act(() => {
-      inc?.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+      firstDigitInc?.dispatchEvent(new MouseEvent('click', { bubbles: true }));
     });
 
     expect(onChange).toHaveBeenCalledWith('1000000000+');
@@ -42,8 +43,7 @@ describe('EntrySection', () => {
     const onChange = vi.fn();
     render(<EntrySection value="0000000000+" onChange={onChange} />);
 
-    const cwKnobs = container.querySelectorAll('[title="Click to rotate clockwise"]');
-    const signKnob = cwKnobs[cwKnobs.length - 1];
+    const signKnob = container.querySelector('[title="CW"]');
     act(() => {
       signKnob?.dispatchEvent(new MouseEvent('click', { bubbles: true }));
     });

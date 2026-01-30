@@ -30,26 +30,26 @@ describe('DecimalKnob', () => {
     const onChange = vi.fn();
     render(<DecimalKnob value={3} onChange={onChange} />);
 
-    const ccw = container.querySelector('[title="Click to rotate counter-clockwise"]');
-    const cw = container.querySelector('[title="Click to rotate clockwise"]');
+    const ccw = container.querySelector('[title="DECREMENT"]');
+    const cw = container.querySelector('[title="INCREMENT"]');
 
     act(() => ccw?.dispatchEvent(new MouseEvent('click', { bubbles: true })));
     act(() => cw?.dispatchEvent(new MouseEvent('click', { bubbles: true })));
 
-    expect(onChange).toHaveBeenCalledWith(2); // 3 -> 2
-    expect(onChange).toHaveBeenCalledWith(4); // 3 -> 4
+    expect(onChange).toHaveBeenCalledWith(2); // 3 -> 2 (from ccw - decrement)
+    expect(onChange).toHaveBeenCalledWith(4); // 3 -> 4 (from cw - increment)
   });
 
   it('wraps around from 0 to 9 and 9 to 0', () => {
     const onChange = vi.fn();
     render(<DecimalKnob value={0} onChange={onChange} />);
-    const ccw = container.querySelector('[title="Click to rotate counter-clockwise"]');
+    const ccw = container.querySelector('[title="DECREMENT"]');
     act(() => ccw?.dispatchEvent(new MouseEvent('click', { bubbles: true })));
     expect(onChange).toHaveBeenCalledWith(9);
 
     onChange.mockClear();
     render(<DecimalKnob value={9} onChange={onChange} />);
-    const cw = container.querySelector('[title="Click to rotate clockwise"]');
+    const cw = container.querySelector('[title="INCREMENT"]');
     act(() => cw?.dispatchEvent(new MouseEvent('click', { bubbles: true })));
     expect(onChange).toHaveBeenCalledWith(0);
   });
@@ -58,7 +58,7 @@ describe('DecimalKnob', () => {
     const onChange = vi.fn();
     render(<DecimalKnob value={5} onChange={onChange} />);
 
-    const display = container.querySelector('[title="Click to select digit"]');
+    const display = container.querySelector('[title="CHOOSE"]');
     act(() => display?.dispatchEvent(new MouseEvent('click', { bubbles: true })));
 
     const digitEight = Array.from(container.querySelectorAll('[role="button"], div')).find((el) => el.textContent === '8');
