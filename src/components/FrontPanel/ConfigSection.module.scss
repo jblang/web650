@@ -1,3 +1,6 @@
+@use 'common' as *;
+@use '@carbon/type';
+
 .finalKnobsRow {
   grid-column: 1 / 12;
   display: grid;
@@ -10,10 +13,11 @@
 }
 
 .knobLabel {
-  color: white;
-  font-size: 11px;
-  font-weight: bold;
-  text-align: center;
+  @include section-heading-base;
+  @include type.type-style('heading-compact-01'); // Override compact-02 from base
+  font-size: 0.75rem; // Scaled down as requested
+  // letter-spacing and padding-left are handled in individual & classes
+  text-align: center; // Kept as it was explicitly there and not part of common style for override
 
   &.programmed {
     grid-column: 1 / 2;

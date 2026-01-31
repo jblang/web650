@@ -7,7 +7,7 @@ import cn from 'classnames';
 // Knob position configurations
 const STOP_RUN_POS = [{label: 'STOP', angle: -30}, {label: 'RUN', angle: 30}];
 const HALF_RUN_POS = [{label: 'HALF', angle: -30}, {label: 'RUN', angle: 30}];
-const CONTROL_POS = [{label: 'ADDRESS STOP', angle: -45}, {label: 'RUN', angle: 0}, {label: 'MANUAL OP', angle: 45}];
+const CONTROL_POS = [{label: 'ADDRESS STOP', angle: -45}, {label: 'RUN', angle: 0}, {label: 'MANUAL OPERATION', angle: 45}];
 const OVERFLOW_POS = [{label: 'STOP', angle: -30}, {label: 'SENSE', angle: 30}];
 const ERROR_POS = [{label: 'STOP', angle: -30}, {label: 'SENSE', angle: 30}];
 const DISPLAY_POS = [
@@ -35,7 +35,7 @@ export const HalfCycle = {
 export const Control = {
   ADDRESS_STOP: 0,
   RUN: 1,
-  MANUAL_OP: 2,
+  MANUAL_OPERATION: 2,
 } as const;
 
 // Display switch positions

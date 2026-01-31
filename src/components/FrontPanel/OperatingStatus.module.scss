@@ -1,4 +1,5 @@
 @use 'common' as *;
+@use '@carbon/type';
 
 .operatingBox {
   grid-column: 7 / 10;
@@ -12,12 +13,10 @@
 
 .operatingTitle {
   grid-column: span 3;
-  text-align: center;
-  color: #002244;
-  font-size: 10px;
-  font-weight: bold;
-  letter-spacing: 1.2em;
-  padding-left: 1.2em;
+  @include section-heading-base;
+  color: #002244; // Override default white from mixin
+  letter-spacing: 1.2em; // Keep this for visual alignment
+  padding-left: 1.2em; // Keep this for visual alignment
 }
 
 .ledColumn {
@@ -39,9 +38,9 @@
 }
 
 .ledLabel {
+  @include section-heading-base;
   color: #002244;
-  font-size: 8px;
-  font-weight: bold;
+  font-size: 0.5rem;
   white-space: nowrap;
 }
 

@@ -16,7 +16,7 @@ const links = [
   { href: '/punch', text: 'Punch' },
   { href: '/printer', text: 'Printer' },
   { href: '/tape', text: 'Tape' },
-  { href: '/ramac', text: 'RAMAC' },
+  { href: '/ramac', text: 'Disk' },
   { href: '/emulator', text: 'Emulator' },
   { href: '/docs', text: 'Documentation' },
 ];

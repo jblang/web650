@@ -1,10 +1,13 @@
+@use 'common' as *;
+@use '@carbon/type';
+
 /* Shared Knob styles */
 .knobContainer {
   display: inline-flex;
   flex-direction: column;
   align-items: center;
   gap: 4px;
-  min-width: 85px;
+  min-width: 100px;
 }
 
 .knobWrapper {
@@ -31,6 +34,7 @@
 .decimalKnobContainer {
   height: 74.8px;
   justify-content: flex-end;
+  min-width: 100px;
 }
 
 .decimalDisplayWrapper {
@@ -45,13 +49,11 @@
 
 .decimalDisplay {
   background-color: #1a1a1a;
-  color: white;
-  font-size: 12px;
-  font-weight: bold;
+  @include section-heading-base;
+  font-size: 0.75rem;
   padding: 2px 6px;
   border-radius: 2px;
   min-width: 16px;
-  text-align: center;
   border: 1px solid #333;
   cursor: pointer;
 }
@@ -105,16 +107,17 @@
   position: relative;
   width: 90.574px;
   height: 74.8px;
+  min-width: 100px;
 }
 
 .labeledKnobLabel {
   position: absolute;
-  color: white;
-  font-size: 10px;
-  font-family: monospace;
-  font-weight: bold;
+  @include section-heading-base; // Provides color: white and text-align: center, and default heading-compact-02
+  @include type.type-style('heading-compact-01'); // Override default heading-compact-02
+  color: white; // Explicitly keep white color if base changes
+  font-size: 0.625rem; // Explicitly keep computed font size (10px = 0.625rem)
+  line-height: 1; // Reduced line spacing
   transform: translate(-50%, -50%);
-  text-align: center;
   max-width: 60px;
   cursor: pointer;
 }

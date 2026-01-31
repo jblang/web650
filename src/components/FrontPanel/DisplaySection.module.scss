@@ -1,4 +1,5 @@
 @use 'common' as *;
+@use '@carbon/type';
 
 .labelBar {
   grid-column: 1 / 12;
@@ -11,22 +12,16 @@
 .labelDisplay {
   grid-column: 1 / 11;
   padding: 0 12px;
-  color: white;
-  font-size: 11px;
-  font-weight: bold;
-  letter-spacing: 5em;
-  text-align: center;
+  @include section-heading-base;
+  letter-spacing: 5em; // Re-added with the requested value
   padding-left: 5em;
 }
 
 .labelSign {
   grid-column: 11;
   padding: 0 12px;
-  color: white;
-  font-size: 11px;
-  font-weight: bold;
-  letter-spacing: 0.6em;
-  text-align: center;
+  @include section-heading-base;
+  letter-spacing: 0.6em; // Keep this for visual alignment
 }
 
 .digitGroup1 {

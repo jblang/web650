@@ -1,3 +1,5 @@
+@use '@carbon/type';
+
 @mixin panel-section {
   display: grid;
   grid-template-columns: subgrid;
@@ -15,4 +17,10 @@
 @mixin bulb {
   text-align: center;
   line-height: 1.4;
+}
+
+@mixin section-heading-base {
+  color: white;
+  @include type.type-style('heading-compact-02');
+  text-align: center;
 }

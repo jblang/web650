@@ -1,3 +1,6 @@
+@use 'common' as *;
+@use '@carbon/type';
+
 .buttonsRow {
   grid-column: 1 / 12;
   display: flex;
@@ -28,12 +31,10 @@
   border-right: 1px solid #3a3a3a;
   border-radius: 0;
   cursor: pointer;
-  color: #e0e0e0;
-  font-size: 11px;
-  font-weight: bold;
-  text-align: center;
+  @include section-heading-base;
+  @include type.type-style('heading-compact-01'); // Override default heading-compact-02
+  font-size: 0.75rem; // Explicitly keep original font-size (10px = 0.625rem)
   padding: 4px;
-  line-height: 1.2;
   text-shadow: 0 1px 2px rgba(0,0,0,0.8);
 
   &.red {
