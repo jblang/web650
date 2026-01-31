@@ -1,0 +1,3 @@
+[submodule "simh"]
+	path = simh
+	url = git@github.com:jblang/simh.git
