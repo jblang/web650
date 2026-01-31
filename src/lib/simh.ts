@@ -607,7 +607,8 @@ export class ConfigError extends Error {
 
 export async function initializeEmulator(binaryName: string): Promise<void> {
   if (!process.env.I650_PATH) {
-    throw new ConfigError('I650_PATH environment variable not set to SIMH i650 binary.');
+    // I650_PATH is optional now that WASM integration is available
+    return;
   }
   if (g.simhEmulator?.isRunning()) {
     return;
