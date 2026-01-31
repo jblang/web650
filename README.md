@@ -1,8 +1,6 @@
 # SIMH IBM 650 Simulator Web UI
 
-This project provides a web-based user interface for the [Open SIMH](https://opensimh.org) IBM 650 simulator.
-
-⚠️ *Warning: the code in this repo is a work in progress and is not fully functional, tested, or secure yet. **DO NOT bind this server to any interface other than localhost on a public network!** The `npm run dev` command will only bind to `localhost` by default and to override this on a public network **risks arbitrary code execution on your computer via HTTP**!  The `POST /api/command` route allows arbitrary commands to be sent to SIMH and by extension your computer, since SIMH can shell out. Inputs will be sanitized in due course, but until then, caveat emptor!*
+This project provides a web-based user interface for the [Open SIMH](https://opensimh.org) IBM 650 simulator. The simulator runs entirely in the browser via WebAssembly, compiled from Open SIMH using Emscripten.
 
 ![Front Panel](front_panel.png)
 
@@ -10,19 +8,23 @@ This project provides a web-based user interface for the [Open SIMH](https://ope
 
 ## Getting Started
 
-### Build the Simulator
+### Build the WASM Simulator
 
-This UI is designed to interact with the Open SIMH IBM 650 simulator. Before you use this UI, you'll need to have the simulator compiled and running.
+The simulator is compiled to WebAssembly using [Emscripten](https://emscripten.org). The SIMH source is included as a git submodule.
 
-Clone the Open SIMH repository from [https://github.com/open-simh/simh](https://github.com/open-simh/simh), then run `make` in the repo's root directory. 
+1. Install the [Emscripten SDK](https://emscripten.org/docs/getting_started/downloads.html) and activate it in your shell.
+2. Initialize the submodule and run the build script:
 
-This works on macOS with the Xcode command line tools installed, and on Linux with build tools installed. It should also work on MSYS2 on Windows with the appropriate packages installed, but I haven't tested it yet.  If you can't get this to work, try the instructions in [README-CMake.md](https://github.com/open-simh/simh/blob/master/README-CMake.md) in the repo.
+```bash
+git submodule update --init
+./scripts/build-wasm.sh
+```
 
-After successful compilation, the `BIN` directory should contain the simulator executables.
+This produces `i650.js`, `i650.wasm`, and `i650.data` in the `public/` directory.
 
 ### Install Dependencies
 
-The dependencies for this project are managed by npm.  Run the following to install them:
+The dependencies for this project are managed by npm. Run the following to install them:
 
 ```
 npm install
@@ -31,8 +33,6 @@ npm install
 If you don't have npm, install it via [Homebrew](https://brew.sh/) or your operating system's native package manager.
 
 ### Start the UI
-
-Set the `I650_PATH` environment variable to point to the full path of the Open SIMH `i650` binary. This allows the UI to locate the simulator.
 
 Run the development server:
 

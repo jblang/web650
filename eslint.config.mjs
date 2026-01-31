@@ -37,6 +37,8 @@ const eslintConfig = defineConfig([
     "build/**",
     "next-env.d.ts",
     "coverage/**",
+    // Auto-generated Emscripten output:
+    "public/i650.js",
   ]),
 ]);
 

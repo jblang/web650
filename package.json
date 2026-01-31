@@ -7,15 +7,13 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "test": "vitest",
-    "postinstall": "node scripts/postinstall.js"
+    "test": "vitest"
   },
   "dependencies": {
     "@carbon/react": "^1.99.0",
     "@ibm/plex": "^6.4.1",
     "classnames": "^2.5.1",
     "next": "16.1.4",
-    "node-pty": "^1.1.0",
     "react": "19.2.3",
     "react-dom": "19.2.3",
     "react-markdown": "^10.1.0",

@@ -166,14 +166,14 @@ export async function init(): Promise<void> {
   try {
     const swStat = Module.FS.stat('/sw');
     console.log('[simh-wasm] /sw directory loaded:', swStat.mode);
-  } catch (err) {
+  } catch {
     console.warn('[simh-wasm] /sw directory not found — preloaded filesystem may not have loaded');
   }
 
   try {
     const testsStat = Module.FS.stat('/tests');
     console.log('[simh-wasm] /tests directory loaded:', testsStat.mode);
-  } catch (err) {
+  } catch {
     console.warn('[simh-wasm] /tests directory not found — preloaded filesystem may not have loaded');
   }
 }

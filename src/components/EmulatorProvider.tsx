@@ -36,7 +36,7 @@ function getDisplayValue(
 interface EmulatorContextType {
   initialized: boolean;
   output: string;
-  sendCommand: (command: string, options?: { appendCR?: boolean; expectResponse?: boolean }) => Promise<string>;
+  sendCommand: (command: string) => Promise<string>;
   // Derived display value (kept in provider)
   displayValue: string;
   operation: string;
@@ -148,7 +148,7 @@ export default function EmulatorProvider({ children }: { children: ReactNode }) 
   }, []);
 
   const sendCommand = useCallback(
-    async (command: string, _options?: { appendCR?: boolean; expectResponse?: boolean }): Promise<string> => {
+    async (command: string): Promise<string> => {
       setOutput((prev) => prev + `sim> ${command}\n`);
       const result = simhWasm.sendCommand(command);
       if (result.trim()) {
