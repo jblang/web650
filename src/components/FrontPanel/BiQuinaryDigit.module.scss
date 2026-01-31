@@ -1,5 +1,4 @@
 @use 'common' as *;
-@use '@carbon/type';
 
 .container {
   display: inline-grid;
@@ -14,6 +13,5 @@
 }
 
 .number {
-  @include section-heading-base;
-  @include type.type-style('heading-compact-01'); // Override compact-02 from base
+  @include section-heading-base('heading-compact-01');
 }

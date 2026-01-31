@@ -1,5 +1,4 @@
 @use 'common' as *;
-@use '@carbon/type';
 
 .knobsRow {
   @include panel-section;
@@ -23,8 +22,7 @@
 .storageEntryLabel {
   grid-column: 1 / 11;
   @include section-heading-base;
-  letter-spacing: 2.4em; // Keep this for visual alignment
-  padding-left: 2.4em; // Keep this for visual alignment
+  @include spaced-text(2.4em);
   align-self: end;
 }
 

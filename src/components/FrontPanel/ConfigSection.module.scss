@@ -1,23 +1,19 @@
 @use 'common' as *;
-@use '@carbon/type';
 
 .finalKnobsRow {
   grid-column: 1 / 12;
   display: grid;
   grid-template-columns: subgrid;
   grid-template-rows: auto auto;
-  background-color: #002244;
+  background-color: $panel-bg;
   padding: 12px;
   gap: 12px;
   align-items: end;
 }
 
 .knobLabel {
-  @include section-heading-base;
-  @include type.type-style('heading-compact-01'); // Override compact-02 from base
-  font-size: 0.75rem; // Scaled down as requested
-  // letter-spacing and padding-left are handled in individual & classes
-  text-align: center; // Kept as it was explicitly there and not part of common style for override
+  @include section-heading-base('heading-compact-01');
+  font-size: $font-size-control;
 
   &.programmed {
     grid-column: 1 / 2;

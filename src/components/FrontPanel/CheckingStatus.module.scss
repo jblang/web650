@@ -1,5 +1,4 @@
 @use 'common' as *;
-@use '@carbon/type';
 
 .checkingBox {
   @include panel-section;
@@ -10,8 +9,7 @@
 .checkingTitle {
   grid-column: span 2;
   @include section-heading-base;
-  letter-spacing: 0.6em; // Keep this for visual alignment
-  padding-left: 0.6em; // Keep this for visual alignment
+  @include spaced-text(0.6em);
 }
 
 .ledColumn {
@@ -33,8 +31,8 @@
 }
 
 .checkingLabel {
-  @include section-heading-base; // Provides color: white and text-align: center, and default heading-compact-02
-  font-size: 0.5rem; // Explicitly keep computed font size (8px = 0.5rem)
+  @include section-heading-base;
+  font-size: $font-size-status-label;
   white-space: pre-wrap;
 }
 

@@ -1,5 +1,4 @@
 @use 'common' as *;
-@use '@carbon/type';
 
 /* Shared Knob styles */
 .knobContainer {
@@ -7,7 +6,7 @@
   flex-direction: column;
   align-items: center;
   gap: 4px;
-  min-width: 100px;
+  min-width: $knob-min-width;
 }
 
 .knobWrapper {
@@ -34,7 +33,7 @@
 .decimalKnobContainer {
   height: 74.8px;
   justify-content: flex-end;
-  min-width: 100px;
+  min-width: $knob-min-width;
 }
 
 .decimalDisplayWrapper {
@@ -50,7 +49,7 @@
 .decimalDisplay {
   background-color: #1a1a1a;
   @include section-heading-base;
-  font-size: 0.75rem;
+  font-size: $font-size-control;
   padding: 2px 6px;
   border-radius: 2px;
   min-width: 16px;
@@ -81,9 +80,8 @@
   align-items: center;
   justify-content: center;
   background-color: #1a1a1a;
-  color: white;
-  font-size: 12px;
-  font-weight: bold;
+  @include section-heading-base;
+  font-size: $font-size-control;
   border-radius: 2px;
   cursor: pointer;
   border: 1px solid #333;
@@ -107,16 +105,14 @@
   position: relative;
   width: 90.574px;
   height: 74.8px;
-  min-width: 100px;
+  min-width: $knob-min-width;
 }
 
 .labeledKnobLabel {
   position: absolute;
-  @include section-heading-base; // Provides color: white and text-align: center, and default heading-compact-02
-  @include type.type-style('heading-compact-01'); // Override default heading-compact-02
-  color: white; // Explicitly keep white color if base changes
-  font-size: 0.625rem; // Explicitly keep computed font size (10px = 0.625rem)
-  line-height: 1; // Reduced line spacing
+  @include section-heading-base('heading-compact-01');
+  font-size: $font-size-knob-label;
+  line-height: 1;
   transform: translate(-50%, -50%);
   max-width: 60px;
   cursor: pointer;

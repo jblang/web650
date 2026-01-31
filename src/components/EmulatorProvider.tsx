@@ -300,7 +300,7 @@ export default function EmulatorProvider({ children }: { children: ReactNode }) 
 
   const onProgramStartClick = useCallback(async () => {
     if (isRunning) return;
-    if (controlSwitch === Control.MANUAL_OP) {
+    if (controlSwitch === Control.MANUAL_OPERATION) {
       await handleDrumTransfer();
     } else {
       await handleProgramStart();
@@ -343,7 +343,7 @@ export default function EmulatorProvider({ children }: { children: ReactNode }) 
   }, [refreshRegisters]);
 
   const onTransferClick = useCallback(async () => {
-    if (controlSwitch === Control.MANUAL_OP) {
+    if (controlSwitch === Control.MANUAL_OPERATION) {
       await setAddressRegister(addressSwitches);
     }
   }, [addressSwitches, controlSwitch, setAddressRegister]);

@@ -1,9 +1,21 @@
 @use '@carbon/type';
 
+// Color variables
+$panel-bg: #002244;
+$panel-text-dark: #002244;
+
+// Size variables
+$knob-min-width: 100px;
+
+// Font size variables (semantic names based on usage)
+$font-size-status-label: 0.5rem;    // Small status labels (8px)
+$font-size-knob-label: 0.625rem;    // Knob position labels (10px)
+$font-size-control: 0.75rem;        // Control buttons and config labels (12px)
+
 @mixin panel-section {
   display: grid;
   grid-template-columns: subgrid;
-  background-color: #002244;
+  background-color: $panel-bg;
   padding: 12px;
   gap: 12px;
 }
@@ -19,8 +31,13 @@
   line-height: 1.4;
 }
 
-@mixin section-heading-base {
+@mixin section-heading-base($style: 'heading-compact-02') {
   color: white;
-  @include type.type-style('heading-compact-02');
+  @include type.type-style($style);
   text-align: center;
+}
+
+@mixin spaced-text($spacing) {
+  letter-spacing: $spacing;
+  padding-left: $spacing;
 }
