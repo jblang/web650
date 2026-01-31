@@ -6,6 +6,10 @@ const nextConfig: NextConfig = {
   sassOptions: {
     silenceDeprecations: ["if-function"],
   },
+  // Set the hostname for the dev server
+  dev: {
+    hostname: 'localhost',
+  },
 };
 
 export default nextConfig;

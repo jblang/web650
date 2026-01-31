@@ -1,8 +1,8 @@
-# IBM 650 Simulator UI
+# SIMH IBM 650 Simulator Web UI
 
-This project provides a web-based user interface for the Open SIMH IBM 650 simulator.
+This project provides a web-based user interface for the [Open SIMH](https://opensimh.org) IBM 650 simulator.
 
-⚠️ ***Warning: the code in this repo is a work in progress and is not fully functional yet.***
+⚠️ *Warning: the code in this repo is a work in progress and is not fully functional, tested, or secure yet. **DO NOT bind this server to any interface other than localhost on a public network!** The `npm run dev` command will only bind to `localhost` by default and to override this on a public network **risks arbitrary code execution on your computer via HTTP**!  The `POST /api/command` route allows arbitrary commands to be sent to SIMH and by extension your computer, since SIMH can shell out. Inputs will be sanitized in due course, but until then, caveat emptor!*
 
 ![Front Panel](front_panel.png)
 
@@ -20,9 +20,19 @@ This works on macOS with the Xcode command line tools installed, and on Linux wi
 
 After successful compilation, the `BIN` directory should contain the simulator executables.
 
+### Install Dependencies
+
+The dependencies for this project are managed by npm.  Run the following to install them:
+
+```
+npm install
+```
+
+If you don't have npm, install it via [Homebrew](https://brew.sh/) or your operating system's native package manager.
+
 ### Start the UI
 
-Set the `SIMH_PATH` environment variable to point to the `BIN` directory of your cloned repo. This allows the UI to locate the simulator.
+Set the `I650_PATH` environment variable to point to the full path of the Open SIMH `i650` binary. This allows the UI to locate the simulator.
 
 Run the development server:
 
@@ -34,7 +44,7 @@ Open [http://localhost:3000](http://localhost:3000) with your browser to access 
 
 ## About the IBM 650
 
-The [IBM 650](https://en.wikipedia.org/wiki/IBM_650) (wikipedia.org) is an early digital computer produced by IBM in the mid-1950s. It was the first mass-produced computer in the world.
+The [IBM 650](https://en.wikipedia.org/wiki/IBM_650) (wikipedia.org) is an early digital computer released by IBM in 1954. It was one of the first mass-produced computers in the world (at a time when just under 2000 was considered mass-produced).
 
 Further reading:
 
@@ -60,6 +70,10 @@ You can check out [the Next.js GitHub repository](https://github.com/vercel/next
 ## About Carbon Design System
 
 This project uses the [Carbon Design System](https://carbondesignsystem.com), IBM's open-source design system and React Framework.
+
+## About Me
+
+Hi, I'm [J.B. Langston](https://www.linkedin.com/in/jblangston/). I happen to work for IBM, but this project is not affiliated with or endorsed by IBM. I made this on my own time for fun.
 
 ## MIT License
 

@@ -1,9 +1,10 @@
 import * as pty from 'node-pty';
 import type { IPty } from 'node-pty';
 import * as path from 'path';
+import * as fs from 'fs';
 import { EventEmitter } from 'events';
 
-const SIMH_PATH = process.env.SIMH_PATH || '';
+const I650_PATH = process.env.I650_PATH || '';
 const SIMH_DEBUG = (process.env.SIMH_DEBUG || '').toLowerCase() === 'true' || process.env.SIMH_DEBUG === '1';
 const PROMPT = 'sim> ';
 const DEFAULT_TIMEOUT_MS = 30000;
@@ -136,15 +137,13 @@ class SimhEmulator {
       return Promise.reject(new Error('Emulator already running'));
     }
 
-    const binaryPath = SIMH_PATH
-      ? path.join(SIMH_PATH, this.binaryName)
-      : this.binaryName;
+    const binaryPath = I650_PATH || this.binaryName;
 
     console.log(`Starting SIMH emulator: ${binaryPath}`);
     debugLog('spawn options', {
       binaryPath,
       cwd: process.cwd(),
-      envSimhPath: SIMH_PATH,
+      envI650Path: I650_PATH,
     });
 
     return new Promise((resolve, reject) => {
@@ -599,10 +598,47 @@ export function getEmulator(): SimhEmulator | undefined {
   return g.simhEmulator;
 }
 
+export class ConfigError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'ConfigError';
+  }
+}
+
 export async function initializeEmulator(binaryName: string): Promise<void> {
+  if (!process.env.I650_PATH) {
+    throw new ConfigError('I650_PATH environment variable not set to SIMH i650 binary.');
+  }
   if (g.simhEmulator?.isRunning()) {
     return;
   }
+
+  const resolvedPath = path.resolve(process.env.I650_PATH);
+
+  if (!fs.existsSync(resolvedPath)) {
+    throw new ConfigError(`I650_PATH points to a file that does not exist: ${resolvedPath}`);
+  }
+
+  const stat = fs.statSync(resolvedPath);
+  if (!stat.isFile()) {
+    throw new ConfigError(`I650_PATH is not a file: ${resolvedPath}`);
+  }
+
+  if (process.platform === 'win32') {
+    const ext = path.extname(resolvedPath).toLowerCase();
+    if (!['.exe', '.cmd', '.bat', '.com'].includes(ext)) {
+      throw new ConfigError(
+        `I650_PATH does not appear to be an executable (expected .exe, .cmd, .bat, or .com): ${resolvedPath}`,
+      );
+    }
+  } else {
+    try {
+      fs.accessSync(resolvedPath, fs.constants.X_OK);
+    } catch {
+      throw new ConfigError(`I650_PATH is not executable: ${resolvedPath}`);
+    }
+  }
+
   g.simhEmulator = new SimhEmulator(binaryName);
   attachConsoleBuffer(g.simhEmulator); // capture early output for console streaming
   await g.simhEmulator.start();

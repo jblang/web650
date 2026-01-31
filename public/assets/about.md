@@ -1,8 +1,6 @@
-# IBM 650 Simulator UI
-
 ## About the IBM 650
 
-The [IBM 650](https://en.wikipedia.org/wiki/IBM_650) (wikipedia.org) is an early digital computer produced by IBM in the mid-1950s. It was the first mass-produced computer in the world.
+The [IBM 650](https://en.wikipedia.org/wiki/IBM_650) (wikipedia.org) is an early digital computer released by IBM in 1954. It was one of the first mass-produced computers in the world (at a time when just under 2000 was considered mass-produced).
 
 Further reading:
 
@@ -14,7 +12,7 @@ Further reading:
 
 ## About Open SIMH
 
-[Open SIMH](https://opensimh.org) a collection of simulators started by Robert Supnik and developed by a group of volunteers.  It includes simulators for many famous mini- and mainframe computers from the 1950s onwards, and specifically an [IBM 650 simulator](https://opensimh.org/simdocs/i650_doc) by Roberto Sancho.
+[Open SIMH](https://opensimh.org) is a collection of simulators started by Robert Supnik and developed by a group of volunteers.  It includes simulators for many famous mini- and mainframe computers from the 1950s onwards, and specifically an [IBM 650 simulator](https://opensimh.org/simdocs/i650_doc) by Roberto Sancho.
 
 ## MIT License
 

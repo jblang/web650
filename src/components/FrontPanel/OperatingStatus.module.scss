@@ -1,4 +1,4 @@
-@import 'common';
+@use 'common' as *;
 
 .operatingBox {
   grid-column: 7 / 10;

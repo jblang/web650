@@ -5,7 +5,7 @@ import { Content } from '@carbon/react';
 import './globals.scss';
 
 export const metadata: Metadata = {
-  title: 'IBM 650',
+  title: 'SIMH i650',
   description: 'IBM 650 Simulator',
 };
 

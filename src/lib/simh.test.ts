@@ -1,7 +1,8 @@
-import { describe, expect, it, vi, beforeEach } from 'vitest';
+import { describe, expect, it, vi, beforeEach, afterEach } from 'vitest';
 import type { IPty } from 'node-pty';
 import {
   SimhEmulator,
+  ConfigError,
   attachConsoleBuffer,
   detachConsoleBuffer,
   onConsoleLine,
@@ -19,6 +20,15 @@ let dataHandler: DataHandler | null = null;
 let exitHandler: ExitHandler | null = null;
 let writes: string[] = [];
 let killed = false;
+
+const fsMocks = vi.hoisted(() => ({
+  existsSync: vi.fn((): boolean => true),
+  statSync: vi.fn(() => ({ isFile: () => true })),
+  accessSync: vi.fn(),
+  constants: { X_OK: 1 },
+}));
+
+vi.mock('fs', () => fsMocks);
 
 vi.mock('node-pty', () => ({
   spawn: vi.fn((): IPty => {
@@ -343,13 +353,20 @@ describe('state primitives', () => {
   });
 
   it('initializeEmulator is a singleton and skips when already running', async () => {
+    const originalPath = process.env.I650_PATH;
+    process.env.I650_PATH = 'dummy-path';
+
     const runningMock = { isRunning: () => true };
     const globalShim = globalThis as { simhEmulator?: unknown };
     globalShim.simhEmulator = runningMock;
+
     await initializeEmulator('dummy');
+
     expect(getEmulator()).toBe(runningMock);
+
     // reset
     globalShim.simhEmulator = undefined;
+    process.env.I650_PATH = originalPath;
   });
 
   it('sendEscape resolves immediately when already at prompt', async () => {
@@ -373,5 +390,69 @@ describe('state primitives', () => {
 
     expect(sendCommand).toHaveBeenCalledWith('SHOW BREAK', { expectResponse: true });
     expect(breaks).toEqual({ '1000': 'E', '2000': 'E' });
+  });
+});
+
+describe('initializeEmulator binary validation', () => {
+  const originalPath = process.env.I650_PATH;
+  const originalPlatform = process.platform;
+
+  beforeEach(() => {
+    process.env.I650_PATH = '/usr/local/bin/i650';
+    const globalShim = globalThis as { simhEmulator?: unknown };
+    globalShim.simhEmulator = undefined;
+    // Reset fs mocks to passing defaults
+    fsMocks.existsSync.mockReturnValue(true);
+    fsMocks.statSync.mockReturnValue({ isFile: () => true });
+    fsMocks.accessSync.mockImplementation(() => {});
+  });
+
+  afterEach(() => {
+    process.env.I650_PATH = originalPath;
+    Object.defineProperty(process, 'platform', { value: originalPlatform });
+  });
+
+  it('throws ConfigError when I650_PATH is not set', async () => {
+    delete process.env.I650_PATH;
+    await expect(initializeEmulator('dummy')).rejects.toThrow(ConfigError);
+    await expect(initializeEmulator('dummy')).rejects.toThrow(/not set/);
+  });
+
+  it('throws ConfigError when file does not exist', async () => {
+    fsMocks.existsSync.mockReturnValue(false);
+    await expect(initializeEmulator('dummy')).rejects.toThrow(ConfigError);
+    await expect(initializeEmulator('dummy')).rejects.toThrow(/does not exist/);
+  });
+
+  it('throws ConfigError when path is not a file', async () => {
+    fsMocks.statSync.mockReturnValue({ isFile: () => false });
+    await expect(initializeEmulator('dummy')).rejects.toThrow(ConfigError);
+    await expect(initializeEmulator('dummy')).rejects.toThrow(/not a file/);
+  });
+
+  it('throws ConfigError when file is not executable on unix', async () => {
+    Object.defineProperty(process, 'platform', { value: 'linux' });
+    fsMocks.accessSync.mockImplementation(() => {
+      throw new Error('EACCES');
+    });
+    await expect(initializeEmulator('dummy')).rejects.toThrow(ConfigError);
+    await expect(initializeEmulator('dummy')).rejects.toThrow(/not executable/);
+  });
+
+  it('throws ConfigError for non-executable extension on windows', async () => {
+    Object.defineProperty(process, 'platform', { value: 'win32' });
+    process.env.I650_PATH = 'C:\\tools\\i650.txt';
+    await expect(initializeEmulator('dummy')).rejects.toThrow(ConfigError);
+    await expect(initializeEmulator('dummy')).rejects.toThrow(/does not appear to be an executable/);
+  });
+
+  it('accepts .exe on windows', async () => {
+    Object.defineProperty(process, 'platform', { value: 'win32' });
+    process.env.I650_PATH = 'C:\\tools\\i650.exe';
+    // Should pass validation and proceed to spawn (which is mocked)
+    const startPromise = initializeEmulator('dummy');
+    await vi.waitFor(() => { if (!dataHandler) throw new Error('waiting'); });
+    emitPrompt('');
+    await startPromise;
   });
 });

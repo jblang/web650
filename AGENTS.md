@@ -9,7 +9,7 @@ Web-based UI for the Open SIMH IBM 650 simulator. A Next.js app that spawns and 
 ## Commands
 
 ```bash
-npm run dev          # Start dev server (requires SIMH i650 binary in PATH or SIMH_PATH)
+npm run dev          # Start dev server (requires SIMH i650 binary in PATH or I650_PATH)
 npm run build        # Production build
 npm run lint         # ESLint (flat config, strict TypeScript)
 npm test             # Run all tests (vitest, watch mode)
@@ -18,7 +18,7 @@ npx vitest run --coverage  # Tests with coverage report
 ```
 
 **Environment variables:**
-- `SIMH_PATH` — Directory containing the SIMH `i650` binary (optional if in PATH)
+- `I650_PATH` — Full path to the SIMH `i650` binary
 - `SIMH_DEBUG=true` — Enable debug logging for emulator PTY communication
 - `SIMH_QUIT_TIMEOUT_MS` — Timeout in ms for graceful emulator shutdown (default: 1000)
 

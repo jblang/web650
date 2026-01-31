@@ -25,9 +25,9 @@ export default function AppHeader() {
   const pathname = usePathname();
 
   return (
-    <Header aria-label="IBM 650">
-      <HeaderName href="#" prefix="IBM">
-        650
+    <Header aria-label="SIMH i650">
+      <HeaderName href="#" prefix="SIMH">
+        i650
       </HeaderName>
       <HeaderNavigation aria-label="Navigation">
         {links.map((link) => (
