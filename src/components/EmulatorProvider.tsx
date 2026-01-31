@@ -4,7 +4,8 @@ import { createContext, useContext, useState, useEffect, useCallback, ReactNode,
 import { Display, Control, Programmed, HalfCycle, Overflow } from './FrontPanel/ConfigSection';
 import type { OperatingState } from './FrontPanel/OperatingStatus';
 import type { CheckingState } from './FrontPanel/CheckingStatus';
-import * as simhWasm from '@/lib/simh-wasm';
+import * as simh from '@/lib/simh';
+import { ZERO_ADDRESS, ZERO_DATA, ZERO_OPERATION, extractOperationCode } from '@/lib/simh';
 
 // Maps display switch position to the register string shown on the lights.
 function getDisplayValue(
@@ -29,7 +30,7 @@ function getDisplayValue(
     case Display.READ_IN_STORAGE:
       return regs.distributor;
     default:
-      return '0000000000+';
+      return ZERO_DATA;
   }
 }
 
@@ -92,18 +93,18 @@ export default function EmulatorProvider({ children }: { children: ReactNode }) 
   const [output, setOutput] = useState('');
   const [initialized, setInitialized] = useState(false);
   // Emulator register snapshot (kept in provider so consumers don't fetch on demand)
-  const [addressRegister, setAddressRegisterState] = useState<string>('0000');
-  const [programRegister, setProgramRegisterState] = useState<string>('00000');
-  const [lowerAccumulator, setLowerAccumulatorState] = useState<string>('0000000000+');
-  const [upperAccumulator, setUpperAccumulatorState] = useState<string>('0000000000+');
-  const [distributor, setDistributorState] = useState<string>('0000000000+');
-  const [consoleSwitches, setConsoleSwitchesState] = useState<string>('0000000000+');
+  const [addressRegister, setAddressRegisterState] = useState<string>(ZERO_ADDRESS);
+  const [programRegister, setProgramRegisterState] = useState<string>(ZERO_DATA);
+  const [lowerAccumulator, setLowerAccumulatorState] = useState<string>(ZERO_DATA);
+  const [upperAccumulator, setUpperAccumulatorState] = useState<string>(ZERO_DATA);
+  const [distributor, setDistributorState] = useState<string>(ZERO_DATA);
+  const [consoleSwitches, setConsoleSwitchesState] = useState<string>(ZERO_DATA);
   const [programmedStop, setProgrammedStopState] = useState<boolean>(false);
   const [overflowStop, setOverflowStopState] = useState<boolean>(false);
   const [halfCycle, setHalfCycleState] = useState<boolean>(false);
-  const [displayValue, setDisplayValue] = useState<string>('0000000000+');
+  const [displayValue, setDisplayValue] = useState<string>(ZERO_DATA);
   const [isRunning, setIsRunning] = useState<boolean>(false);
-  const [operation, setOperation] = useState<string>('00');
+  const [operation, setOperation] = useState<string>(ZERO_OPERATION);
   const [operatingState] = useState<OperatingState>({
     dataAddress: false,
     program: false,
@@ -129,28 +130,26 @@ export default function EmulatorProvider({ children }: { children: ReactNode }) 
   const [displaySwitch, setDisplaySwitch] = useState<number>(0);
   const [controlSwitch, setControlSwitch] = useState<number>(0);
   const [errorSwitch, setErrorSwitch] = useState<number>(0);
-  const [addressSwitches, setAddressSwitches] = useState<string>('0000');
+  const [addressSwitches, setAddressSwitches] = useState<string>(ZERO_ADDRESS);
 
   /* ── WASM-backed operations ─────────────────────────────────── */
 
   const refreshRegisters = useCallback(async () => {
-    const regs = simhWasm.examineState('STATE');
-    const getBool = (key: string) => (regs[key]?.trim() ?? '0') === '1';
-    setAddressRegisterState(regs.AR ?? '0000');
-    setProgramRegisterState(regs.PR ?? '00000');
-    setLowerAccumulatorState(regs.ACCLO ?? '0000000000+');
-    setUpperAccumulatorState(regs.ACCUP ?? '0000000000+');
-    setDistributorState(regs.DIST ?? '0000000000+');
-    setConsoleSwitchesState(regs.CSW ?? '0000000000+');
-    setProgrammedStopState(getBool('CSWPS'));
-    setOverflowStopState(getBool('CSWOS'));
-    setHalfCycleState(getBool('HALF'));
+    setAddressRegisterState(simh.getAddressRegister());
+    setProgramRegisterState(simh.getProgramRegister());
+    setLowerAccumulatorState(simh.getLowerAccumulator());
+    setUpperAccumulatorState(simh.getUpperAccumulator());
+    setDistributorState(simh.getDistributor());
+    setConsoleSwitchesState(simh.getConsoleSwitches());
+    setProgrammedStopState(simh.getProgrammedStop());
+    setOverflowStopState(simh.getOverflowStop());
+    setHalfCycleState(simh.getHalfCycle());
   }, []);
 
   const sendCommand = useCallback(
     async (command: string): Promise<string> => {
       setOutput((prev) => prev + `sim> ${command}\n`);
-      const result = simhWasm.sendCommand(command);
+      const result = simh.sendCommand(command);
       if (result.trim()) {
         setOutput((prev) => prev + result + '\n');
       }
@@ -159,23 +158,14 @@ export default function EmulatorProvider({ children }: { children: ReactNode }) 
     []
   );
 
-  const getDrumLocation = useCallback((address: string): string => {
-    const regs = simhWasm.examineState(address);
-    const numeric = String(parseInt(address, 10));
-    return regs[address] ?? regs[numeric] ?? regs[numeric.padStart(4, '0')] ?? '';
-  }, []);
-
-  const setDrumLocation = useCallback((address: string, value: string): void => {
-    simhWasm.depositState(address, value);
-  }, []);
 
   const restart = useCallback(async () => {
     setInitialized(false);
     setOutput('');
     setIsRunning(false);
 
-    await simhWasm.restart();
-    simhWasm.sendCommand('SET CPU 1K');
+    await simh.restart();
+    simh.setMemorySize('1K');
     await refreshRegisters();
     setInitialized(true);
   }, [refreshRegisters]);
@@ -183,37 +173,37 @@ export default function EmulatorProvider({ children }: { children: ReactNode }) 
   /* ── Register setters (deposit + update local state) ────────── */
 
   const setAddressRegister = useCallback(async (value: string) => {
-    simhWasm.depositState('AR', value);
+    simh.setAddressRegister(value);
     setAddressRegisterState(value);
   }, []);
 
   const setProgramRegister = useCallback(async (value: string) => {
-    simhWasm.depositState('PR', value);
+    simh.setProgramRegister(value);
     setProgramRegisterState(value);
   }, []);
 
   const setDistributor = useCallback(async (value: string) => {
-    simhWasm.depositState('DIST', value);
+    simh.setDistributor(value);
     setDistributorState(value);
   }, []);
 
   const setConsoleSwitches = useCallback(async (value: string) => {
-    simhWasm.depositState('CSW', value);
+    simh.setConsoleSwitches(value);
     setConsoleSwitchesState(value);
   }, []);
 
   const setProgrammedStop = useCallback(async (value: boolean) => {
-    simhWasm.depositState('CSWPS', value ? '1' : '0');
+    simh.setProgrammedStop(value);
     setProgrammedStopState(value);
   }, []);
 
   const setOverflowStop = useCallback(async (value: boolean) => {
-    simhWasm.depositState('CSWOS', value ? '1' : '0');
+    simh.setOverflowStop(value);
     setOverflowStopState(value);
   }, []);
 
   const setHalfCycle = useCallback(async (value: boolean) => {
-    simhWasm.depositState('HALF', value ? '1' : '0');
+    simh.setHalfCycle(value);
     setHalfCycleState(value);
   }, []);
 
@@ -232,20 +222,20 @@ export default function EmulatorProvider({ children }: { children: ReactNode }) 
 
   // Derive operation register display (first two digits of PR numeric portion).
   useEffect(() => {
-    setOperation(programRegister.slice(0, 2));
+    setOperation(extractOperationCode(programRegister));
   }, [programRegister]);
 
   const handleDrumTransfer = useCallback(async () => {
     const targetAddress = addressRegister;
 
     if (displaySwitch === Display.READ_OUT_STORAGE) {
-      const value = getDrumLocation(targetAddress);
+      const value = simh.readMemory(targetAddress);
       await setDistributor(value);
     } else if (displaySwitch === Display.READ_IN_STORAGE) {
       await setDistributor(consoleSwitches);
-      setDrumLocation(targetAddress, consoleSwitches);
+      simh.writeMemory(targetAddress, consoleSwitches);
     }
-  }, [addressRegister, displaySwitch, consoleSwitches, setDistributor, getDrumLocation, setDrumLocation]);
+  }, [addressRegister, displaySwitch, consoleSwitches, setDistributor]);
 
   const onDisplayChange = useCallback((value: number) => {
     setDisplaySwitch(value);
@@ -300,9 +290,9 @@ export default function EmulatorProvider({ children }: { children: ReactNode }) 
   /* ── Program control ────────────────────────────────────────── */
 
   const handleProgramStart = useCallback(async () => {
-    simhWasm.startRunning(() => {
+    simh.startRunning(() => {
       refreshRegisters();
-      if (!simhWasm.isRunning()) {
+      if (!simh.isRunning()) {
         setIsRunning(false);
       }
     });
@@ -319,41 +309,36 @@ export default function EmulatorProvider({ children }: { children: ReactNode }) 
   }, [controlSwitch, handleDrumTransfer, handleProgramStart, isRunning]);
 
   const onProgramStopClick = useCallback(async () => {
-    simhWasm.stopRunning();
+    simh.stopRunning();
     setIsRunning(false);
     await refreshRegisters();
   }, [refreshRegisters]);
 
   const onProgramResetClick = useCallback(async () => {
     if (isRunning) {
-      simhWasm.stopRunning();
+      simh.stopRunning();
       setIsRunning(false);
     }
-    await setProgramRegister('00000');
-    const addressValue = controlSwitch === Control.MANUAL_OP ? '0000' : '8000';
-    await setAddressRegister(addressValue);
+    await setProgramRegister(ZERO_DATA);
+    await setAddressRegister(ZERO_ADDRESS);
     await refreshRegisters();
-  }, [controlSwitch, isRunning, setAddressRegister, setProgramRegister, refreshRegisters]);
+  }, [isRunning, setAddressRegister, setProgramRegister, refreshRegisters]);
 
   const onComputerResetClick = useCallback(async () => {
     if (isRunning) {
-      simhWasm.stopRunning();
+      simh.stopRunning();
       setIsRunning(false);
     }
-    simhWasm.sendCommand('RESET');
+    simh.reset();
     setIsRunning(false);
     await refreshRegisters();
   }, [isRunning, refreshRegisters]);
 
   const onAccumResetClick = useCallback(async () => {
-    const zeroWord = '0000000000+';
-    simhWasm.depositState('DIST', zeroWord);
-    simhWasm.depositState('ACCLO', zeroWord);
-    simhWasm.depositState('ACCUP', zeroWord);
-    simhWasm.depositState('OV', '0');
-    setDistributorState(zeroWord);
-    setLowerAccumulatorState(zeroWord);
-    setUpperAccumulatorState(zeroWord);
+    simh.resetAccumulator();
+    setDistributorState(ZERO_DATA);
+    setLowerAccumulatorState(ZERO_DATA);
+    setUpperAccumulatorState(ZERO_DATA);
     await refreshRegisters();
   }, [refreshRegisters]);
 
@@ -461,12 +446,12 @@ export default function EmulatorProvider({ children }: { children: ReactNode }) 
 
   useEffect(() => {
     // Capture tick-loop output (device I/O during program execution)
-    simhWasm.onOutput((text) => setOutput((prev) => prev + text));
+    simh.onOutput((text) => setOutput((prev) => prev + text));
 
     const initialize = async () => {
       try {
-        await simhWasm.init();
-        simhWasm.sendCommand('SET CPU 1K');
+        await simh.init();
+        simh.setMemorySize('1K');
         refreshRegisters();
       } catch (err) {
         const msg = err instanceof Error ? err.message : 'Unknown error';
@@ -478,7 +463,7 @@ export default function EmulatorProvider({ children }: { children: ReactNode }) 
     initialize();
 
     return () => {
-      simhWasm.onOutput(null);
+      simh.onOutput(null);
     };
   }, [refreshRegisters]);
 

@@ -4,7 +4,7 @@ Guidance for AI coding agents working on this codebase.
 
 ## Project Summary
 
-Web-based UI for the Open SIMH IBM 650 simulator. The simulator runs entirely in the browser via WebAssembly, compiled from Open SIMH using Emscripten. A Next.js app serves static pages, and a TypeScript wrapper (`src/lib/simh-wasm.ts`) provides the FFI layer over the Emscripten module. The frontend renders an interactive front panel simulation with knobs, switches, and indicator lights using IBM Carbon Design System.
+Web-based UI for the Open SIMH IBM 650 simulator. The simulator runs entirely in the browser via WebAssembly, compiled from Open SIMH using Emscripten. A Next.js app serves static pages, and a modular TypeScript wrapper (`src/lib/simh/`) provides the FFI layer over the Emscripten module. The frontend renders an interactive front panel simulation with knobs, switches, and indicator lights using IBM Carbon Design System.
 
 ## Commands
 
@@ -49,7 +49,15 @@ src/
 │   ├── Header.tsx           # Navigation header
 │   └── Providers.tsx        # Root context composition
 ├── lib/
-│   ├── simh-wasm.ts         # WASM wrapper (Emscripten FFI, output capture, tick loop)
+│   ├── simh/                # WASM wrapper modules
+│   │   ├── index.ts         # Main entry point, re-exports all modules
+│   │   ├── core.ts          # Module init, commands, output handling
+│   │   ├── registers.ts     # Register operations
+│   │   ├── memory.ts        # Memory operations & validation
+│   │   ├── control.ts       # Execution control (step, start, stop)
+│   │   ├── filesystem.ts    # Virtual filesystem
+│   │   ├── constants.ts     # Constants (SCPE codes, defaults)
+│   │   └── types.ts         # TypeScript interfaces
 │   └── format.ts            # Value formatting (10-digit IBM 650 format with sign)
 public/
 ├── i650.js                  # Emscripten-generated JS loader
@@ -62,7 +70,7 @@ scripts/
 
 ### Key patterns
 
-- **WASM singleton** in `src/lib/simh-wasm.ts` loads the Emscripten module once via `init()` and stores it as a module-level variable. All emulator interaction goes through this wrapper.
+- **WASM singleton** in `src/lib/simh/core.ts` loads the Emscripten module once via `init()` and stores it as a module-level variable. All emulator interaction goes through this wrapper.
 - **Output capture** uses a two-tier system: during `sendCommand`/`examineState`/`depositState`, output is buffered and returned to the caller. During tick-loop execution (`startRunning`), I/O flows through the `onOutput` callback.
 - **Tick loop** uses `requestAnimationFrame` to execute 500 CPU steps per frame, providing smooth 60fps rendering during program execution.
 - **State management** uses React context via `EmulatorProvider`. The provider holds register snapshots in local state, syncing them with the WASM module via `examineState`/`depositState` calls.
@@ -82,14 +90,14 @@ The WASM module exposes four `EMSCRIPTEN_KEEPALIVE` functions called via Emscrip
 Emscripten provides an in-memory filesystem (MEMFS). SIMH scripts (`DO` files) and device attachments (`ATTACH CDR1 deck.crd`) open files via the C standard library, which Emscripten routes through MEMFS.
 
 - **Preloaded files**: The build uses `--preload-file I650/sw@/sw` and `--preload-file I650/tests@/tests` to bundle the `sw/` and `tests/` directories into `i650.data`, mapped to `/sw/` and `/tests/` in the virtual FS. Scripts like `DO run_soap.ini` work because the files exist at these paths.
-- **Runtime files**: User-uploaded card decks or custom scripts are written to MEMFS at runtime via `simh-wasm.ts` filesystem functions (`writeFile`, `readFile`, `mkdir`, `unlink`).
+- **Runtime files**: User-uploaded card decks or custom scripts are written to MEMFS at runtime via `simh/filesystem` module functions (`writeFile`, `readFile`, `mkdir`, `unlink`).
 - **Limitation**: Interactive stdin is disabled (`window.prompt = () => null`). Scripts using `set env -P "prompt"` will get EOF and the variable will be unset. The built-in demo scripts only use this as a "press enter to continue" pause, so this is acceptable.
 
 ## Code Conventions
 
 ### TypeScript
 - Strict mode enabled (`"strict": true` in tsconfig).
-- Path alias: `@/*` maps to `src/*`. Use `@/lib/simh-wasm`, `@/components/Header`, etc.
+- Path alias: `@/*` maps to `src/*`. Use `@/lib/simh`, `@/components/Header`, etc.
 - React components use `React.FC<Props>` pattern with explicit prop interfaces.
 
 ### File naming
