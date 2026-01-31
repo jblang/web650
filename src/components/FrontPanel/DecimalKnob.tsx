@@ -1,16 +1,13 @@
 import React, { useState, useRef, useEffect, useLayoutEffect } from 'react';
 import { Knob } from './Knob';
-import './Knob.scss';
+import styles from './Knob.module.scss';
+import cn from 'classnames';
 
 interface DecimalKnobProps {
+  style?: React.CSSProperties;
   value: number; // 0-9
   onChange?: (value: number) => void;
-  style?: React.CSSProperties;
 }
-
-// SVG cursors for clockwise and counter-clockwise rotation
-const ccwCursor = `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 18 18'%3E%3Cpath d='M9 3v12M3 9h12' stroke='black' stroke-width='4.5' fill='none'/%3E%3Cpath d='M9 3v12M3 9h12' stroke='white' stroke-width='3' fill='none'/%3E%3C/svg%3E") 12 12, pointer`;
-const cwCursor = `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 18 18'%3E%3Cpath d='M3 9h12' stroke='black' stroke-width='4.5' fill='none'/%3E%3Cpath d='M3 9h12' stroke='white' stroke-width='3' fill='none'/%3E%3C/svg%3E") 12 12, pointer`;
 
 const DecimalKnob: React.FC<DecimalKnobProps> = ({ value, onChange, style }) => {
   const [showPopup, setShowPopup] = useState(false);
@@ -68,21 +65,21 @@ const DecimalKnob: React.FC<DecimalKnobProps> = ({ value, onChange, style }) => 
   }, [showPopup]);
 
   return (
-    <div className="knob-container decimal-knob" style={style}>
-      <div className="display-wrapper" ref={wrapperRef}>
+    <div className={cn(styles.knobContainer, styles.decimalKnobContainer)} style={style}>
+      <div className={styles.decimalDisplayWrapper} ref={wrapperRef}>
         <div
-          className="display"
+          className={styles.decimalDisplay}
           onClick={() => setShowPopup(!showPopup)}
           title="CHOOSE"
         >
           {value}
         </div>
         {showPopup && (
-          <div ref={popupRef} className="popup" style={{ marginLeft: popupOffset }}>
+          <div ref={popupRef} className={styles.decimalPopup} style={{ marginLeft: popupOffset }}>
             {[0, 1, 2, 3, 4, 5, 6, 7, 8, 9].map((digit) => (
               <div
                 key={digit}
-                className={`popup-digit ${digit === value ? 'selected' : ''}`}
+                className={cn(styles.decimalPopupDigit, { [styles.decimalPopupDigitSelected]: digit === value })}
                 onClick={() => handleDigitSelect(digit)}
               >
                 {digit}
@@ -91,17 +88,15 @@ const DecimalKnob: React.FC<DecimalKnobProps> = ({ value, onChange, style }) => 
           </div>
         )}
       </div>
-      <div className="knob-wrapper">
+      <div className={cn(styles.knobWrapper, styles.decimalKnobWrapper)}>
         <Knob rotation={rotation} />
         <div
-          className="knob-half"
-          style={{ left: 0, cursor: cwCursor }}
+          className={cn(styles.knobHalf, styles.knobHalfLeft, styles.decimalDecCursor)}
           onClick={handleLeftClick}
           title="DECREMENT"
         />
         <div
-          className="knob-half"
-          style={{ right: 0, cursor: ccwCursor }}
+          className={cn(styles.knobHalf, styles.knobHalfRight, styles.decimalIncCursor)}
           onClick={handleRightClick}
           title="INCREMENT"
         />

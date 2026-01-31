@@ -1,0 +1,18 @@
+@import 'common';
+
+.container {
+  display: inline-grid;
+  grid-template-columns: auto auto auto;
+  gap: 4px 4px;
+  align-items: center;
+  font-size: 14px;
+}
+
+.bulb {
+  @include bulb;
+}
+
+.number {
+  text-align: center;
+  color: white;
+}

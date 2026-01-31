@@ -1,0 +1,50 @@
+@import 'common';
+
+.checkingBox {
+  @include panel-section;
+  grid-column: 10 / 12;
+  grid-template-rows: auto 1fr;
+}
+
+.checkingTitle {
+  grid-column: span 2;
+  text-align: center;
+  color: white;
+  font-size: 10px;
+  font-weight: bold;
+  letter-spacing: 0.6em;
+  padding-left: 0.6em;
+}
+
+.ledColumn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.checkingUnit {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.bulb {
+  @include bulb;
+}
+
+.checkingLabel {
+  color: white;
+  font-size: 8px;
+  font-weight: bold;
+  text-align: center;
+  white-space: pre-wrap;
+}
+
+.columnContainer {
+  grid-column: span 2;
+  display: grid;
+  grid-template-columns: subgrid;
+  gap: 12px;
+}

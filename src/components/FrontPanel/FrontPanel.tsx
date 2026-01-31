@@ -7,6 +7,7 @@ import AddressDisplay from './AddressDisplay';
 import EntrySection from './EntrySection';
 import ConfigSection from './ConfigSection';
 import ControlSection from './ControlSection';
+import styles from './FrontPanel.module.scss';
 
 export const litBulb = '🟡';
 export const unlitBulb = '⚫';
@@ -49,32 +50,9 @@ export interface FrontPanelProps {
   onEmulatorResetClick?: () => void;
 }
 
-const styles = {
-  container: {
-    display: 'inline-grid',
-    gridTemplateColumns: 'repeat(10, auto) auto',
-    gap: '4px',
-    padding: '10px', 
-    backgroundColor: '#a6a6a6', // Half-way fallback
-    backgroundImage: `
-      repeating-linear-gradient(to bottom, hsla(0,0%,100%,0) 0%, hsla(0,0%,100%,0) 6%, hsla(0,0%,100%,.08) 7.5%),
-      repeating-linear-gradient(to bottom, hsla(0,0%,0%,0) 0%, hsla(0,0%,0%,0) 4%, hsla(0,0%,0%,.04) 4.5%),
-      repeating-linear-gradient(to bottom, hsla(0,0%,100%,0) 0%, hsla(0,0%,100%,0) 1.2%, hsla(0,0%,100%,.1) 2.2%),
-      linear-gradient(0deg, 
-        hsl(0,0%,65%) 0%,   /* Mid-dark base */
-        hsl(0,0%,72%) 20%, 
-        hsl(0,0%,78%) 50%,  /* Balanced highlight */
-        hsl(0,0%,72%) 80%, 
-        hsl(0,0%,65%) 100%)
-    `,
-    backgroundSize: '100% 2px, 100% 8px, 100% 12px, 100% 100%',
-    boxShadow: 'inset 0 0 6px rgba(0,0,0,0.2)', 
-  },
-};
-
 const FrontPanel: React.FC<FrontPanelProps> = (props) => {
   return (
-    <div style={styles.container}>
+    <div className={styles.container}>
       <DisplaySection value={props.displayValue} />
 
       <EntrySection
@@ -108,12 +86,12 @@ const FrontPanel: React.FC<FrontPanelProps> = (props) => {
         onTransferClick={props.onTransferClick}
         onProgramStartClick={props.onProgramStartClick}
         onProgramStopClick={props.onProgramStopClick}
-      onProgramResetClick={props.onProgramResetClick}
-      onComputerResetClick={props.onComputerResetClick}
-      onAccumResetClick={props.onAccumResetClick}
-      onHelpClick={props.onHelpClick}
-      onCheatClick={props.onCheatClick}
-      onEmulatorResetClick={props.onEmulatorResetClick}
+        onProgramResetClick={props.onProgramResetClick}
+        onComputerResetClick={props.onComputerResetClick}
+        onAccumResetClick={props.onAccumResetClick}
+        onHelpClick={props.onHelpClick}
+        onCheatClick={props.onCheatClick}
+        onEmulatorResetClick={props.onEmulatorResetClick}
       />
     </div>
   );

@@ -1,0 +1,18 @@
+@mixin panel-section {
+  display: grid;
+  grid-template-columns: subgrid;
+  background-color: #002244;
+  padding: 12px;
+  gap: 12px;
+}
+
+@mixin centered-cell {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+@mixin bulb {
+  text-align: center;
+  line-height: 1.4;
+}

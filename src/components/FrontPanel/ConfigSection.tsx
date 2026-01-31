@@ -1,6 +1,8 @@
 import React from 'react';
 import LabeledKnob from './LabeledKnob';
 import AddressSelection from './AddressSelection';
+import styles from './ConfigSection.module.scss';
+import cn from 'classnames';
 
 // Knob position configurations
 const STOP_RUN_POS = [{label: 'STOP', angle: -30}, {label: 'RUN', angle: 30}];
@@ -77,45 +79,26 @@ interface ConfigSectionProps {
   onErrorChange: (value: number) => void;
 }
 
-const styles = {
-  finalKnobsRow: {
-    gridColumn: '1 / 12',
-    display: 'grid',
-    gridTemplateColumns: 'subgrid',
-    gridTemplateRows: 'auto auto',
-    backgroundColor: '#002244',
-    padding: '12px',
-    gap: '12px',
-    alignItems: 'end',
-  },
-  knobLabel: {
-    color: 'white',
-    fontSize: '11px',
-    fontWeight: 'bold' as const,
-    textAlign: 'center' as const,
-  },
-};
-
 const ConfigSection: React.FC<ConfigSectionProps> = ({
   programmed, halfCycle, addressSelection, control, display, overflow, error,
   onProgrammedChange, onHalfCycleChange, onAddressChange, onControlChange, onDisplayChange, onOverflowChange, onErrorChange,
 }) => {
   return (
-    <div style={styles.finalKnobsRow}>
+    <div className={styles.finalKnobsRow}>
       <LabeledKnob position={programmed} positions={STOP_RUN_POS} onChange={onProgrammedChange} />
       <LabeledKnob position={halfCycle} positions={HALF_RUN_POS} onChange={onHalfCycleChange} />
       <AddressSelection value={addressSelection} onChange={onAddressChange} />
       <LabeledKnob position={control} positions={CONTROL_POS} onChange={onControlChange} labelRadius={48} />
-      <LabeledKnob position={display} positions={DISPLAY_POS} onChange={onDisplayChange} style={{ gridColumn: 'span 2' }} labelRadius={56} />
+      <LabeledKnob position={display} positions={DISPLAY_POS} onChange={onDisplayChange} className={styles.displayKnob} labelRadius={56} />
       <LabeledKnob position={overflow} positions={OVERFLOW_POS} onChange={onOverflowChange} />
       <LabeledKnob position={error} positions={ERROR_POS} onChange={onErrorChange} />
-      <div style={{ ...styles.knobLabel, gridColumn: '1 / 2' }}>PROGRAMMED</div>
-      <div style={{ ...styles.knobLabel, gridColumn: '2 / 3' }}>HALF CYCLE</div>
-      <div style={{ ...styles.knobLabel, gridColumn: '3 / 7', letterSpacing: '0.6em' }}>ADDRESS SELECTION</div>
-      <div style={{ ...styles.knobLabel, gridColumn: '7 / 8' }}>CONTROL</div>
-      <div style={{ ...styles.knobLabel, gridColumn: '8 / 10' }}>DISPLAY</div>
-      <div style={{ ...styles.knobLabel, gridColumn: '10 / 11' }}>OVERFLOW</div>
-      <div style={{ ...styles.knobLabel, gridColumn: '11 / 12' }}>ERROR</div>
+      <div className={cn(styles.knobLabel, styles.programmed)}>PROGRAMMED</div>
+      <div className={cn(styles.knobLabel, styles.halfCycle)}>HALF CYCLE</div>
+      <div className={cn(styles.knobLabel, styles.addressSelection)}>ADDRESS SELECTION</div>
+      <div className={cn(styles.knobLabel, styles.control)}>CONTROL</div>
+      <div className={cn(styles.knobLabel, styles.display)}>DISPLAY</div>
+      <div className={cn(styles.knobLabel, styles.overflow)}>OVERFLOW</div>
+      <div className={cn(styles.knobLabel, styles.error)}>ERROR</div>
     </div>
   );
 };

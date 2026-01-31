@@ -1,0 +1,50 @@
+.finalKnobsRow {
+  grid-column: 1 / 12;
+  display: grid;
+  grid-template-columns: subgrid;
+  grid-template-rows: auto auto;
+  background-color: #002244;
+  padding: 12px;
+  gap: 12px;
+  align-items: end;
+}
+
+.knobLabel {
+  color: white;
+  font-size: 11px;
+  font-weight: bold;
+  text-align: center;
+
+  &.programmed {
+    grid-column: 1 / 2;
+  }
+
+  &.halfCycle {
+    grid-column: 2 / 3;
+  }
+
+  &.addressSelection {
+    grid-column: 3 / 7;
+    letter-spacing: 0.6em;
+  }
+
+  &.control {
+    grid-column: 7 / 8;
+  }
+
+  &.display {
+    grid-column: 8 / 10;
+  }
+
+  &.overflow {
+    grid-column: 10 / 11;
+  }
+
+  &.error {
+    grid-column: 11 / 12;
+  }
+}
+
+.displayKnob {
+  grid-column: span 2;
+}

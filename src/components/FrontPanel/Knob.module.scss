@@ -1,0 +1,145 @@
+/* Shared Knob styles */
+.knobContainer {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  min-width: 85px;
+}
+
+.knobWrapper {
+  position: relative;
+}
+
+.knobHalf {
+  position: absolute;
+  top: 0;
+  width: 50%;
+  height: 100%;
+  z-index: 1;
+}
+
+.knobHalfLeft {
+  left: 0;
+}
+
+.knobHalfRight {
+  right: 0;
+}
+
+/* DecimalKnob specific styles */
+.decimalKnobContainer {
+  height: 74.8px;
+  justify-content: flex-end;
+}
+
+.decimalDisplayWrapper {
+  position: relative;
+}
+
+.decimalKnobWrapper {
+  width: 48px;
+  height: 48px;
+  transform: scale(1.1);
+}
+
+.decimalDisplay {
+  background-color: #1a1a1a;
+  color: white;
+  font-size: 12px;
+  font-weight: bold;
+  padding: 2px 6px;
+  border-radius: 2px;
+  min-width: 16px;
+  text-align: center;
+  border: 1px solid #333;
+  cursor: pointer;
+}
+
+.decimalPopup {
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: row;
+  background-color: #2a2a2a;
+  border: 1px solid #555;
+  border-radius: 4px;
+  padding: 4px;
+  gap: 2px;
+  z-index: 100;
+  margin-top: 2px;
+}
+
+.decimalPopupDigit {
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #1a1a1a;
+  color: white;
+  font-size: 12px;
+  font-weight: bold;
+  border-radius: 2px;
+  cursor: pointer;
+  border: 1px solid #333;
+}
+
+.decimalPopupDigitSelected {
+  background-color: #444;
+}
+
+.decimalIncCursor {
+  cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 18 18'%3E%3Cpath d='M9 3v12M3 9h12' stroke='black' stroke-width='4.5' fill='none'/%3E%3Cpath d='M9 3v12M3 9h12' stroke='white' stroke-width='3' fill='none'/%3E%3C/svg%3E") 12 12, pointer;
+}
+
+.decimalDecCursor {
+  cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 18 18'%3E%3Cpath d='M3 9h12' stroke='black' stroke-width='4.5' fill='none'/%3E%3Cpath d='M3 9h12' stroke='white' stroke-width='3' fill='none'/%3E%3C/svg%3E") 12 12, pointer;
+}
+
+
+/* LabeledKnob specific styles */
+.labeledKnobInnerContainer {
+  position: relative;
+  width: 90.574px;
+  height: 74.8px;
+}
+
+.labeledKnobLabel {
+  position: absolute;
+  color: white;
+  font-size: 10px;
+  font-family: monospace;
+  font-weight: bold;
+  transform: translate(-50%, -50%);
+  text-align: center;
+  max-width: 60px;
+  cursor: pointer;
+}
+
+.labeledKnobWrapper {
+  position: absolute;
+  width: 48px;
+  height: 48px;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%) scale(1.1);
+}
+
+.labeledKnobTickmark {
+  position: absolute;
+  width: 2px;
+  height: 6px;
+  background-color: white;
+  border-radius: 1px;
+}
+
+.labeledCwCursor {
+  cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpath d='M18 12 A6 6 0 0 1 12 18 A6 6 0 0 1 6 12 A6 6 0 0 1 12 6 M12 3.17 L16.86 6 L12 8.83 Z' stroke='black' stroke-width='5' fill='none'/%3E%3Cpath d='M18 12 A6 6 0 0 1 12 18 A6 6 0 0 1 6 12 A6 6 0 0 1 12 6 M12 3.17 L16.86 6 L12 8.83 Z' stroke='white' stroke-width='3' fill='none'/%3E%3C/svg%3E") 12 12, pointer;
+}
+
+.labeledCcwCursor {
+  cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpath d='M6 12 A6 6 0 0 0 12 18 A6 6 0 0 0 18 12 A6 6 0 0 0 12 6 M12 8.83 L7.14 6 L12 3.17 Z' stroke='black' stroke-width='5' fill='none'/%3E%3Cpath d='M6 12 A6 6 0 0 0 12 18 A6 6 0 0 0 18 12 A6 6 0 0 0 12 6 M12 8.83 L7.14 6 L12 3.17 Z' stroke='white' stroke-width='3' fill='none'/%3E%3C/svg%3E") 12 12, pointer;
+}

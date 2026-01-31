@@ -1,0 +1,21 @@
+@import 'common';
+
+.addressDisplay {
+  @include panel-section;
+  grid-column: 3 / 7;
+  grid-template-rows: auto 1fr;
+}
+
+.title {
+  grid-column: span 4;
+  text-align: center;
+  color: white;
+  font-size: 10px;
+  font-weight: bold;
+  letter-spacing: 2.4em;
+  padding-left: 2.4em;
+}
+
+.cell {
+  @include centered-cell;
+}

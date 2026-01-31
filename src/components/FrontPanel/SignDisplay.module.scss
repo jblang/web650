@@ -1,0 +1,26 @@
+@import 'common';
+
+.container {
+  display: inline-grid;
+  grid-template-columns: auto auto;
+  gap: 4px 4px;
+  align-items: center;
+  font-size: 14px;
+}
+
+.bulb {
+  @include bulb;
+
+  &.hidden {
+    visibility: hidden;
+  }
+}
+
+.sign {
+  text-align: center;
+  color: white;
+
+  &.hidden {
+    visibility: hidden;
+  }
+}

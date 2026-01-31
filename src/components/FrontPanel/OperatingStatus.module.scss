@@ -1,0 +1,54 @@
+@import 'common';
+
+.operatingBox {
+  grid-column: 7 / 10;
+  display: grid;
+  grid-template-columns: subgrid;
+  grid-template-rows: auto 1fr;
+  background-color: transparent;
+  padding: 12px;
+  gap: 12px;
+}
+
+.operatingTitle {
+  grid-column: span 3;
+  text-align: center;
+  color: #002244;
+  font-size: 10px;
+  font-weight: bold;
+  letter-spacing: 1.2em;
+  padding-left: 1.2em;
+}
+
+.ledColumn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.ledUnit {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.bulb {
+  @include bulb;
+}
+
+.ledLabel {
+  color: #002244;
+  font-size: 8px;
+  font-weight: bold;
+  white-space: nowrap;
+}
+
+.columnContainer {
+  grid-column: span 3;
+  display: grid;
+  grid-template-columns: subgrid;
+  gap: 12px;
+  padding-top: 12px;
+}

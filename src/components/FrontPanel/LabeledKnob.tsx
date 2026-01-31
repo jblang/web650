@@ -1,6 +1,7 @@
 import React from 'react';
 import { Knob } from './Knob';
-import './Knob.scss';
+import styles from './Knob.module.scss';
+import cn from 'classnames';
 
 interface KnobPosition {
   label: string;
@@ -11,15 +12,11 @@ interface LabeledKnobProps {
   position: number; // The index of the current position
   positions: KnobPosition[];
   onChange?: (position: number) => void;
-  style?: React.CSSProperties;
+  className?: string;
   labelRadius?: number;
 }
 
-// SVG cursors for clockwise and counter-clockwise rotation
-const cwCursor = `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpath d='M18 12 A6 6 0 0 1 12 18 A6 6 0 0 1 6 12 A6 6 0 0 1 12 6 M12 3.17 L16.86 6 L12 8.83 Z' stroke='black' stroke-width='5' fill='none'/%3E%3Cpath d='M18 12 A6 6 0 0 1 12 18 A6 6 0 0 1 6 12 A6 6 0 0 1 12 6 M12 3.17 L16.86 6 L12 8.83 Z' stroke='white' stroke-width='3' fill='none'/%3E%3C/svg%3E") 12 12, pointer`;
-const ccwCursor = `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpath d='M6 12 A6 6 0 0 0 12 18 A6 6 0 0 0 18 12 A6 6 0 0 0 12 6 M12 8.83 L7.14 6 L12 3.17 Z' stroke='black' stroke-width='5' fill='none'/%3E%3Cpath d='M6 12 A6 6 0 0 0 12 18 A6 6 0 0 0 18 12 A6 6 0 0 0 12 6 M12 8.83 L7.14 6 L12 3.17 Z' stroke='white' stroke-width='3' fill='none'/%3E%3C/svg%3E") 12 12, pointer`;
-
-const LabeledKnob: React.FC<LabeledKnobProps> = ({ position, positions, onChange, style, labelRadius }) => {
+const LabeledKnob: React.FC<LabeledKnobProps> = ({ position, positions, onChange, className, labelRadius }) => {
   const rotation = positions[position]?.angle ?? 0;
 
   const handleLeftClick = () => {
@@ -47,8 +44,8 @@ const LabeledKnob: React.FC<LabeledKnobProps> = ({ position, positions, onChange
   const showTickmarks = positions.length > 2;
 
   return (
-    <div className="knob-container labeled-knob" style={style}>
-      <div className="knob-inner-container" style={{ width: `${scaledContainerWidth}px`, height: `${scaledContainerHeight}px` }}>
+    <div className={cn(styles.knobContainer, className)}>
+      <div className={styles.labeledKnobInnerContainer} style={{ width: `${scaledContainerWidth}px`, height: `${scaledContainerHeight}px` }}>
         {positions.map((p, i) => {
           const angleRad = (p.angle - 90) * (Math.PI / 180);
           const x = Math.round(centerX + currentRadius * Math.cos(angleRad));
@@ -57,7 +54,7 @@ const LabeledKnob: React.FC<LabeledKnobProps> = ({ position, positions, onChange
           return (
             <span
               key={i}
-              className="label"
+              className={styles.labeledKnobLabel}
               style={{ top: `${y}px`, left: `${x}px` }}
               onClick={() => onChange?.(i)}
             >
@@ -73,7 +70,7 @@ const LabeledKnob: React.FC<LabeledKnobProps> = ({ position, positions, onChange
           return (
             <div
               key={`tick-${i}`}
-              className="tickmark"
+              className={styles.labeledKnobTickmark}
               style={{
                 top: `${y.toFixed(2)}px`,
                 left: `${x.toFixed(2)}px`,
@@ -82,17 +79,15 @@ const LabeledKnob: React.FC<LabeledKnobProps> = ({ position, positions, onChange
             />
           );
         })}
-        <div className="knob-wrapper">
+        <div className={cn(styles.knobWrapper, styles.labeledKnobWrapper)}>
           <Knob rotation={rotation} />
           <div
-            className="knob-half"
-            style={{ left: 0, cursor: ccwCursor }}
+            className={cn(styles.knobHalf, styles.knobHalfLeft, styles.labeledCcwCursor)}
             onClick={handleLeftClick}
             title="CCW"
           />
           <div
-            className="knob-half"
-            style={{ right: 0, cursor: cwCursor }}
+            className={cn(styles.knobHalf, styles.knobHalfRight, styles.labeledCwCursor)}
             onClick={handleRightClick}
             title="CW"
           />
