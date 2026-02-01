@@ -42,6 +42,47 @@ npm run dev
 
 Open [http://localhost:3000](http://localhost:3000) with your browser to access the UI.
 
+## Testing
+
+The project includes comprehensive test coverage:
+
+### Unit Tests
+
+The codebase includes unit tests for utility functions and React components. Run them with:
+
+```bash
+npm test
+```
+
+### Integration Tests
+
+The i650 WASM module has a full integration test suite that runs in Node.js:
+
+```bash
+npm test -- __tests__
+```
+
+The integration tests cover:
+- SIMH command execution (EXAMINE, DEPOSIT, RESET, etc.)
+- Memory read/write operations across all configurations (1K, 2K, 4K)
+- Register operations (AR, PR, DIST, ACCLO, ACCUP, CSW)
+- CPU instruction execution via the step() function
+- Special register-mapped memory addresses (8000-8003)
+- Full program loading and execution
+- The complete SIMH i650 test suite
+
+To run a specific test file:
+
+```bash
+npm test -- i650-test-suite.integration.test.ts
+```
+
+To generate a coverage report:
+
+```bash
+npm test -- --coverage
+```
+
 ## About the IBM 650
 
 The [IBM 650](https://en.wikipedia.org/wiki/IBM_650) (wikipedia.org) is an early digital computer released by IBM in 1954. It was one of the first mass-produced computers in the world (at a time when just under 2000 was considered mass-produced).

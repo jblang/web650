@@ -22,6 +22,10 @@ export function getModule(): EmscriptenModule {
   return Module;
 }
 
+export function setModule(module: EmscriptenModule): void {
+  Module = module;
+}
+
 export function resetModule(): void {
   Module = null;
 }
@@ -38,7 +42,7 @@ let outputCallback: ((text: string) => void) | null = null;
  * output callback is suppressed.  Otherwise lines flow to the callback
  * (used during tick-loop execution for device I/O).
  */
-function handleOutput(text: string) {
+export function handleOutput(text: string) {
   if (captureBuffer !== null) {
     captureBuffer.push(text);
   } else {
