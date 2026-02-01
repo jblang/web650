@@ -18,7 +18,7 @@ Note: Coverage numbers above reflect only files exercised by existing tests. Key
 
 | # | Severity | Issue | Section |
 |---|----------|-------|---------|
-| 1 | **High** | Monolithic context causes excessive re-renders | [1](#1-monolithic-emulatorprovider-context-high) |
+| 1 | ~~**High**~~ | ~~Monolithic context causes excessive re-renders~~ ✅ | [1](#1-monolithic-emulatorprovider-context-high--resolved) |
 | 2 | **High** | Accessibility gaps across the front panel | [2](#2-accessibility-gaps-high) |
 | 3 | **Medium** | Missing React.memo and useMemo optimizations | [3](#3-missing-memoization-medium) |
 | 4 | **Medium** | Error handling inconsistencies | [4](#4-error-handling-inconsistencies-medium) |
@@ -32,15 +32,21 @@ Note: Coverage numbers above reflect only files exercised by existing tests. Key
 
 ## Detailed Findings
 
-### 1. Monolithic EmulatorProvider Context (High)
+### 1. ~~Monolithic EmulatorProvider Context~~ (High) ✅ **RESOLVED**
 
-`EmulatorProvider.tsx` is a single context provider managing all emulator state: registers, console output, configuration switches, breakpoints, and control actions. Every state change re-renders every consumer.
+**Status:** Fixed in commit [pending]. `EmulatorProvider.tsx` now uses three separate contexts to eliminate unnecessary re-renders.
 
-**Specific issues:**
-- The `useMemo` dependency array is so long it effectively re-creates on nearly every render.
-- `operatingState` and `checkingState` are initialized with `useState` but their setters are never called — they are effectively static constants wrapped in state. `Object.freeze({ ...operatingState })` creates a new reference each `useMemo` evaluation.
+**Changes made:**
+- Split monolithic context into three focused contexts:
+  - `EmulatorConsoleContext` — console output and commands (changes frequently during execution)
+  - `EmulatorStateContext` — registers, switches, and derived values (changes when registers update)
+  - `EmulatorActionsContext` — stable callback references
+- Converted `operatingState` and `checkingState` from `useState` to module-level frozen constants (`INITIAL_OPERATING_STATE`, `INITIAL_CHECKING_STATE`)
+- Split massive `useMemo` into three separate ones with focused dependency arrays
+- Created three hooks: `useEmulatorConsole()`, `useEmulatorState()`, `useEmulatorActions()`
+- Updated consumers: `EmulatorConsole.tsx` uses `useEmulatorConsole()`, `useFrontPanelControls.ts` uses `useEmulatorState()` + `useEmulatorActions()`
 
-**Recommendation:** Split into multiple focused contexts (e.g., `EmulatorStateContext`, `EmulatorActionsContext`, `EmulatorConsoleContext`). Convert static state to module-level constants.
+**Impact:** Console output changes no longer re-render the front panel. Register changes no longer re-render the console. Static state no longer creates new object references on every render.
 
 ---
 

@@ -31,11 +31,11 @@ vi.mock('@carbon/icons-react', () => ({
   Send: () => null,
 }));
 
-// Mock useEmulator to control output and capture sends
+// Mock useEmulatorConsole to control output and capture sends
 const sendCommand = vi.fn(async () => '');
 let outputValue = 'hello\n';
 vi.mock('./EmulatorProvider', () => ({
-  useEmulator: () => ({
+  useEmulatorConsole: () => ({
     output: outputValue,
     sendCommand,
   }),

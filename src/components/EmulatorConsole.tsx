@@ -9,12 +9,12 @@ import {
   Stack,
 } from '@carbon/react';
 import { Send } from '@carbon/icons-react';
-import { useEmulator } from './EmulatorProvider';
+import { useEmulatorConsole } from './EmulatorProvider';
 
 export default function EmulatorConsole() {
   const [command, setCommand] = useState('');
   const [sending, setSending] = useState(false);
-  const { output, sendCommand } = useEmulator();
+  const { output, sendCommand } = useEmulatorConsole();
   const textAreaRef = useRef<HTMLTextAreaElement>(null);
   const commandInputRef = useRef<HTMLInputElement>(null);
 

@@ -34,21 +34,43 @@ function getDisplayValue(
   }
 }
 
-interface EmulatorContextType {
-  initialized: boolean;
+// Static state constants - frozen at module level
+export const INITIAL_OPERATING_STATE: OperatingState = Object.freeze({
+  dataAddress: false,
+  program: false,
+  inputOutput: false,
+  inquiry: false,
+  ramac: false,
+  magneticTape: false,
+  instAddress: false,
+  accumulator: false,
+  overflow: false,
+});
+
+export const INITIAL_CHECKING_STATE: CheckingState = Object.freeze({
+  programRegister: false,
+  controlUnit: false,
+  storageSelection: false,
+  storageUnit: false,
+  distributor: false,
+  clocking: false,
+  accumulator: false,
+  errorSense: false,
+});
+
+// Context 1: Console output and commands (changes frequently during execution)
+interface EmulatorConsoleContextType {
   output: string;
   sendCommand: (command: string) => Promise<string>;
-  // Derived display value (kept in provider)
-  displayValue: string;
-  operation: string;
-  operatingState: OperatingState;
-  checkingState: CheckingState;
-  // Panel-only state (not backed by emulator registers)
+}
+
+// Context 2: Emulator state (registers, switches, derived values)
+interface EmulatorStateContextType {
+  initialized: boolean;
   displaySwitch: number;
   controlSwitch: number;
   errorSwitch: number;
   addressSwitches: string;
-  // Emulator register snapshot (maintained locally)
   addressRegister: string;
   programRegister: string;
   lowerAccumulator: string;
@@ -58,8 +80,13 @@ interface EmulatorContextType {
   programmedStop: boolean;
   overflowStop: boolean;
   halfCycle: boolean;
+  displayValue: string;
+  operation: string;
+}
+
+// Context 3: Actions and callbacks (stable references)
+interface EmulatorActionsContextType {
   refreshRegisters: () => Promise<void>;
-  // Front panel handlers (business logic)
   onDisplayChange: (value: number) => void;
   onAddressChange: (value: string) => Promise<void>;
   onProgrammedChange: (value: number) => Promise<void>;
@@ -79,12 +106,30 @@ interface EmulatorContextType {
   onEmulatorResetClick: () => Promise<void>;
 }
 
-const EmulatorContext = createContext<EmulatorContextType | null>(null);
+const EmulatorConsoleContext = createContext<EmulatorConsoleContextType | null>(null);
+const EmulatorStateContext = createContext<EmulatorStateContextType | null>(null);
+const EmulatorActionsContext = createContext<EmulatorActionsContextType | null>(null);
 
-export function useEmulator() {
-  const context = useContext(EmulatorContext);
+export function useEmulatorConsole() {
+  const context = useContext(EmulatorConsoleContext);
   if (!context) {
-    throw new Error('useEmulator must be used within an EmulatorProvider');
+    throw new Error('useEmulatorConsole must be used within an EmulatorProvider');
+  }
+  return context;
+}
+
+export function useEmulatorState() {
+  const context = useContext(EmulatorStateContext);
+  if (!context) {
+    throw new Error('useEmulatorState must be used within an EmulatorProvider');
+  }
+  return context;
+}
+
+export function useEmulatorActions() {
+  const context = useContext(EmulatorActionsContext);
+  if (!context) {
+    throw new Error('useEmulatorActions must be used within an EmulatorProvider');
   }
   return context;
 }
@@ -105,27 +150,6 @@ export default function EmulatorProvider({ children }: { children: ReactNode }) 
   const [displayValue, setDisplayValue] = useState<string>(ZERO_DATA);
   const [isRunning, setIsRunning] = useState<boolean>(false);
   const [operation, setOperation] = useState<string>(ZERO_OPERATION);
-  const [operatingState] = useState<OperatingState>({
-    dataAddress: false,
-    program: false,
-    inputOutput: false,
-    inquiry: false,
-    ramac: false,
-    magneticTape: false,
-    instAddress: false,
-    accumulator: false,
-    overflow: false,
-  });
-  const [checkingState] = useState<CheckingState>({
-    programRegister: false,
-    controlUnit: false,
-    storageSelection: false,
-    storageUnit: false,
-    distributor: false,
-    clocking: false,
-    accumulator: false,
-    errorSense: false,
-  });
   // Panel-only switch state (not backed by emulator registers)
   const [displaySwitch, setDisplaySwitch] = useState<number>(0);
   const [controlSwitch, setControlSwitch] = useState<number>(0);
@@ -357,9 +381,18 @@ export default function EmulatorProvider({ children }: { children: ReactNode }) 
 
   const onCheatClick = useCallback(() => {}, []);
 
-  const value = useMemo(
+  // Context 1: Console (changes frequently)
+  const consoleValue = useMemo(
     () => ({
       output,
+      sendCommand,
+    }),
+    [output, sendCommand]
+  );
+
+  // Context 2: State (changes when registers/switches change)
+  const stateValue = useMemo(
+    () => ({
       initialized,
       displaySwitch,
       controlSwitch,
@@ -376,12 +409,31 @@ export default function EmulatorProvider({ children }: { children: ReactNode }) 
       halfCycle,
       displayValue,
       operation,
-      // expose frozen copies so consumers can't mutate internal state objects
-      operatingState: Object.freeze({ ...operatingState }),
-      checkingState: Object.freeze({ ...checkingState }),
+    }),
+    [
+      initialized,
+      displaySwitch,
+      controlSwitch,
+      errorSwitch,
+      addressSwitches,
+      addressRegister,
+      programRegister,
+      lowerAccumulator,
+      upperAccumulator,
+      distributor,
+      consoleSwitches,
+      programmedStop,
+      overflowStop,
+      halfCycle,
+      displayValue,
+      operation,
+    ]
+  );
+
+  // Context 3: Actions (stable callbacks)
+  const actionsValue = useMemo(
+    () => ({
       refreshRegisters,
-      // API actions (wrapped to keep local state in sync)
-      sendCommand,
       onDisplayChange,
       onAddressChange,
       onProgrammedChange,
@@ -401,26 +453,6 @@ export default function EmulatorProvider({ children }: { children: ReactNode }) 
       onEmulatorResetClick,
     }),
     [
-      sendCommand,
-      output,
-      initialized,
-      displaySwitch,
-      controlSwitch,
-      errorSwitch,
-      addressSwitches,
-      addressRegister,
-      programRegister,
-      lowerAccumulator,
-      upperAccumulator,
-      distributor,
-      consoleSwitches,
-      programmedStop,
-      overflowStop,
-      halfCycle,
-      displayValue,
-      operation,
-      operatingState,
-      checkingState,
       refreshRegisters,
       onDisplayChange,
       onAddressChange,
@@ -468,8 +500,12 @@ export default function EmulatorProvider({ children }: { children: ReactNode }) 
   }, [refreshRegisters]);
 
   return (
-    <EmulatorContext.Provider value={value}>
-      {children}
-    </EmulatorContext.Provider>
+    <EmulatorConsoleContext.Provider value={consoleValue}>
+      <EmulatorStateContext.Provider value={stateValue}>
+        <EmulatorActionsContext.Provider value={actionsValue}>
+          {children}
+        </EmulatorActionsContext.Provider>
+      </EmulatorStateContext.Provider>
+    </EmulatorConsoleContext.Provider>
   );
 }

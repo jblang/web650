@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { useEmulator } from '../EmulatorProvider';
+import { useEmulatorState, useEmulatorActions, INITIAL_OPERATING_STATE, INITIAL_CHECKING_STATE } from '../EmulatorProvider';
 import { OperatingState } from './OperatingStatus';
 import { CheckingState } from './CheckingStatus';
 import { Programmed, HalfCycle, Overflow } from './ConfigSection';
@@ -7,12 +7,21 @@ import { Programmed, HalfCycle, Overflow } from './ConfigSection';
 export const useFrontPanelControls = () => {
   const {
     initialized,
-    refreshRegisters,
     displayValue,
     displaySwitch,
     controlSwitch,
     errorSwitch,
     addressSwitches,
+    addressRegister,
+    operation,
+    consoleSwitches,
+    programmedStop,
+    halfCycle,
+    overflowStop,
+  } = useEmulatorState();
+
+  const {
+    refreshRegisters,
     onDisplayChange,
     onAddressChange,
     onProgrammedChange,
@@ -30,18 +39,10 @@ export const useFrontPanelControls = () => {
     onHelpClick,
     onCheatClick,
     onEmulatorResetClick,
-    addressRegister,
-    operation,
-    consoleSwitches,
-    programmedStop,
-    halfCycle,
-    overflowStop,
-    operatingState,
-    checkingState,
-  } = useEmulator();
+  } = useEmulatorActions();
 
-  const operatingLights: OperatingState = operatingState;
-  const checkingLights: CheckingState = checkingState;
+  const operatingLights: OperatingState = INITIAL_OPERATING_STATE;
+  const checkingLights: CheckingState = INITIAL_CHECKING_STATE;
 
   // Ensure front panel reflects emulator state when loaded or when display knob changes.
   useEffect(() => {
