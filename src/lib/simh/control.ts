@@ -77,14 +77,16 @@ export function stopRunning(): void {
 }
 
 /** Reload the WASM module from scratch (full restart). */
-export async function restart(): Promise<void> {
+export async function restart(moduleName: string): Promise<void> {
   stopRunning();
 
-  const oldScript = document.querySelector('script[src="/i650.js"]');
+  const scriptPath = `/${moduleName}.js`;
+  const oldScript = document.querySelector(`script[src="${scriptPath}"]`);
   if (oldScript) oldScript.remove();
 
-  delete (window as unknown as Record<string, unknown>).createI650Module;
+  const moduleKey = `create${moduleName.charAt(0).toUpperCase() + moduleName.slice(1)}Module`;
+  delete (window as unknown as Record<string, unknown>)[moduleKey];
 
   resetModule();
-  await init();
+  await init(moduleName);
 }

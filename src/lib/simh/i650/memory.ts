@@ -1,11 +1,12 @@
 /**
- * Memory operations and validation helpers.
+ * I650-specific memory operations and validation helpers.
  */
 
-import { examineState, depositState } from './core';
+import { examineState, depositState } from '../core';
 import { ZERO_DATA } from './constants';
+import { normalizeAddress } from './format';
 
-/* ── Validation helpers ───────────────────────────────────────── */
+/* ── I650 Validation Helpers ──────────────────────────────────── */
 
 /**
  * Validates that a value matches the expected I650 word format:
@@ -36,19 +37,36 @@ export function validateAddress(value: string, fieldName: string): void {
   }
 }
 
-/* ── Extraction helpers ───────────────────────────────────────── */
+/* ── I650 Extraction Helpers (re-exported from format) ─────────── */
+
+// Re-export extraction functions from format module for backwards compatibility
+export { extractOperationCode, extractDataAddress, extractInstructionAddress } from './format';
 
 /**
- * Extract the operation code from a program register word.
- * The operation code is the first 2 digits of the 10-digit word.
- * @param word - 10-digit word with sign (e.g., "0000000000+")
- * @returns 2-digit operation code (e.g., "00")
+ * Post-process parsed key-value pairs for I650-specific formats.
+ * AR is stored as a 16-bit int (5 digits); physical register is 4 digits.
  */
-export function extractOperationCode(word: string): string {
-  return word.slice(0, 2);
+export function postProcessI650Values(values: Record<string, string>): Record<string, string> {
+  const result = { ...values };
+  for (const [key, val] of Object.entries(result)) {
+    // AR is stored as a 16-bit int (5 digits); physical register is 4 digits.
+    if (/^\d{5}$/.test(val)) {
+      result[key] = normalizeAddress(val);
+    }
+  }
+  return result;
 }
 
-/* ── Memory operations ────────────────────────────────────────── */
+/**
+ * EXAMINE a register or address with I650-specific post-processing.
+ * Returns parsed key-value pairs.
+ */
+export function examineI650State(ref: string): Record<string, string> {
+  const raw = examineState(ref);
+  return postProcessI650Values(raw);
+}
+
+/* ── I650 Memory Operations ───────────────────────────────────── */
 
 /**
  * Read a word from drum memory at the specified address.
@@ -57,7 +75,7 @@ export function extractOperationCode(word: string): string {
  */
 export function readMemory(address: string): string {
   validateAddress(address, 'Memory address');
-  const result = examineState(address);
+  const result = examineI650State(address);
   // Try different formats that SIMH might return
   const numeric = String(parseInt(address, 10));
   return (

@@ -8,6 +8,7 @@ import EntrySection from './EntrySection';
 import ConfigSection from './ConfigSection';
 import ControlSection from './ControlSection';
 import styles from './FrontPanel.module.scss';
+import type { DisplayPosition, ControlPosition, ErrorSwitchPosition } from '@/lib/simh';
 
 export const litBulb = '🟡';
 export const unlitBulb = '⚫';
@@ -23,20 +24,20 @@ export interface FrontPanelProps {
   programmed: number;
   halfCycle: number;
   addressSelection: string;
-  control: number;
-  display: number;
+  control: ControlPosition;
+  display: DisplayPosition;
   overflow: number;
-  error: number;
+  error: ErrorSwitchPosition;
 
   // Callbacks for user interactions
   onEntryValueChange: (value: string) => void;
   onProgrammedChange: (value: number) => void;
   onHalfCycleChange: (value: number) => void;
   onAddressChange: (value: string) => void;
-  onControlChange: (value: number) => void;
-  onDisplayChange: (value: number) => void;
+  onControlChange: (value: ControlPosition) => void;
+  onDisplayChange: (value: DisplayPosition) => void;
   onOverflowChange: (value: number) => void;
-  onErrorChange: (value: number) => void;
+  onErrorChange: (value: ErrorSwitchPosition) => void;
 
   // Callbacks for control buttons
   onTransferClick?: () => void;

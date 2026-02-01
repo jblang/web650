@@ -93,11 +93,7 @@ export function parseKeyValues(text: string): Record<string, string> {
     const match = line.match(/^([A-Z0-9]+)\s*[:/]\s+(.*)$/i);
     if (!match) continue;
     const key = match[1].toUpperCase();
-    let val = match[2].trim();
-    // AR is stored as a 16-bit int (5 digits); physical register is 4 digits.
-    if (/^\d{5}$/.test(val)) {
-      val = val.slice(-4);
-    }
+    const val = match[2].trim();
     result[key] = val;
   }
   return result;
@@ -106,16 +102,18 @@ export function parseKeyValues(text: string): Record<string, string> {
 /* ── Public API ───────────────────────────────────────────────── */
 
 /** Initialize the WASM module and SIMH emulator. */
-export async function init(): Promise<void> {
+export async function init(moduleName: string): Promise<void> {
   if (Module) return;
 
-  await loadScript('/i650.js');
+  const scriptPath = `/${moduleName}.js`;
+  await loadScript(scriptPath);
 
-  if (!window.createI650Module) {
-    throw new Error('createI650Module not found — i650.js failed to load');
+  const createModuleFn = (window as unknown as Record<string, unknown>)[`create${moduleName.charAt(0).toUpperCase() + moduleName.slice(1)}Module`];
+  if (typeof createModuleFn !== 'function') {
+    throw new Error(`create${moduleName.charAt(0).toUpperCase() + moduleName.slice(1)}Module not found — ${scriptPath} failed to load`);
   }
 
-  Module = await window.createI650Module({
+  Module = await (createModuleFn as (config: Record<string, unknown>) => Promise<EmscriptenModule>)({
     noInitialRun: true,
     print: (text: string) => handleOutput(text),
     printErr: (text: string) => handleOutput(text),

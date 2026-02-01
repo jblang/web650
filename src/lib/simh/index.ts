@@ -8,36 +8,51 @@
 // Types
 export type { EmscriptenModule } from './types';
 
-// Constants
+// Generic SIMH Constants
 export {
   SCPE_OK,
   SCPE_STEP,
-  ZERO_ADDRESS,
-  ZERO_DATA,
-  ZERO_OPERATION,
   STEPS_PER_TICK,
 } from './constants';
 
-// Core
+// Generic SIMH Core
 export {
-  init,
   sendCommand,
   examineState,
   depositState,
   onOutput,
+  parseKeyValues,
 } from './core';
 
-// Memory
+// Generic SIMH Control
 export {
+  step,
+  stop,
+  isRunning,
+  startRunning,
+  stopRunning,
+} from './control';
+
+// Generic SIMH Filesystem
+export {
+  writeFile,
+  readFile,
+  mkdir,
+  unlink,
+} from './filesystem';
+
+// I650-specific exports (re-export from i650 submodule)
+export {
+  // Constants
+  ZERO_ADDRESS,
+  ZERO_DATA,
+  ZERO_OPERATION,
+  // Memory operations
   readMemory,
   writeMemory,
-  extractOperationCode,
   validateWord,
   validateAddress,
-} from './memory';
-
-// Registers
-export {
+  // Register operations
   examineAllState,
   getAddressRegister,
   setAddressRegister,
@@ -62,22 +77,50 @@ export {
   resetAccumulator,
   reset,
   setMemorySize,
-} from './registers';
+  // Control operations and switch positions
+  Programmed,
+  HalfCycle,
+  Control,
+  Display,
+  Overflow,
+  ErrorSwitch,
+  DisplaySwitch,
+  ControlSwitch,
+  getDisplayValue,
+  performDrumTransfer,
+  isManualOperation,
+  // Formatting and extraction functions
+  normalizeValue,
+  normalizeAddress,
+  extractOperationCode,
+  extractDataAddress,
+  extractInstructionAddress,
+} from './i650';
 
-// Control
-export {
-  step,
-  stop,
-  isRunning,
-  startRunning,
-  stopRunning,
-  restart,
-} from './control';
+// Re-export types
+export type {
+  ProgrammedPosition,
+  HalfCyclePosition,
+  ControlPosition,
+  DisplayPosition,
+  OverflowPosition,
+  ErrorSwitchPosition,
+  DisplaySwitchPosition,
+  ControlSwitchPosition,
+  I650Registers,
+} from './i650/controls';
 
-// Filesystem
-export {
-  writeFile,
-  readFile,
-  mkdir,
-  unlink,
-} from './filesystem';
+// I650-specific wrappers for init and restart (with hardcoded module name and configuration)
+import { init as coreInit } from './core';
+import { restart as coreRestart } from './control';
+import { setMemorySize } from './i650';
+
+export async function init(): Promise<void> {
+  await coreInit('i650');
+  setMemorySize('1K');
+}
+
+export async function restart(): Promise<void> {
+  await coreRestart('i650');
+  setMemorySize('1K');
+}

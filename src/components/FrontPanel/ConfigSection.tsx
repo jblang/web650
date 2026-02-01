@@ -3,6 +3,8 @@ import LabeledKnob from './LabeledKnob';
 import AddressSelection from './AddressSelection';
 import styles from './ConfigSection.module.scss';
 import cn from 'classnames';
+import { Programmed, HalfCycle, Control, Display, Overflow, ErrorSwitch } from '@/lib/simh';
+import type { DisplayPosition, ControlPosition, ErrorSwitchPosition } from '@/lib/simh';
 
 // Knob position configurations
 const STOP_RUN_POS = [{label: 'STOP', angle: -30}, {label: 'RUN', angle: 30}];
@@ -19,64 +21,27 @@ const DISPLAY_POS = [
   {label: 'READ‑IN STORAGE', angle: 90},
 ];
 
-// Programmed switch positions
-export const Programmed = {
-  STOP: 0,
-  RUN: 1,
-} as const;
-
-// Half Cycle switch positions
-export const HalfCycle = {
-  HALF: 0,
-  RUN: 1,
-} as const;
-
-// Control switch positions
-export const Control = {
-  ADDRESS_STOP: 0,
-  RUN: 1,
-  MANUAL_OPERATION: 2,
-} as const;
-
-// Display switch positions
-export const Display = {
-  LOWER_ACCUM: 0,
-  UPPER_ACCUM: 1,
-  DISTRIBUTOR: 2,
-  PROGRAM_REGISTER: 3,
-  READ_OUT_STORAGE: 4,
-  READ_IN_STORAGE: 5,
-} as const;
-
-// Overflow switch positions
-export const Overflow = {
-  STOP: 0,
-  SENSE: 1,
-} as const;
-
-// Error switch positions
-export const Error = {
-  STOP: 0,
-  SENSE: 1,
-} as const;
+// Re-export for backwards compatibility
+export { Programmed, HalfCycle, Control, Display, Overflow };
+export const Error = ErrorSwitch;
 
 interface ConfigSectionProps {
   // Values
   programmed: number;
   halfCycle: number;
   addressSelection: string;
-  control: number;
-  display: number;
+  control: ControlPosition;
+  display: DisplayPosition;
   overflow: number;
-  error: number;
+  error: ErrorSwitchPosition;
   // Handlers
   onProgrammedChange: (value: number) => void;
   onHalfCycleChange: (value: number) => void;
   onAddressChange: (value: string) => void;
-  onControlChange: (value: number) => void;
-  onDisplayChange: (value: number) => void;
+  onControlChange: (value: ControlPosition) => void;
+  onDisplayChange: (value: DisplayPosition) => void;
   onOverflowChange: (value: number) => void;
-  onErrorChange: (value: number) => void;
+  onErrorChange: (value: ErrorSwitchPosition) => void;
 }
 
 const ConfigSection: React.FC<ConfigSectionProps> = ({
@@ -88,10 +53,10 @@ const ConfigSection: React.FC<ConfigSectionProps> = ({
       <LabeledKnob position={programmed} positions={STOP_RUN_POS} onChange={onProgrammedChange} />
       <LabeledKnob position={halfCycle} positions={HALF_RUN_POS} onChange={onHalfCycleChange} />
       <AddressSelection value={addressSelection} onChange={onAddressChange} />
-      <LabeledKnob position={control} positions={CONTROL_POS} onChange={onControlChange} labelRadius={48} />
-      <LabeledKnob position={display} positions={DISPLAY_POS} onChange={onDisplayChange} className={styles.displayKnob} labelRadius={56} />
+      <LabeledKnob position={control} positions={CONTROL_POS} onChange={(pos) => onControlChange(pos as ControlPosition)} labelRadius={48} />
+      <LabeledKnob position={display} positions={DISPLAY_POS} onChange={(pos) => onDisplayChange(pos as DisplayPosition)} className={styles.displayKnob} labelRadius={56} />
       <LabeledKnob position={overflow} positions={OVERFLOW_POS} onChange={onOverflowChange} />
-      <LabeledKnob position={error} positions={ERROR_POS} onChange={onErrorChange} />
+      <LabeledKnob position={error} positions={ERROR_POS} onChange={(pos) => onErrorChange(pos as ErrorSwitchPosition)} />
       <div className={cn(styles.knobLabel, styles.programmed)}>PROGRAMMED</div>
       <div className={cn(styles.knobLabel, styles.halfCycle)}>HALF CYCLE</div>
       <div className={cn(styles.knobLabel, styles.addressSelection)}>ADDRESS SELECTION</div>

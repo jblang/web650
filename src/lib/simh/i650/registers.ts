@@ -1,19 +1,20 @@
 /**
- * Register operations for the I650 emulator.
+ * I650 register operations.
  */
 
-import { examineState, depositState, sendCommand } from './core';
+import { depositState, sendCommand } from '../core';
+import { examineI650State } from './memory';
 import { validateWord, validateAddress } from './memory';
 import { ZERO_ADDRESS, ZERO_DATA } from './constants';
 
-/* ── Register operations ──────────────────────────────────────── */
+/* ── I650 Register Operations ─────────────────────────────────── */
 
 /**
  * Examine all emulator state registers.
  * Returns parsed key-value pairs for all registers.
  */
 export function examineAllState(): Record<string, string> {
-  return examineState('STATE');
+  return examineI650State('STATE');
 }
 
 /**
@@ -21,7 +22,7 @@ export function examineAllState(): Record<string, string> {
  * Returns a 4-digit string (0000-9999).
  */
 export function getAddressRegister(): string {
-  const result = examineState('AR');
+  const result = examineI650State('AR');
   return result.AR ?? ZERO_ADDRESS;
 }
 
@@ -39,7 +40,7 @@ export function setAddressRegister(value: string): void {
  * Returns a 10-digit word with sign (e.g., "0000000000+").
  */
 export function getProgramRegister(): string {
-  const result = examineState('PR');
+  const result = examineI650State('PR');
   return result.PR ?? ZERO_DATA;
 }
 
@@ -57,7 +58,7 @@ export function setProgramRegister(value: string): void {
  * Returns a 10-digit word with sign.
  */
 export function getDistributor(): string {
-  const result = examineState('DIST');
+  const result = examineI650State('DIST');
   return result.DIST ?? ZERO_DATA;
 }
 
@@ -75,7 +76,7 @@ export function setDistributor(value: string): void {
  * Returns a 10-digit word with sign.
  */
 export function getLowerAccumulator(): string {
-  const result = examineState('ACCLO');
+  const result = examineI650State('ACCLO');
   return result.ACCLO ?? ZERO_DATA;
 }
 
@@ -93,7 +94,7 @@ export function setLowerAccumulator(value: string): void {
  * Returns a 10-digit word with sign.
  */
 export function getUpperAccumulator(): string {
-  const result = examineState('ACCUP');
+  const result = examineI650State('ACCUP');
   return result.ACCUP ?? ZERO_DATA;
 }
 
@@ -111,7 +112,7 @@ export function setUpperAccumulator(value: string): void {
  * Returns a 10-digit word with sign.
  */
 export function getConsoleSwitches(): string {
-  const result = examineState('CSW');
+  const result = examineI650State('CSW');
   return result.CSW ?? ZERO_DATA;
 }
 
@@ -129,7 +130,7 @@ export function setConsoleSwitches(value: string): void {
  * Returns true if programmed stop is enabled.
  */
 export function getProgrammedStop(): boolean {
-  const result = examineState('CSWPS');
+  const result = examineI650State('CSWPS');
   return (result.CSWPS?.trim() ?? '0') === '1';
 }
 
@@ -146,7 +147,7 @@ export function setProgrammedStop(value: boolean): void {
  * Returns true if overflow stop is enabled.
  */
 export function getOverflowStop(): boolean {
-  const result = examineState('CSWOS');
+  const result = examineI650State('CSWOS');
   return (result.CSWOS?.trim() ?? '0') === '1';
 }
 
@@ -163,7 +164,7 @@ export function setOverflowStop(value: boolean): void {
  * Returns true if half cycle mode is enabled.
  */
 export function getHalfCycle(): boolean {
-  const result = examineState('HALF');
+  const result = examineI650State('HALF');
   return (result.HALF?.trim() ?? '0') === '1';
 }
 
@@ -180,7 +181,7 @@ export function setHalfCycle(value: boolean): void {
  * Returns true if overflow is set.
  */
 export function getOverflow(): boolean {
-  const result = examineState('OV');
+  const result = examineI650State('OV');
   return (result.OV?.trim() ?? '0') === '1';
 }
 

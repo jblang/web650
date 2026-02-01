@@ -1,38 +1,20 @@
 'use client';
 
 import { createContext, useContext, useState, useEffect, useCallback, ReactNode, useMemo } from 'react';
-import { Display, Control, Programmed, HalfCycle, Overflow } from './FrontPanel/ConfigSection';
+import { Programmed, HalfCycle, Overflow } from './FrontPanel/ConfigSection';
 import type { OperatingState } from './FrontPanel/OperatingStatus';
 import type { CheckingState } from './FrontPanel/CheckingStatus';
 import * as simh from '@/lib/simh';
-import { ZERO_ADDRESS, ZERO_DATA, ZERO_OPERATION, extractOperationCode } from '@/lib/simh';
-
-// Maps display switch position to the register string shown on the lights.
-function getDisplayValue(
-  displaySwitch: number,
-  regs: {
-    lowerAccumulator: string;
-    upperAccumulator: string;
-    distributor: string;
-    programRegister: string;
-  }
-): string {
-  switch (displaySwitch) {
-    case Display.LOWER_ACCUM:
-      return regs.lowerAccumulator;
-    case Display.UPPER_ACCUM:
-      return regs.upperAccumulator;
-    case Display.DISTRIBUTOR:
-      return regs.distributor;
-    case Display.PROGRAM_REGISTER:
-      return regs.programRegister;
-    case Display.READ_OUT_STORAGE:
-    case Display.READ_IN_STORAGE:
-      return regs.distributor;
-    default:
-      return ZERO_DATA;
-  }
-}
+import {
+  ZERO_ADDRESS,
+  ZERO_DATA,
+  ZERO_OPERATION,
+  extractOperationCode,
+  getDisplayValue,
+  performDrumTransfer,
+  isManualOperation,
+} from '@/lib/simh';
+import type { DisplayPosition, ControlPosition, ErrorSwitchPosition } from '@/lib/simh';
 
 // Static state constants - frozen at module level
 export const INITIAL_OPERATING_STATE: OperatingState = Object.freeze({
@@ -67,9 +49,9 @@ interface EmulatorConsoleContextType {
 // Context 2: Emulator state (registers, switches, derived values)
 interface EmulatorStateContextType {
   initialized: boolean;
-  displaySwitch: number;
-  controlSwitch: number;
-  errorSwitch: number;
+  displaySwitch: DisplayPosition;
+  controlSwitch: ControlPosition;
+  errorSwitch: ErrorSwitchPosition;
   addressSwitches: string;
   addressRegister: string;
   programRegister: string;
@@ -87,13 +69,13 @@ interface EmulatorStateContextType {
 // Context 3: Actions and callbacks (stable references)
 interface EmulatorActionsContextType {
   refreshRegisters: () => Promise<void>;
-  onDisplayChange: (value: number) => void;
+  onDisplayChange: (value: DisplayPosition) => void;
   onAddressChange: (value: string) => Promise<void>;
   onProgrammedChange: (value: number) => Promise<void>;
   onHalfCycleChange: (value: number) => Promise<void>;
-  onControlChange: (value: number) => void;
+  onControlChange: (value: ControlPosition) => void;
   onOverflowChange: (value: number) => Promise<void>;
-  onErrorChange: (value: number) => void;
+  onErrorChange: (value: ErrorSwitchPosition) => void;
   onEntryValueChange: (value: string) => Promise<void>;
   onTransferClick: () => Promise<void>;
   onProgramStartClick: () => Promise<void>;
@@ -151,9 +133,9 @@ export default function EmulatorProvider({ children }: { children: ReactNode }) 
   const [isRunning, setIsRunning] = useState<boolean>(false);
   const [operation, setOperation] = useState<string>(ZERO_OPERATION);
   // Panel-only switch state (not backed by emulator registers)
-  const [displaySwitch, setDisplaySwitch] = useState<number>(0);
-  const [controlSwitch, setControlSwitch] = useState<number>(0);
-  const [errorSwitch, setErrorSwitch] = useState<number>(0);
+  const [displaySwitch, setDisplaySwitch] = useState<DisplayPosition>(0);
+  const [controlSwitch, setControlSwitch] = useState<ControlPosition>(0);
+  const [errorSwitch, setErrorSwitch] = useState<ErrorSwitchPosition>(0);
   const [addressSwitches, setAddressSwitches] = useState<string>(ZERO_ADDRESS);
 
   /* ── WASM-backed operations ─────────────────────────────────── */
@@ -189,7 +171,6 @@ export default function EmulatorProvider({ children }: { children: ReactNode }) 
     setIsRunning(false);
 
     await simh.restart();
-    simh.setMemorySize('1K');
     await refreshRegisters();
     setInitialized(true);
   }, [refreshRegisters]);
@@ -250,18 +231,16 @@ export default function EmulatorProvider({ children }: { children: ReactNode }) 
   }, [programRegister]);
 
   const handleDrumTransfer = useCallback(async () => {
-    const targetAddress = addressRegister;
+    const result = performDrumTransfer(displaySwitch, addressRegister, consoleSwitches);
 
-    if (displaySwitch === Display.READ_OUT_STORAGE) {
-      const value = simh.readMemory(targetAddress);
-      await setDistributor(value);
-    } else if (displaySwitch === Display.READ_IN_STORAGE) {
-      await setDistributor(consoleSwitches);
-      simh.writeMemory(targetAddress, consoleSwitches);
+    if (result.type === 'read') {
+      await setDistributor(result.value);
+    } else if (result.type === 'write') {
+      await setDistributor(result.value);
     }
   }, [addressRegister, displaySwitch, consoleSwitches, setDistributor]);
 
-  const onDisplayChange = useCallback((value: number) => {
+  const onDisplayChange = useCallback((value: DisplayPosition) => {
     setDisplaySwitch(value);
   }, []);
 
@@ -288,7 +267,7 @@ export default function EmulatorProvider({ children }: { children: ReactNode }) 
     [setHalfCycle]
   );
 
-  const onControlChange = useCallback((value: number) => {
+  const onControlChange = useCallback((value: ControlPosition) => {
     setControlSwitch(value);
   }, []);
 
@@ -300,7 +279,7 @@ export default function EmulatorProvider({ children }: { children: ReactNode }) 
     [setOverflowStop]
   );
 
-  const onErrorChange = useCallback((value: number) => {
+  const onErrorChange = useCallback((value: ErrorSwitchPosition) => {
     setErrorSwitch(value);
   }, []);
 
@@ -324,7 +303,7 @@ export default function EmulatorProvider({ children }: { children: ReactNode }) 
 
   const onProgramStartClick = useCallback(async () => {
     if (isRunning) return;
-    if (controlSwitch === Control.MANUAL_OPERATION) {
+    if (isManualOperation(controlSwitch)) {
       await handleDrumTransfer();
     } else {
       await handleProgramStart();
@@ -367,7 +346,7 @@ export default function EmulatorProvider({ children }: { children: ReactNode }) 
   }, [refreshRegisters]);
 
   const onTransferClick = useCallback(async () => {
-    if (controlSwitch === Control.MANUAL_OPERATION) {
+    if (isManualOperation(controlSwitch)) {
       await setAddressRegister(addressSwitches);
     }
   }, [addressSwitches, controlSwitch, setAddressRegister]);
@@ -483,7 +462,6 @@ export default function EmulatorProvider({ children }: { children: ReactNode }) 
     const initialize = async () => {
       try {
         await simh.init();
-        simh.setMemorySize('1K');
         refreshRegisters();
       } catch (err) {
         const msg = err instanceof Error ? err.message : 'Unknown error';
