@@ -1,7 +1,7 @@
 import React from 'react';
 import DecimalKnob from './DecimalKnob';
 import LabeledKnob from './LabeledKnob';
-import { normalizeValue } from '../../lib/format';
+import { normalizeWord } from '../../lib/format';
 import styles from './EntrySection.module.scss';
 
 const SIGN_POS = [{label: '-', angle: -30}, {label: '+', angle: 30}];
@@ -15,10 +15,10 @@ const EntrySection: React.FC<EntrySectionProps> = ({
   value,
   onChange,
 }) => {
-  const [normalizedValue, setNormalizedValue] = React.useState(() => normalizeValue(value));
+  const [normalizedValue, setNormalizedValue] = React.useState(() => normalizeWord(value));
 
   React.useEffect(() => {
-    setNormalizedValue(normalizeValue(value));
+    setNormalizedValue(normalizeWord(value));
   }, [value]);
 
   // Extract 10 digits and sign (sign is at end: 0000000000+)
@@ -34,14 +34,14 @@ const EntrySection: React.FC<EntrySectionProps> = ({
     const newNumericPart = newNumericPartArray.join('');
 
     const newCanonicalValue = newNumericPart + (isNegative ? '-' : '+');
-    onChange(normalizeValue(newCanonicalValue));
+    onChange(normalizeWord(newCanonicalValue));
   };
 
   // Handler for sign changes
   const handleSignChange = (newSign: number) => {
     const newSignChar = newSign === 0 ? '-' : '+';
     const numericPart = normalizedValue.substring(0, 10);
-    onChange(normalizeValue(numericPart + newSignChar));
+    onChange(normalizeWord(numericPart + newSignChar));
   };
 
   return (

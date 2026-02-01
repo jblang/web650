@@ -37,7 +37,7 @@ describe('Register Integration Tests', () => {
 
   beforeAll(async () => {
     outputCapture = new OutputCapture();
-    await initWasmForNode(outputCapture);
+    await initWasmForNode();
   }, 30000);
 
   afterAll(() => {

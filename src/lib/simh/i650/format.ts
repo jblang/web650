@@ -3,6 +3,31 @@
  */
 
 /**
+ * Validates a value for I650 word format.
+ *
+ * @param value - Value to validate
+ * @throws {TypeError} If value contains invalid characters, multiple signs, or exceeds 10 digits
+ */
+export function validateWord(value: string): void {
+  if (!/^([+-]?\d{1,10}|\d{1,10}[+-]?)$/.test(value)) {
+    throw new TypeError(
+      `Value must contain 1-10 digits and an optional sign before or after (got: ${value})`
+    );
+  }
+}
+
+/**
+ * Validates that a value is a 4-digit address (0000-9999).
+ */
+export function validateAddress(value: string): void {
+  if (!/^0?\d{1,4}$/.test(value)) {
+    throw new TypeError(
+      `Address must be 1-4 digits (got: ${value})`
+    );
+  }
+}
+
+/**
  * Normalizes a value to the I650 10-digit word format with sign.
  *
  * Accepts various input formats:
@@ -16,76 +41,23 @@
  * @returns 10-digit word with sign at end (I650 format)
  * @throws {TypeError} If value contains invalid characters, multiple signs, or exceeds 10 digits
  */
-export function normalizeValue(value: string | number | null | undefined): string {
-  let sign = '+';
-  let numericPart = '';
-
-  if (value === null || value === undefined) {
-    numericPart = '0';
-  } else if (typeof value === 'number') {
-    if (value < 0) {
-      sign = '-';
-    }
-    numericPart = String(Math.abs(value));
-
-    // Validate length for numbers
-    if (numericPart.length > 10) {
-      throw new TypeError(
-        `Value must be at most 10 digits (got ${numericPart.length} digits)`
-      );
-    }
-  } else { // typeof value === 'string'
-    // Empty string is valid (becomes 0)
-    if (value === '') {
-      numericPart = '0';
-    } else {
-      // Check for multiple signs
-      const signCount = (value.match(/[+-]/g) || []).length;
-      if (signCount > 1) {
-        throw new TypeError(
-          `Value can have at most one sign character (got: ${value})`
-        );
-      }
-
-      // Check for sign at the end (emulator format: 0000000000+)
-      if (value.endsWith('+') || value.endsWith('-')) {
-        sign = value[value.length - 1];
-        numericPart = value.substring(0, value.length - 1);
-      // Also accept sign at the beginning for backwards compatibility
-      } else if (value.startsWith('+') || value.startsWith('-')) {
-        sign = value[0];
-        numericPart = value.substring(1);
-      } else {
-        numericPart = value;
-      }
-
-      // Validate numeric part contains only digits (allow empty for lone sign)
-      if (numericPart !== '' && !/^\d+$/.test(numericPart)) {
-        throw new TypeError(
-          `Value must contain only digits and an optional sign (got: ${value})`
-        );
-      }
-
-      // Empty numeric part (lone sign) becomes 0
-      if (numericPart === '') {
-        numericPart = '0';
-      }
-
-      // Validate length
-      if (numericPart.length > 10) {
-        throw new TypeError(
-          `Value must be at most 10 digits (got ${numericPart.length} digits)`
-        );
-      }
-    }
+export function normalizeWord(value: string | number): string {
+  if (typeof value === 'number') {
+    value = String(value);
   }
-
-  // Pad the numeric part to 10 digits from the left
-  // If numericPart is '123', it becomes '0000000123'
-  const paddedNumericPart = numericPart.padStart(10, '0');
-
-  // Return with sign at end (emulator format)
-  return paddedNumericPart + sign;
+  validateWord(value);
+  let sign = '+';
+  let magnitude = '';
+  if (value.endsWith('+') || value.endsWith('-')) {
+    sign = value[value.length - 1];
+    magnitude = value.substring(0, value.length - 1);
+  } else if (value.startsWith('+') || value.startsWith('-')) {
+    sign = value[0];
+    magnitude = value.substring(1);
+  } else {
+    magnitude = value;
+  }
+  return magnitude.padStart(10, '0') + sign;
 }
 
 /**
@@ -99,24 +71,12 @@ export function normalizeValue(value: string | number | null | undefined): strin
  * @param value - Value to normalize
  * @returns 4-digit address (I650 format)
  */
-export function normalizeAddress(value: string | number | null | undefined): string {
-  let numericPart = '';
-
-  if (value === null || value === undefined) {
-    numericPart = '0';
-  } else if (typeof value === 'number') {
-    numericPart = String(Math.abs(value));
-  } else { // typeof value === 'string'
-    // Remove any non-numeric characters
-    numericPart = value.replace(/\D/g, '');
+export function normalizeAddress(value: string | number): string {
+  if (typeof value === 'number') {
+    value = String(value);
   }
-
-  // Pad the numeric part to 4 digits from the left
-  // If numericPart is '123', it becomes '0123'
-  const paddedNumericPart = numericPart.padStart(4, '0');
-
-  // Take only the last 4 digits in case of overflow
-  return paddedNumericPart.slice(-4);
+  validateAddress(value);
+  return value.slice(-4).padStart(4, '0');
 }
 
 /* ── I650 Word Field Extraction ───────────────────────────────── */

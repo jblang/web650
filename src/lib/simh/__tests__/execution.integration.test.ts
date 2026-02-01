@@ -22,7 +22,7 @@ describe('Execution Integration Tests', () => {
 
   beforeAll(async () => {
     outputCapture = new OutputCapture();
-    await initWasmForNode(outputCapture);
+    await initWasmForNode();
   }, 30000);
 
   afterAll(() => {
@@ -113,7 +113,6 @@ describe('Execution Integration Tests', () => {
       setProgramRegister(FIXTURES.NOP_INSTRUCTION);
       setAddressRegister('0000');
 
-      const prBefore = getProgramRegister();
       step(1);
       const prAfter = getProgramRegister();
 

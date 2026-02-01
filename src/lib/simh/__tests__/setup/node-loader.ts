@@ -32,12 +32,9 @@ export class OutputCapture {
 /**
  * Initialize the WASM module for Node.js testing.
  *
- * @param outputCapture Optional OutputCapture instance to capture print/printErr output
  * @returns The initialized Emscripten module
  */
-export async function initWasmForNode(
-  outputCapture?: OutputCapture
-): Promise<EmscriptenModule> {
+export async function initWasmForNode(): Promise<EmscriptenModule> {
   // Check if already initialized
   try {
     return getModule();
@@ -50,12 +47,12 @@ export async function initWasmForNode(
   const publicDir = path.resolve(__dirname, '../../../../../public');
   const modulePath = path.join(publicDir, 'i650.js');
 
-  // eslint-disable-next-line @typescript-eslint/no-var-requires
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
   const createModule = require(modulePath);
 
   // Create the module with Node.js-specific configuration
   // Use handleOutput from core.ts to ensure output capture works correctly
-  const module = (await createModule({
+  const wasmModule = (await createModule({
     noInitialRun: true,
     print: (text: string) => handleOutput(text),
     printErr: (text: string) => handleOutput(text),
@@ -67,16 +64,16 @@ export async function initWasmForNode(
   })) as EmscriptenModule;
 
   // Initialize SIMH
-  const rc = module.ccall('simh_init', 'number', [], []) as number;
+  const rc = wasmModule.ccall('simh_init', 'number', [], []) as number;
   if (rc !== 0) {
     throw new Error(`simh_init failed with code ${rc}`);
   }
 
   // Set the module in core.ts so all API functions can access it
-  setCoreModule(module);
+  setCoreModule(wasmModule);
 
   // Configure drum memory so EXAMINE/DEPOSIT on addresses work
   sendCommand('SET CPU 1K');
 
-  return module;
+  return wasmModule;
 }

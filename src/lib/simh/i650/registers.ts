@@ -4,7 +4,7 @@
 
 import { depositState, sendCommand } from '../core';
 import { examineI650State } from './memory';
-import { validateWord, validateAddress } from './memory';
+import { validateWord, validateAddress } from './format';
 import { ZERO_ADDRESS, ZERO_DATA } from './constants';
 
 /* ── I650 Register Operations ─────────────────────────────────── */
@@ -31,7 +31,7 @@ export function getAddressRegister(): string {
  * @param value - 4-digit address (0000-9999)
  */
 export function setAddressRegister(value: string): void {
-  validateAddress(value, 'Address Register');
+  validateAddress(value);
   depositState('AR', value);
 }
 
@@ -49,7 +49,7 @@ export function getProgramRegister(): string {
  * @param value - 10-digit word with sign (e.g., "0000000000+")
  */
 export function setProgramRegister(value: string): void {
-  validateWord(value, 'Program Register');
+  validateWord(value);
   depositState('PR', value);
 }
 
@@ -67,7 +67,7 @@ export function getDistributor(): string {
  * @param value - 10-digit word with sign
  */
 export function setDistributor(value: string): void {
-  validateWord(value, 'Distributor');
+  validateWord(value);
   depositState('DIST', value);
 }
 
@@ -85,7 +85,7 @@ export function getLowerAccumulator(): string {
  * @param value - 10-digit word with sign
  */
 export function setLowerAccumulator(value: string): void {
-  validateWord(value, 'Lower Accumulator');
+  validateWord(value);
   depositState('ACCLO', value);
 }
 
@@ -103,7 +103,7 @@ export function getUpperAccumulator(): string {
  * @param value - 10-digit word with sign
  */
 export function setUpperAccumulator(value: string): void {
-  validateWord(value, 'Upper Accumulator');
+  validateWord(value);
   depositState('ACCUP', value);
 }
 
@@ -121,7 +121,7 @@ export function getConsoleSwitches(): string {
  * @param value - 10-digit word with sign
  */
 export function setConsoleSwitches(value: string): void {
-  validateWord(value, 'Console Switches');
+  validateWord(value);
   depositState('CSW', value);
 }
 

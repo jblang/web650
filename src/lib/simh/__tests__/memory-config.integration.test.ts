@@ -27,7 +27,7 @@ describe('Memory Configuration Integration Tests', () => {
 
   beforeAll(async () => {
     outputCapture = new OutputCapture();
-    await initWasmForNode(outputCapture);
+    await initWasmForNode();
   }, 30000);
 
   afterAll(() => {
@@ -56,9 +56,8 @@ describe('Memory Configuration Integration Tests', () => {
 
     it('should handle out-of-range addresses gracefully', () => {
       // SIMH returns empty for out-of-range addresses
-      // Our readMemory returns ZERO_DATA for addresses that return empty
       const result = readMemory('1000');
-      expect(result).toBe(FIXTURES.ZERO_WORD);
+      expect(result).toBeUndefined();
     });
   });
 
@@ -79,7 +78,7 @@ describe('Memory Configuration Integration Tests', () => {
 
     it('should handle out-of-range addresses gracefully', () => {
       const result = readMemory('2000');
-      expect(result).toBe(FIXTURES.ZERO_WORD);
+      expect(result).toBeUndefined();
     });
   });
 
@@ -100,7 +99,7 @@ describe('Memory Configuration Integration Tests', () => {
 
     it('should handle out-of-range addresses gracefully', () => {
       const result = readMemory('4000');
-      expect(result).toBe(FIXTURES.ZERO_WORD);
+      expect(result).toBeUndefined();
     });
   });
 
@@ -256,8 +255,8 @@ describe('Memory Configuration Integration Tests', () => {
       expect(readMemory('0100')).toBe(FIXTURES.TEST_WORD_1);
       expect(readMemory('0500')).toBe(FIXTURES.TEST_WORD_2);
 
-      // Out of range returns zeros
-      expect(readMemory('3000')).toBe(FIXTURES.ZERO_WORD);
+      // Out of range returns undefined
+      expect(readMemory('3000')).toBeUndefined();
     });
   });
 
@@ -269,7 +268,7 @@ describe('Memory Configuration Integration Tests', () => {
 
       expect(readMemory('0000')).toBe(FIXTURES.TEST_WORD_1);
       expect(readMemory('0999')).toBe(FIXTURES.TEST_WORD_2);
-      expect(readMemory('1000')).toBe(FIXTURES.ZERO_WORD); // Just beyond range
+      expect(readMemory('1000')).toBeUndefined(); // Just beyond range
     });
 
     it('should handle exact boundary addresses for 2K', () => {
@@ -279,7 +278,7 @@ describe('Memory Configuration Integration Tests', () => {
 
       expect(readMemory('0000')).toBe(FIXTURES.TEST_WORD_1);
       expect(readMemory('1999')).toBe(FIXTURES.TEST_WORD_2);
-      expect(readMemory('2000')).toBe(FIXTURES.ZERO_WORD);
+      expect(readMemory('2000')).toBeUndefined();
     });
 
     it('should handle exact boundary addresses for 4K', () => {
@@ -289,7 +288,7 @@ describe('Memory Configuration Integration Tests', () => {
 
       expect(readMemory('0000')).toBe(FIXTURES.TEST_WORD_1);
       expect(readMemory('3999')).toBe(FIXTURES.TEST_WORD_2);
-      expect(readMemory('4000')).toBe(FIXTURES.ZERO_WORD);
+      expect(readMemory('4000')).toBeUndefined();
     });
   });
 });

@@ -1,7 +1,7 @@
 import React from 'react';
 import BiQuinaryDigit from './BiQuinaryDigit';
 import SignDisplay from './SignDisplay';
-import { normalizeValue } from '../../lib/format';
+import { normalizeWord } from '../../lib/format';
 import styles from './DisplaySection.module.scss';
 
 interface DisplaySectionProps {
@@ -9,7 +9,7 @@ interface DisplaySectionProps {
 }
 
 const DisplaySection: React.FC<DisplaySectionProps> = ({ value }) => {
-  const normalizedValue = normalizeValue(value);
+  const normalizedValue = normalizeWord(value);
   // Extract 10 digits and sign (sign is at end: 0000000000+)
   const sign = normalizedValue.charAt(10) as '+' | '-';
   const digits = normalizedValue.substring(0, 10).split('').map(Number);

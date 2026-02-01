@@ -14,7 +14,7 @@ describe('i650 SIMH Test Suite', () => {
 
   beforeAll(async () => {
     outputCapture = new OutputCapture();
-    await initWasmForNode(outputCapture);
+    await initWasmForNode();
   }, 30000);
 
   afterAll(() => {

@@ -90,7 +90,7 @@ export {
   performDrumTransfer,
   isManualOperation,
   // Formatting and extraction functions
-  normalizeValue,
+  normalizeWord,
   normalizeAddress,
   extractOperationCode,
   extractDataAddress,
