@@ -124,7 +124,7 @@
   height: 48px;
   bottom: 0;
   left: 50%;
-  transform: translateX(-50%) scale(1.1);
+  transform: translateX(calc(-50% - 4px)) scale(1.1);
 }
 
 .labeledKnobTickmark {

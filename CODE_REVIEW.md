@@ -225,7 +225,7 @@ The provider's React logic (register state management, display derivation, contr
 |------|-------|
 | `globals.scss` | 6 uses of `!important` to override Carbon DataTable overflow. `z-index: 9999 !important` will conflict with modals/overlays. |
 | `docs.scss` | Hardcoded dark colors (`#444`, `#333`, `#e0e0e0`, `#e8e8e8`) won't adapt to theme changes. Should use Carbon design tokens. |
-| `Knob.scss` | Hardcoded colors (`#1a1a1a`, `#2a2a2a`, `#333`). Magic pixel values (`74.8px`, `90.574px`) without documentation. |
+| `Knob.scss` | Hardcoded colors (`#1a1a1a`, `#2a2a2a`, `#333`). Magic pixel values (`74.8px`, `90.574px`) without documentation. **Mystery 4px offset:** `.labeledKnobWrapper` requires `translateX(calc(-50% - 4px))` to align with tickmarks despite the math indicating perfect centering. Likely a browser rendering quirk related to the `scale(1.1)` transform, but root cause unclear. Tickmarks are at calculated `centerX = 45.287px`, knob should also center at 45.287px, yet needs -4px adjustment for visual alignment. |
 | `FrontPanel.tsx` | Complex 4-layer gradient background in inline styles is hard to maintain. |
 | `DisplaySection.tsx` | `letterSpacing: '5em'` is extremely fragile — any font size change dramatically alters layout. |
 | `programming/page.tsx` | `paddingBottom: '250px'` magic number, likely a ComboBox overflow workaround. |
