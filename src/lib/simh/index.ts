@@ -58,6 +58,7 @@ export {
   validateAddress,
   // Register operations
   examineAllState,
+  getRegisterSnapshot,
   getAddressRegister,
   setAddressRegister,
   getProgramRegister,

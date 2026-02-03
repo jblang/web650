@@ -1,5 +1,4 @@
 import * as simh from './index';
-import { ZERO_ADDRESS, ZERO_DATA } from './i650/constants';
 
 type RequestMessage = {
   id: number;
@@ -26,21 +25,6 @@ simh.onOutput((text) => {
   ctx.postMessage({ type: 'output', text });
 });
 
-function getRegisterSnapshot() {
-  const values = simh.examineAllState();
-  return {
-    addressRegister: values.AR ?? ZERO_ADDRESS,
-    programRegister: values.PR ?? ZERO_DATA,
-    lowerAccumulator: values.ACCLO ?? ZERO_DATA,
-    upperAccumulator: values.ACCUP ?? ZERO_DATA,
-    distributor: values.DIST ?? ZERO_DATA,
-    consoleSwitches: values.CSW ?? ZERO_DATA,
-    programmedStop: (values.CSWPS?.trim() ?? '0') === '1',
-    overflowStop: (values.CSWOS?.trim() ?? '0') === '1',
-    halfCycle: (values.HALF?.trim() ?? '0') === '1',
-  };
-}
-
 const handlers: Record<string, (...args: unknown[]) => unknown> = {
   init: (baseUrl?: unknown) => {
     if (typeof baseUrl === 'string') {
@@ -57,7 +41,7 @@ const handlers: Record<string, (...args: unknown[]) => unknown> = {
   writeFile: (path: unknown, data: unknown) => simh.writeFile(String(path), data as string | Uint8Array),
   mkdir: (path: unknown) => simh.mkdir(String(path)),
   unlink: (path: unknown) => simh.unlink(String(path)),
-  getRegisterSnapshot,
+  getRegisterSnapshot: () => simh.getRegisterSnapshot(),
   getAddressRegister: () => simh.getAddressRegister(),
   setAddressRegister: (value: unknown) => simh.setAddressRegister(String(value)),
   getProgramRegister: () => simh.getProgramRegister(),

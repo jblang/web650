@@ -18,6 +18,34 @@ export function examineAllState(): Record<string, string> {
 }
 
 /**
+ * Return a snapshot of key registers and switch flags for UI updates.
+ */
+export function getRegisterSnapshot(): {
+  addressRegister: string;
+  programRegister: string;
+  lowerAccumulator: string;
+  upperAccumulator: string;
+  distributor: string;
+  consoleSwitches: string;
+  programmedStop: boolean;
+  overflowStop: boolean;
+  halfCycle: boolean;
+} {
+  const values = examineAllState();
+  return {
+    addressRegister: values.AR ?? ZERO_ADDRESS,
+    programRegister: values.PR ?? ZERO_DATA,
+    lowerAccumulator: values.ACCLO ?? ZERO_DATA,
+    upperAccumulator: values.ACCUP ?? ZERO_DATA,
+    distributor: values.DIST ?? ZERO_DATA,
+    consoleSwitches: values.CSW ?? ZERO_DATA,
+    programmedStop: (values.CSWPS?.trim() ?? '0') === '1',
+    overflowStop: (values.CSWOS?.trim() ?? '0') === '1',
+    halfCycle: (values.HALF?.trim() ?? '0') === '1',
+  };
+}
+
+/**
  * Get the Address Register (AR) value.
  * Returns a 4-digit string (0000-9999).
  */
