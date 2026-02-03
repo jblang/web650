@@ -27,6 +27,8 @@ export {
   isEmulatorBusy,
   getYieldSteps,
   setYieldSteps,
+  getYieldEnabled,
+  setYieldEnabled,
 } from './core';
 
 // Generic SIMH Control

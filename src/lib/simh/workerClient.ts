@@ -54,9 +54,8 @@ function ensureWorker(): Worker {
     }
   };
   worker.onerror = (event) => {
-    const err = event instanceof ErrorEvent ? event.error : undefined;
     const message = event instanceof ErrorEvent ? event.message : 'Worker error';
-    const error = err instanceof Error ? err : new Error(message);
+    const error = new Error(message);
     for (const { reject } of pending.values()) {
       reject(error);
     }

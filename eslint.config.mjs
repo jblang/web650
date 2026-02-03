@@ -39,6 +39,8 @@ const eslintConfig = defineConfig([
     "coverage/**",
     // Auto-generated Emscripten output:
     "public/i650.js",
+    "simh/BIN/**",
+    "simh/emscripten-build/**",
   ]),
 ]);
 

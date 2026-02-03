@@ -124,8 +124,6 @@ ctx.onmessage = async (event: MessageEvent<RequestMessage>) => {
         return;
       }
       if (method === 'sendCommand') {
-        const cmd = String(args[0] ?? '');
-        const verb = cmd.trim().split(/\s+/)[0]?.toUpperCase();
         const result = await handler(...args);
         response = { id, ok: true, result };
         ctx.postMessage(response);

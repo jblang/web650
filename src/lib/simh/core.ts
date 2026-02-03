@@ -250,6 +250,17 @@ export function setYieldSteps(steps: number): void {
   emModule.ccall('simh_set_yield_steps', 'void', ['number'], [steps]);
 }
 
+export function getYieldEnabled(): boolean {
+  const emModule = getModule();
+  const enabled = emModule.ccall('simh_get_yield_enabled', 'number', [], []) as number;
+  return enabled !== 0;
+}
+
+export function setYieldEnabled(enabled: boolean): void {
+  const emModule = getModule();
+  emModule.ccall('simh_set_yield_enabled', 'void', ['number'], [enabled ? 1 : 0]);
+}
+
 
 /** EXAMINE a register or address.  Returns parsed key-value pairs. */
 export function examineState(ref: string): Record<string, string> {

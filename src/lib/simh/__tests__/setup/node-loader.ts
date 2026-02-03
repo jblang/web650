@@ -7,7 +7,7 @@
 
 import path from 'path';
 import type { EmscriptenModule } from '../../types';
-import { setModule as setCoreModule, getModule, handleOutput, sendCommand } from '../../core';
+import { setModule as setCoreModule, getModule, handleOutput, sendCommand, setYieldEnabled } from '../../core';
 
 export class OutputCapture {
   private lines: string[] = [];
@@ -71,6 +71,9 @@ export async function initWasmForNode(): Promise<EmscriptenModule> {
 
   // Set the module in core.ts so all API functions can access it
   setCoreModule(wasmModule);
+
+  // Disable async yielding for Node tests so command output is captured synchronously
+  setYieldEnabled(false);
 
   // Configure drum memory so EXAMINE/DEPOSIT on addresses work
   sendCommand('SET CPU 1K');

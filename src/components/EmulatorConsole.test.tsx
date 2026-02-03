@@ -6,15 +6,22 @@ import EmulatorConsole from './EmulatorConsole';
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
 
 // Mock Carbon components to simple HTML equivalents
-type InputProps = { onChange?: (e: { target: { value: string } }) => void } & Record<string, unknown>;
+type InputProps = {
+  id?: string;
+  onChange?: (e: { target: { value: string } }) => void;
+} & Record<string, unknown>;
 type ButtonProps = { onClick?: (e?: unknown) => void } & Record<string, unknown>;
 let lastInputProps: InputProps | undefined;
+const inputPropsById = new Map<string, InputProps>();
 let lastButtonProps: ButtonProps | undefined;
 
 vi.mock('@carbon/react', () => ({
   TextInput: ({ onChange, ...props }: InputProps) => {
     const merged = { ...props, onChange };
     lastInputProps = merged as InputProps;
+    if (typeof merged.id === 'string') {
+      inputPropsById.set(merged.id, merged as InputProps);
+    }
     return <input {...merged} />;
   },
   TextArea: (props: Record<string, unknown>) => <textarea {...props} />,
@@ -32,11 +39,14 @@ vi.mock('@carbon/icons-react', () => ({
 
 // Mock useEmulatorConsole to control output and capture sends
 const sendCommand = vi.fn(async () => '');
+const setYieldSteps = vi.fn();
 let outputValue = 'hello\n';
 vi.mock('./EmulatorProvider', () => ({
   useEmulatorConsole: () => ({
     output: outputValue,
     sendCommand,
+    yieldSteps: 100,
+    setYieldSteps,
     isRunning: false,
   }),
   useEmulatorActions: () => ({
@@ -60,6 +70,7 @@ describe('EmulatorConsole', () => {
     root = createRoot(container);
     sendCommand.mockClear();
     lastInputProps = undefined;
+    inputPropsById.clear();
     lastButtonProps = undefined;
   });
 
@@ -82,7 +93,8 @@ describe('EmulatorConsole', () => {
   it('sends command on button click and clears input', async () => {
     render(<EmulatorConsole />);
     act(() => {
-      lastInputProps.onChange?.({ target: { value: '  SHOW DEV  ' } });
+      const commandInput = inputPropsById.get('command') ?? lastInputProps;
+      commandInput?.onChange?.({ target: { value: '  SHOW DEV  ' } });
     });
 
     await act(async () => {
