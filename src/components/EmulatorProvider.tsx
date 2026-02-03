@@ -1,17 +1,17 @@
 'use client';
 
-import { createContext, useContext, useState, useEffect, useCallback, ReactNode, useMemo } from 'react';
+import { createContext, useContext, useState, useEffect, useCallback, ReactNode, useMemo, useRef } from 'react';
 import { Programmed, HalfCycle, Overflow } from './FrontPanel/ConfigSection';
 import type { OperatingState } from './FrontPanel/OperatingStatus';
 import type { CheckingState } from './FrontPanel/CheckingStatus';
-import * as simh from '@/lib/simh';
+import * as simhClient from '@/lib/simh/workerClient';
 import {
   ZERO_ADDRESS,
   ZERO_DATA,
   ZERO_OPERATION,
   extractOperationCode,
   getDisplayValue,
-  performDrumTransfer,
+  DisplaySwitch,
   isManualOperation,
 } from '@/lib/simh';
 import type { DisplayPosition, ControlPosition, ErrorSwitchPosition } from '@/lib/simh';
@@ -44,6 +44,9 @@ export const INITIAL_CHECKING_STATE: CheckingState = Object.freeze({
 interface EmulatorConsoleContextType {
   output: string;
   sendCommand: (command: string) => Promise<string>;
+  isRunning: boolean;
+  yieldSteps: number;
+  setYieldSteps: (steps: number) => void;
 }
 
 // Context 2: Emulator state (registers, switches, derived values)
@@ -119,6 +122,7 @@ export function useEmulatorActions() {
 export default function EmulatorProvider({ children }: { children: ReactNode }) {
   const [output, setOutput] = useState('');
   const [initialized, setInitialized] = useState(false);
+  const [yieldSteps, setYieldStepsState] = useState(100);
   // Emulator register snapshot (kept in provider so consumers don't fetch on demand)
   const [addressRegister, setAddressRegisterState] = useState<string>(ZERO_ADDRESS);
   const [programRegister, setProgramRegisterState] = useState<string>(ZERO_DATA);
@@ -137,32 +141,65 @@ export default function EmulatorProvider({ children }: { children: ReactNode }) 
   const [controlSwitch, setControlSwitch] = useState<ControlPosition>(0);
   const [errorSwitch, setErrorSwitch] = useState<ErrorSwitchPosition>(0);
   const [addressSwitches, setAddressSwitches] = useState<string>(ZERO_ADDRESS);
+  const outputBufferRef = useRef('');
+
+  const enqueueOutput = useCallback((text: string) => {
+    outputBufferRef.current += text;
+  }, []);
+
+  useEffect(() => {
+    const flush = () => {
+      const chunk = outputBufferRef.current;
+      if (!chunk) return;
+      outputBufferRef.current = '';
+      setOutput((prev) => prev + chunk);
+    };
+
+    const id = setInterval(flush, 50);
+    return () => clearInterval(id);
+  }, []);
 
   /* ── WASM-backed operations ─────────────────────────────────── */
 
   const refreshRegisters = useCallback(async () => {
-    setAddressRegisterState(simh.getAddressRegister());
-    setProgramRegisterState(simh.getProgramRegister());
-    setLowerAccumulatorState(simh.getLowerAccumulator());
-    setUpperAccumulatorState(simh.getUpperAccumulator());
-    setDistributorState(simh.getDistributor());
-    setConsoleSwitchesState(simh.getConsoleSwitches());
-    setProgrammedStopState(simh.getProgrammedStop());
-    setOverflowStopState(simh.getOverflowStop());
-    setHalfCycleState(simh.getHalfCycle());
+    const snapshot = await simhClient.getRegisterSnapshot();
+    setAddressRegisterState(snapshot.addressRegister);
+    setProgramRegisterState(snapshot.programRegister);
+    setLowerAccumulatorState(snapshot.lowerAccumulator);
+    setUpperAccumulatorState(snapshot.upperAccumulator);
+    setDistributorState(snapshot.distributor);
+    setConsoleSwitchesState(snapshot.consoleSwitches);
+    setProgrammedStopState(snapshot.programmedStop);
+    setOverflowStopState(snapshot.overflowStop);
+    setHalfCycleState(snapshot.halfCycle);
   }, []);
+  const refreshRegistersRef = useRef(refreshRegisters);
+  useEffect(() => {
+    refreshRegistersRef.current = refreshRegisters;
+  }, [refreshRegisters]);
 
   const sendCommand = useCallback(
     async (command: string): Promise<string> => {
-      setOutput((prev) => prev + `sim> ${command}\n`);
-      const result = simh.sendCommand(command);
-      if (result.trim()) {
-        setOutput((prev) => prev + result + '\n');
+      const trimmed = command.trim();
+      if (!trimmed) return '';
+
+      enqueueOutput(`sim> ${trimmed}\n`);
+
+      try {
+        const result = await simhClient.sendCommand(trimmed, { streamOutput: true });
+        return result;
+      } finally {
+        await refreshRegistersRef.current();
       }
-      return result;
     },
-    []
+    [enqueueOutput]
   );
+
+  const setYieldSteps = useCallback((steps: number) => {
+    const next = Number.isFinite(steps) ? Math.max(1, Math.min(100000, Math.round(steps))) : 100;
+    setYieldStepsState(next);
+    void simhClient.setYieldSteps(next);
+  }, []);
 
 
   const restart = useCallback(async () => {
@@ -170,7 +207,7 @@ export default function EmulatorProvider({ children }: { children: ReactNode }) 
     setOutput('');
     setIsRunning(false);
 
-    await simh.restart();
+    await simhClient.restart();
     await refreshRegisters();
     setInitialized(true);
   }, [refreshRegisters]);
@@ -178,37 +215,37 @@ export default function EmulatorProvider({ children }: { children: ReactNode }) 
   /* ── Register setters (deposit + update local state) ────────── */
 
   const setAddressRegister = useCallback(async (value: string) => {
-    simh.setAddressRegister(value);
+    await simhClient.setAddressRegister(value);
     setAddressRegisterState(value);
   }, []);
 
   const setProgramRegister = useCallback(async (value: string) => {
-    simh.setProgramRegister(value);
+    await simhClient.setProgramRegister(value);
     setProgramRegisterState(value);
   }, []);
 
   const setDistributor = useCallback(async (value: string) => {
-    simh.setDistributor(value);
+    await simhClient.setDistributor(value);
     setDistributorState(value);
   }, []);
 
   const setConsoleSwitches = useCallback(async (value: string) => {
-    simh.setConsoleSwitches(value);
+    await simhClient.setConsoleSwitches(value);
     setConsoleSwitchesState(value);
   }, []);
 
   const setProgrammedStop = useCallback(async (value: boolean) => {
-    simh.setProgrammedStop(value);
+    await simhClient.setProgrammedStop(value);
     setProgrammedStopState(value);
   }, []);
 
   const setOverflowStop = useCallback(async (value: boolean) => {
-    simh.setOverflowStop(value);
+    await simhClient.setOverflowStop(value);
     setOverflowStopState(value);
   }, []);
 
   const setHalfCycle = useCallback(async (value: boolean) => {
-    simh.setHalfCycle(value);
+    await simhClient.setHalfCycle(value);
     setHalfCycleState(value);
   }, []);
 
@@ -231,12 +268,15 @@ export default function EmulatorProvider({ children }: { children: ReactNode }) 
   }, [programRegister]);
 
   const handleDrumTransfer = useCallback(async () => {
-    const result = performDrumTransfer(displaySwitch, addressRegister, consoleSwitches);
+    if (displaySwitch === DisplaySwitch.READ_OUT_STORAGE) {
+      const value = await simhClient.readMemory(addressRegister);
+      await setDistributor(value);
+      return;
+    }
 
-    if (result.type === 'read') {
-      await setDistributor(result.value);
-    } else if (result.type === 'write') {
-      await setDistributor(result.value);
+    if (displaySwitch === DisplaySwitch.READ_IN_STORAGE) {
+      await simhClient.writeMemory(addressRegister, consoleSwitches);
+      await setDistributor(consoleSwitches);
     }
   }, [addressRegister, displaySwitch, consoleSwitches, setDistributor]);
 
@@ -293,13 +333,8 @@ export default function EmulatorProvider({ children }: { children: ReactNode }) 
   /* ── Program control ────────────────────────────────────────── */
 
   const handleProgramStart = useCallback(async () => {
-    simh.startRunning(() => {
-      refreshRegisters();
-      if (!simh.isRunning()) {
-        setIsRunning(false);
-      }
-    });
-  }, [refreshRegisters]);
+    await simhClient.sendCommand('GO', { streamOutput: true });
+  }, []);
 
   const onProgramStartClick = useCallback(async () => {
     if (isRunning) return;
@@ -307,20 +342,17 @@ export default function EmulatorProvider({ children }: { children: ReactNode }) 
       await handleDrumTransfer();
     } else {
       await handleProgramStart();
-      setIsRunning(true);
     }
   }, [controlSwitch, handleDrumTransfer, handleProgramStart, isRunning]);
 
   const onProgramStopClick = useCallback(async () => {
-    simh.stopRunning();
-    setIsRunning(false);
+    await simhClient.stopCpu();
     await refreshRegisters();
   }, [refreshRegisters]);
 
   const onProgramResetClick = useCallback(async () => {
     if (isRunning) {
-      simh.stopRunning();
-      setIsRunning(false);
+      await simhClient.stopCpu();
     }
     await setProgramRegister(ZERO_DATA);
     await setAddressRegister(ZERO_ADDRESS);
@@ -329,16 +361,14 @@ export default function EmulatorProvider({ children }: { children: ReactNode }) 
 
   const onComputerResetClick = useCallback(async () => {
     if (isRunning) {
-      simh.stopRunning();
-      setIsRunning(false);
+      await simhClient.stopCpu();
     }
-    simh.reset();
-    setIsRunning(false);
+    await simhClient.reset();
     await refreshRegisters();
   }, [isRunning, refreshRegisters]);
 
   const onAccumResetClick = useCallback(async () => {
-    simh.resetAccumulator();
+    await simhClient.resetAccumulator();
     setDistributorState(ZERO_DATA);
     setLowerAccumulatorState(ZERO_DATA);
     setUpperAccumulatorState(ZERO_DATA);
@@ -365,8 +395,11 @@ export default function EmulatorProvider({ children }: { children: ReactNode }) 
     () => ({
       output,
       sendCommand,
+      isRunning,
+      yieldSteps,
+      setYieldSteps,
     }),
-    [output, sendCommand]
+    [output, sendCommand, isRunning, yieldSteps, setYieldSteps]
   );
 
   // Context 2: State (changes when registers/switches change)
@@ -457,15 +490,21 @@ export default function EmulatorProvider({ children }: { children: ReactNode }) 
 
   useEffect(() => {
     // Capture tick-loop output (device I/O during program execution)
-    simh.onOutput((text) => setOutput((prev) => prev + text));
+    void simhClient.onOutput((text) => enqueueOutput(text));
+    simhClient.onRunState((runningFlag) => {
+      setIsRunning(runningFlag);
+      void refreshRegistersRef.current();
+    });
 
     const initialize = async () => {
       try {
-        await simh.init();
-        refreshRegisters();
+        await simhClient.init();
+        const initialYieldSteps = await simhClient.getYieldSteps();
+        setYieldStepsState(initialYieldSteps);
+        await refreshRegistersRef.current();
       } catch (err) {
         const msg = err instanceof Error ? err.message : 'Unknown error';
-        setOutput((prev) => prev + `Error initializing emulator: ${msg}\n`);
+        enqueueOutput(`Error initializing emulator: ${msg}\n`);
       } finally {
         setInitialized(true);
       }
@@ -473,9 +512,10 @@ export default function EmulatorProvider({ children }: { children: ReactNode }) 
     initialize();
 
     return () => {
-      simh.onOutput(null);
+      void simhClient.onOutput(null);
+      simhClient.onRunState(null);
     };
-  }, [refreshRegisters]);
+  }, [enqueueOutput]);
 
   return (
     <EmulatorConsoleContext.Provider value={consoleValue}>

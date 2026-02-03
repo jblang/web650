@@ -23,7 +23,6 @@ vi.mock('@carbon/react', () => ({
     lastButtonProps = merged as ButtonProps;
     return <button type="button" {...merged} />;
   },
-  InlineLoading: (props: Record<string, unknown>) => <div data-testid="loading" {...props} />,
   Stack: (props: Record<string, unknown>) => <div {...props} />,
 }));
 
@@ -38,6 +37,10 @@ vi.mock('./EmulatorProvider', () => ({
   useEmulatorConsole: () => ({
     output: outputValue,
     sendCommand,
+    isRunning: false,
+  }),
+  useEmulatorActions: () => ({
+    onProgramStopClick: vi.fn(),
   }),
 }));
 

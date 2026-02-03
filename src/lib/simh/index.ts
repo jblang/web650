@@ -22,15 +22,17 @@ export {
   depositState,
   onOutput,
   parseKeyValues,
+  setAssetBase,
+  isCpuRunning,
+  isEmulatorBusy,
+  getYieldSteps,
+  setYieldSteps,
 } from './core';
 
 // Generic SIMH Control
 export {
   step,
   stop,
-  isRunning,
-  startRunning,
-  stopRunning,
 } from './control';
 
 // Generic SIMH Filesystem

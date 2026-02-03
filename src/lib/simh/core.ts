@@ -6,16 +6,17 @@
 
 import type { EmscriptenModule } from './types';
 
-// Emscripten's default TTY driver calls window.prompt() when C code reads
-// from stdin.  We never want interactive stdin, so kill it at module-import
-// time before any script loads.
-if (typeof window !== 'undefined') {
-  window.prompt = () => null;
+// Emscripten's default TTY driver calls prompt() when C code reads from stdin.
+// We never want interactive stdin, so kill it at module-import time before any script loads.
+const globalPromptTarget = typeof globalThis !== 'undefined' ? (globalThis as { prompt?: () => unknown }) : null;
+if (globalPromptTarget && typeof globalPromptTarget.prompt === 'function') {
+  globalPromptTarget.prompt = () => null;
 }
 
 /* ── Module singleton ─────────────────────────────────────────── */
 
 let Module: EmscriptenModule | null = null;
+let assetBaseUrl: string | null = null;
 
 export function getModule(): EmscriptenModule {
   if (!Module) throw new Error('WASM module not initialized');
@@ -30,9 +31,14 @@ export function resetModule(): void {
   Module = null;
 }
 
+export function setAssetBase(baseUrl: string | null): void {
+  assetBaseUrl = baseUrl;
+}
+
 /* ── Output handling ──────────────────────────────────────────── */
 
 let captureBuffer: string[] | null = null;
+let captureStream = false;
 let outputCallback: ((text: string) => void) | null = null;
 
 /**
@@ -45,36 +51,86 @@ let outputCallback: ((text: string) => void) | null = null;
 export function handleOutput(text: string) {
   if (captureBuffer !== null) {
     captureBuffer.push(text);
+    if (captureStream) {
+      outputCallback?.(text + '\n');
+    }
   } else {
     outputCallback?.(text + '\n');
   }
 }
 
-function beginCapture(): void {
+function beginCapture(streamOutput: boolean): void {
   captureBuffer = [];
+  captureStream = streamOutput;
 }
 
 function endCapture(): string {
   const lines = captureBuffer ?? [];
   captureBuffer = null;
+  captureStream = false;
   return lines.join('\n');
 }
 
 /* ── Helpers ──────────────────────────────────────────────────── */
 
-/** Inject a <script> tag and wait for it to load. */
+/** Inject a <script> tag and wait for it to load (or importScripts in worker). */
 function loadScript(url: string): Promise<void> {
   return new Promise((resolve, reject) => {
+    if (typeof document === 'undefined') {
+      const importer = (globalThis as unknown as { importScripts?: (...urls: string[]) => void }).importScripts;
+      if (importer) {
+        try {
+          const loc = (globalThis as unknown as { location?: Location }).location;
+          let resolved = url;
+          if (loc) {
+            if (url.startsWith('/') && loc.origin && loc.origin !== 'null') {
+              resolved = `${loc.origin}${url}`;
+            } else {
+              resolved = new URL(url, loc.href).toString();
+            }
+          }
+          importer(resolveModuleAsset(resolved));
+          resolve();
+        } catch (err) {
+          reject(err);
+        }
+        return;
+      }
+      reject(new Error(`Failed to load ${url} (no document or importScripts)`));
+      return;
+    }
+
     if (document.querySelector(`script[src="${url}"]`)) {
       resolve();
       return;
     }
+
     const script = document.createElement('script');
     script.src = url;
     script.onload = () => resolve();
     script.onerror = () => reject(new Error(`Failed to load ${url}`));
     document.head.appendChild(script);
   });
+}
+
+function resolveModuleAsset(path: string): string {
+  if (assetBaseUrl) {
+    if (/^[a-zA-Z][a-zA-Z0-9+.-]*:/.test(path)) {
+      return path;
+    }
+    const normalized = path.startsWith('/') ? path : `/${path}`;
+    return `${assetBaseUrl}${normalized}`;
+  }
+  const loc = (globalThis as unknown as { location?: Location }).location;
+  if (!loc) return path;
+  if (path.startsWith('/') && loc.origin && loc.origin !== 'null') {
+    return `${loc.origin}${path}`;
+  }
+  try {
+    return new URL(path, loc.href).toString();
+  } catch {
+    return path;
+  }
 }
 
 /**
@@ -112,7 +168,7 @@ export async function init(moduleName: string): Promise<void> {
   const scriptPath = `/${moduleName}.js`;
   await loadScript(scriptPath);
 
-  const createModuleFn = (window as unknown as Record<string, unknown>)[`create${moduleName.charAt(0).toUpperCase() + moduleName.slice(1)}Module`];
+  const createModuleFn = (globalThis as unknown as Record<string, unknown>)[`create${moduleName.charAt(0).toUpperCase() + moduleName.slice(1)}Module`];
   if (typeof createModuleFn !== 'function') {
     throw new Error(`create${moduleName.charAt(0).toUpperCase() + moduleName.slice(1)}Module not found — ${scriptPath} failed to load`);
   }
@@ -122,6 +178,7 @@ export async function init(moduleName: string): Promise<void> {
     print: (text: string) => handleOutput(text),
     printErr: (text: string) => handleOutput(text),
     stdin: () => null,
+    locateFile: (path: string) => resolveModuleAsset(path),
   });
 
   const rc = Module.ccall('simh_init', 'number', [], []) as number;
@@ -151,9 +208,9 @@ export async function init(moduleName: string): Promise<void> {
  * Output is captured and returned as a string.  It does NOT flow through the
  * onOutput callback — the caller decides whether to echo it.
  */
-export function sendCommand(cmd: string): string {
+export function sendCommand(cmd: string, options?: { streamOutput?: boolean }): string {
   const emModule = getModule();
-  beginCapture();
+  beginCapture(Boolean(options?.streamOutput));
   try {
     emModule.ccall('simh_cmd', 'number', ['string'], [cmd]);
   } catch (e: unknown) {
@@ -168,6 +225,31 @@ export function sendCommand(cmd: string): string {
   }
   return endCapture();
 }
+
+/** True if the simulator CPU is currently running. */
+export function isCpuRunning(): boolean {
+  const emModule = getModule();
+  const running = emModule.ccall('simh_is_running', 'number', [], []) as number;
+  return running !== 0;
+}
+
+/** True if the simulator is executing a command or running CPU. */
+export function isEmulatorBusy(): boolean {
+  const emModule = getModule();
+  const busy = emModule.ccall('simh_is_busy', 'number', [], []) as number;
+  return busy !== 0;
+}
+
+export function getYieldSteps(): number {
+  const emModule = getModule();
+  return emModule.ccall('simh_get_yield_steps', 'number', [], []) as number;
+}
+
+export function setYieldSteps(steps: number): void {
+  const emModule = getModule();
+  emModule.ccall('simh_set_yield_steps', 'void', ['number'], [steps]);
+}
+
 
 /** EXAMINE a register or address.  Returns parsed key-value pairs. */
 export function examineState(ref: string): Record<string, string> {

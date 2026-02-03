@@ -5,18 +5,19 @@ import {
   TextInput,
   TextArea,
   Button,
-  InlineLoading,
   Stack,
 } from '@carbon/react';
-import { Send } from '@carbon/icons-react';
-import { useEmulatorConsole } from './EmulatorProvider';
+import { Send, Stop } from '@carbon/icons-react';
+import { useEmulatorConsole, useEmulatorActions } from './EmulatorProvider';
 
 export default function EmulatorConsole() {
   const [command, setCommand] = useState('');
   const [sending, setSending] = useState(false);
-  const { output, sendCommand } = useEmulatorConsole();
+  const { output, sendCommand, isRunning, yieldSteps, setYieldSteps } = useEmulatorConsole();
+  const { onProgramStopClick } = useEmulatorActions();
   const textAreaRef = useRef<HTMLTextAreaElement>(null);
   const commandInputRef = useRef<HTMLInputElement>(null);
+  const sendTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     if (textAreaRef.current) {
@@ -24,19 +25,49 @@ export default function EmulatorConsole() {
     }
   }, [output]);
 
+  const busy = isRunning;
+
   useEffect(() => {
-    if (!sending) {
+    if (!busy) {
       commandInputRef.current?.focus();
     }
+  }, [busy]);
+
+  useEffect(() => {
+    if (!isRunning && sending) {
+      setSending(false);
+    }
+  }, [isRunning, sending]);
+
+  useEffect(() => {
+    if (!sending) {
+      if (sendTimeoutRef.current) {
+        clearTimeout(sendTimeoutRef.current);
+        sendTimeoutRef.current = null;
+      }
+      return;
+    }
+    sendTimeoutRef.current = setTimeout(() => {
+      setSending(false);
+    }, 15000);
+    return () => {
+      if (sendTimeoutRef.current) {
+        clearTimeout(sendTimeoutRef.current);
+        sendTimeoutRef.current = null;
+      }
+    };
   }, [sending]);
 
   const handleSend = async () => {
     if (!command.trim() || sending) return;
 
     setSending(true);
-    await sendCommand(command.trim());
-    setSending(false);
-    setCommand('');
+    try {
+      await sendCommand(command.trim());
+    } finally {
+      setSending(false);
+      setCommand('');
+    }
   };
 
   const handleKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
@@ -66,18 +97,39 @@ export default function EmulatorConsole() {
             value={command}
             onChange={(e) => setCommand(e.target.value)}
             onKeyDown={handleKeyDown}
-            disabled={sending}
+            disabled={busy}
             size="lg"
             ref={commandInputRef}
           />
         </div>
-        {sending ? (
-          <InlineLoading description="Sending..." />
+        <div style={{ width: '9rem' }}>
+          <TextInput
+            id="yield-steps"
+            labelText="Yield steps"
+            type="number"
+            min={1}
+            max={100000}
+            step={1}
+            value={String(yieldSteps)}
+            onChange={(e) => setYieldSteps(Number(e.target.value))}
+            disabled={busy}
+            size="lg"
+          />
+        </div>
+        {busy ? (
+          <Button
+            kind="danger"
+            renderIcon={Stop}
+            onClick={onProgramStopClick}
+            size="lg"
+          >
+            Stop
+          </Button>
         ) : (
           <Button
             renderIcon={Send}
             onClick={handleSend}
-            disabled={!command.trim()}
+            disabled={!command.trim() || sending}
             size="lg"
           >
             Send
