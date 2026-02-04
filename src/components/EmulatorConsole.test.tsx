@@ -15,6 +15,13 @@ let lastInputProps: InputProps | undefined;
 const inputPropsById = new Map<string, InputProps>();
 let lastButtonProps: ButtonProps | undefined;
 
+const stripDomProps = (props: Record<string, unknown>) => {
+  const { labelText, renderIcon, ...rest } = props;
+  void labelText;
+  void renderIcon;
+  return rest;
+};
+
 vi.mock('@carbon/react', () => ({
   TextInput: ({ onChange, ...props }: InputProps) => {
     const merged = { ...props, onChange };
@@ -22,13 +29,17 @@ vi.mock('@carbon/react', () => ({
     if (typeof merged.id === 'string') {
       inputPropsById.set(merged.id, merged as InputProps);
     }
-    return <input {...merged} />;
+    return <input {...stripDomProps(merged)} />;
   },
-  TextArea: (props: Record<string, unknown>) => <textarea {...props} />,
+  TextArea: (props: Record<string, unknown>) => <textarea {...stripDomProps(props)} />,
+  Checkbox: ({ onChange, ...props }: InputProps) => {
+    const merged = { ...props, onChange };
+    return <input type="checkbox" {...stripDomProps(merged)} />;
+  },
   Button: ({ onClick, ...props }: ButtonProps) => {
     const merged = { ...props, onClick };
     lastButtonProps = merged as ButtonProps;
-    return <button type="button" {...merged} />;
+    return <button type="button" {...stripDomProps(merged)} />;
   },
   Stack: (props: Record<string, unknown>) => <div {...props} />,
 }));
@@ -41,14 +52,17 @@ vi.mock('@carbon/icons-react', () => ({
 const sendCommand = vi.fn(async () => '');
 const setYieldSteps = vi.fn();
 let outputValue = 'hello\n';
-vi.mock('./EmulatorProvider', () => ({
+vi.mock('./EmulatorConsoleProvider', () => ({
   useEmulatorConsole: () => ({
     output: outputValue,
     sendCommand,
-    yieldSteps: 100,
+    yieldSteps: 1000,
     setYieldSteps,
     isRunning: false,
   }),
+}));
+
+vi.mock('./EmulatorActionsProvider', () => ({
   useEmulatorActions: () => ({
     onProgramStopClick: vi.fn(),
   }),

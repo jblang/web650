@@ -4,6 +4,7 @@ import path from 'path';
 export default defineConfig({
   test: {
     environment: 'jsdom',
+    setupFiles: ['src/test/setup.ts'],
     environmentMatchGlobs: [
       // Integration tests run in Node environment
       ['**/*.integration.test.ts', 'node'],

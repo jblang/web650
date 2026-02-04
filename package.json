@@ -7,7 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "test": "vitest"
+    "test": "NODE_OPTIONS=--localstorage-file=/tmp/vitest-localstorage vitest"
   },
   "dependencies": {
     "@carbon/react": "^1.99.0",

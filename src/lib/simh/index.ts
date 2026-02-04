@@ -17,9 +17,13 @@ export {
 
 // Generic SIMH Core
 export {
+  init,
   sendCommand,
-  examineState,
-  depositState,
+  sendCommandAsync,
+  examine,
+  examineAsync,
+  deposit,
+  depositAsync,
   onOutput,
   parseKeyValues,
   setAssetBase,
@@ -35,6 +39,7 @@ export {
 export {
   step,
   stop,
+  restart,
 } from './control';
 
 // Generic SIMH Filesystem
@@ -115,17 +120,4 @@ export type {
   I650Registers,
 } from './i650/controls';
 
-// I650-specific wrappers for init and restart (with hardcoded module name and configuration)
-import { init as coreInit } from './core';
-import { restart as coreRestart } from './control';
-import { setMemorySize } from './i650';
-
-export async function init(): Promise<void> {
-  await coreInit('i650');
-  setMemorySize('1K');
-}
-
-export async function restart(): Promise<void> {
-  await coreRestart('i650');
-  setMemorySize('1K');
-}
+// Generic init/restart are exported from core/control above.

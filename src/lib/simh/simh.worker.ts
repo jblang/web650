@@ -14,6 +14,7 @@ type ResponseMessage = {
 };
 
 let outputEnabled = false;
+let echoEnabled = false;
 
 const ctx = self as unknown as {
   postMessage: (message: unknown) => void;
@@ -26,52 +27,35 @@ simh.onOutput((text) => {
 });
 
 const handlers: Record<string, (...args: unknown[]) => unknown> = {
-  init: (baseUrl?: unknown) => {
+  init: (moduleName?: unknown, baseUrl?: unknown) => {
     if (typeof baseUrl === 'string') {
       simh.setAssetBase(baseUrl);
     }
-    return simh.init();
+    return simh.init(String(moduleName));
   },
-  restart: () => simh.restart(),
+  restart: (moduleName?: unknown) => simh.restart(String(moduleName)),
   sendCommand: (cmd: unknown, options?: unknown) =>
-    simh.sendCommand(String(cmd), options as { streamOutput?: boolean } | undefined),
-  examineState: (ref: unknown) => simh.examineState(String(ref)),
-  depositState: (ref: unknown, value: unknown) => simh.depositState(String(ref), String(value)),
+    simh.sendCommandAsync(String(cmd), {
+      ...(options as { streamOutput?: boolean; echo?: boolean } | undefined),
+      echo: echoEnabled && (options as { echo?: boolean } | undefined)?.echo !== false,
+    }),
+  examine: (ref: unknown, options?: unknown) =>
+    simh.examineAsync(String(ref), {
+      echo: echoEnabled && (options as { echo?: boolean } | undefined)?.echo !== false,
+    }),
+  deposit: (ref: unknown, value: unknown, options?: unknown) =>
+    simh.depositAsync(String(ref), String(value), {
+      echo: echoEnabled && (options as { echo?: boolean } | undefined)?.echo !== false,
+    }),
   readFile: (path: unknown) => simh.readFile(String(path)),
   writeFile: (path: unknown, data: unknown) => simh.writeFile(String(path), data as string | Uint8Array),
   mkdir: (path: unknown) => simh.mkdir(String(path)),
   unlink: (path: unknown) => simh.unlink(String(path)),
-  getRegisterSnapshot: () => simh.getRegisterSnapshot(),
-  getAddressRegister: () => simh.getAddressRegister(),
-  setAddressRegister: (value: unknown) => simh.setAddressRegister(String(value)),
-  getProgramRegister: () => simh.getProgramRegister(),
-  setProgramRegister: (value: unknown) => simh.setProgramRegister(String(value)),
-  getDistributor: () => simh.getDistributor(),
-  setDistributor: (value: unknown) => simh.setDistributor(String(value)),
-  getLowerAccumulator: () => simh.getLowerAccumulator(),
-  setLowerAccumulator: (value: unknown) => simh.setLowerAccumulator(String(value)),
-  getUpperAccumulator: () => simh.getUpperAccumulator(),
-  setUpperAccumulator: (value: unknown) => simh.setUpperAccumulator(String(value)),
-  getConsoleSwitches: () => simh.getConsoleSwitches(),
-  setConsoleSwitches: (value: unknown) => simh.setConsoleSwitches(String(value)),
-  getProgrammedStop: () => simh.getProgrammedStop(),
-  setProgrammedStop: (value: unknown) => simh.setProgrammedStop(Boolean(value)),
-  getOverflowStop: () => simh.getOverflowStop(),
-  setOverflowStop: (value: unknown) => simh.setOverflowStop(Boolean(value)),
-  getHalfCycle: () => simh.getHalfCycle(),
-  setHalfCycle: (value: unknown) => simh.setHalfCycle(Boolean(value)),
-  getOverflow: () => simh.getOverflow(),
-  setOverflow: (value: unknown) => simh.setOverflow(Boolean(value)),
-  resetAccumulator: () => simh.resetAccumulator(),
-  reset: () => simh.reset(),
-  setMemorySize: (size: unknown) => simh.setMemorySize(size as '1K' | '2K' | '4K'),
-  readMemory: (address: unknown) => simh.readMemory(String(address)),
-  writeMemory: (address: unknown, value: unknown) => simh.writeMemory(String(address), String(value)),
   isCpuRunning: () => simh.isCpuRunning(),
   isEmulatorBusy: () => simh.isEmulatorBusy(),
   getYieldSteps: () => simh.getYieldSteps(),
   setYieldSteps: (steps: unknown) => simh.setYieldSteps(Number(steps)),
-  stopCpu: () => simh.stop(),
+  stop: () => simh.stop(),
 };
 
 let runStateInterval: ReturnType<typeof setInterval> | null = null;
@@ -95,6 +79,9 @@ ctx.onmessage = async (event: MessageEvent<RequestMessage>) => {
     if (method === 'setOutput') {
       outputEnabled = Boolean(args[0]);
       response = { id, ok: true, result: null };
+    } else if (method === 'setEcho') {
+      echoEnabled = Boolean(args[0]);
+      response = { id, ok: true, result: null };
     } else {
       const handler = handlers[method];
       if (!handler) {
@@ -103,12 +90,6 @@ ctx.onmessage = async (event: MessageEvent<RequestMessage>) => {
       if (method === 'init') {
         const result = await handler(...args);
         startRunStatePolling();
-        response = { id, ok: true, result };
-        ctx.postMessage(response);
-        return;
-      }
-      if (method === 'sendCommand') {
-        const result = await handler(...args);
         response = { id, ok: true, result };
         ctx.postMessage(response);
         return;

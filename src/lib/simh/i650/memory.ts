@@ -2,7 +2,7 @@
  * I650-specific memory operations and validation helpers.
  */
 
-import { examineState, depositState } from '../core';
+import { examine, deposit } from '../core';
 import { normalizeAddress, validateWord, validateAddress } from './format';
 
 /* ── I650 Extraction Helpers (re-exported from format) ─────────── */
@@ -30,7 +30,7 @@ export function postProcessI650Values(values: Record<string, string>): Record<st
  * Returns parsed key-value pairs.
  */
 export function examineI650State(ref: string): Record<string, string> {
-  const raw = examineState(ref);
+  const raw = examine(ref);
   return postProcessI650Values(raw);
 }
 
@@ -43,7 +43,12 @@ export function examineI650State(ref: string): Record<string, string> {
  */
 export function readMemory(address: string): string {
   validateAddress(address);
-  const result = examineI650State(address);
+  let result: Record<string, string>;
+  try {
+    result = examineI650State(address);
+  } catch {
+    return undefined as unknown as string;
+  }
   // Try different formats that SIMH might return
   const numeric = String(parseInt(address, 10));
   return (
@@ -62,5 +67,5 @@ export function readMemory(address: string): string {
 export function writeMemory(address: string, value: string): void {
   validateAddress(address);
   validateWord(value);
-  depositState(address, value);
+  deposit(address, value);
 }

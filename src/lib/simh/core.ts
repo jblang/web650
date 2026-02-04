@@ -5,6 +5,7 @@
  */
 
 import type { EmscriptenModule } from './types';
+import { SCPE_OK, SCPE_STOP, SCPE_EXIT, SCPE_EXPECT, SCPE_BREAK, SCPE_KFLAG, SCPE_NOMESSAGE } from './constants';
 
 // Emscripten's default TTY driver calls prompt() when C code reads from stdin.
 // We never want interactive stdin, so kill it at module-import time before any script loads.
@@ -57,6 +58,12 @@ export function handleOutput(text: string) {
   } else {
     outputCallback?.(text + '\n');
   }
+}
+
+function emitOutput(text: string): void {
+  if (!outputCallback) return;
+  const normalized = text.endsWith('\n') ? text : `${text}\n`;
+  outputCallback(normalized);
 }
 
 function beginCapture(streamOutput: boolean): void {
@@ -208,11 +215,32 @@ export async function init(moduleName: string): Promise<void> {
  * Output is captured and returned as a string.  It does NOT flow through the
  * onOutput callback — the caller decides whether to echo it.
  */
-export function sendCommand(cmd: string, options?: { streamOutput?: boolean }): string {
+const SCPE_FLAG_MASK = SCPE_BREAK | SCPE_KFLAG | SCPE_NOMESSAGE;
+const SIMH_OK_STATUSES = new Set([SCPE_OK, SCPE_STOP, SCPE_EXIT, SCPE_EXPECT]);
+
+function bareStatus(rc: number): number {
+  return rc & ~SCPE_FLAG_MASK;
+}
+
+function throwSimhError(rc: number, output: string): never {
+  const message = output.trim() || `SIMH error (${rc})`;
+  const error = new Error(message);
+  (error as { code?: number }).code = rc;
+  throw error;
+}
+
+export function sendCommand(
+  cmd: string,
+  options?: { streamOutput?: boolean; echo?: boolean }
+): string {
   const emModule = getModule();
+  if (options?.echo && options?.streamOutput) {
+    emitOutput(`sim> ${cmd}`);
+  }
   beginCapture(Boolean(options?.streamOutput));
+  let rc = SCPE_OK;
   try {
-    emModule.ccall('simh_cmd', 'number', ['string'], [cmd]);
+    rc = emModule.ccall('simh_cmd', 'number', ['string'], [cmd]) as number;
   } catch (e: unknown) {
     // Emscripten throws ExitStatus when C code calls exit().
     // Capture any output produced before the exit and return it.
@@ -223,7 +251,59 @@ export function sendCommand(cmd: string, options?: { streamOutput?: boolean }): 
     }
     throw e;
   }
-  return endCapture();
+  const output = endCapture();
+  const status = bareStatus(rc);
+  if (options?.echo) {
+    if (!options?.streamOutput) {
+      emitOutput(`sim> ${cmd}`);
+    }
+    if (!options?.streamOutput && output.trim().length > 0) {
+      emitOutput(output);
+    }
+  }
+  if (!SIMH_OK_STATUSES.has(status)) {
+    throwSimhError(status, output);
+  }
+  return output;
+}
+
+export async function sendCommandAsync(
+  cmd: string,
+  options?: { streamOutput?: boolean; echo?: boolean }
+): Promise<string> {
+  const emModule = getModule();
+  if (options?.echo && options?.streamOutput) {
+    emitOutput(`sim> ${cmd}`);
+  }
+  beginCapture(Boolean(options?.streamOutput));
+  let rc = SCPE_OK;
+  try {
+    const result = emModule.ccall('simh_cmd', 'number', ['string'], [cmd]) as
+      | number
+      | Promise<number>;
+    rc = typeof result === 'number' ? result : await result;
+  } catch (e: unknown) {
+    const output = endCapture();
+    const status = (e as { status?: number }).status;
+    if (status !== undefined) {
+      return output + `\n[SIMH exited with status ${status}]\n`;
+    }
+    throw e;
+  }
+  const output = endCapture();
+  const status = bareStatus(rc);
+  if (options?.echo) {
+    if (!options?.streamOutput) {
+      emitOutput(`sim> ${cmd}`);
+    }
+    if (!options?.streamOutput && output.trim().length > 0) {
+      emitOutput(output);
+    }
+  }
+  if (!SIMH_OK_STATUSES.has(status)) {
+    throwSimhError(status, output);
+  }
+  return output;
 }
 
 /** True if the simulator CPU is currently running. */
@@ -263,13 +343,30 @@ export function setYieldEnabled(enabled: boolean): void {
 
 
 /** EXAMINE a register or address.  Returns parsed key-value pairs. */
-export function examineState(ref: string): Record<string, string> {
+export function examine(ref: string): Record<string, string> {
   return parseKeyValues(sendCommand(`EXAMINE ${ref.trim().toUpperCase()}`));
 }
 
 /** DEPOSIT a value into a register or address. */
-export function depositState(ref: string, value: string): void {
+export function deposit(ref: string, value: string): void {
   sendCommand(`DEPOSIT ${ref.trim().toUpperCase()} ${value}`);
+}
+
+export async function examineAsync(
+  ref: string,
+  options?: { echo?: boolean }
+): Promise<Record<string, string>> {
+  return parseKeyValues(
+    await sendCommandAsync(`EXAMINE ${ref.trim().toUpperCase()}`, { echo: options?.echo })
+  );
+}
+
+export async function depositAsync(
+  ref: string,
+  value: string,
+  options?: { echo?: boolean }
+): Promise<void> {
+  await sendCommandAsync(`DEPOSIT ${ref.trim().toUpperCase()} ${value}`, { echo: options?.echo });
 }
 
 /** Subscribe to emulator output (from tick-loop I/O).  Pass null to unsubscribe. */

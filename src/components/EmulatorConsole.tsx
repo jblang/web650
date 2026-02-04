@@ -6,13 +6,19 @@ import {
   TextArea,
   Button,
   Stack,
+  Checkbox,
 } from '@carbon/react';
 import { Send, Stop } from '@carbon/icons-react';
-import { useEmulatorConsole, useEmulatorActions } from './EmulatorProvider';
+import { useEmulatorConsole } from './EmulatorConsoleProvider';
+import { useEmulatorActions } from './EmulatorActionsProvider';
+import { setDebugEnabled, isDebugEnabled } from '@/lib/simh/debug';
+import { isEchoEnabled, setEchoEnabled } from '@/lib/simh/echo';
 
 export default function EmulatorConsole() {
   const [command, setCommand] = useState('');
   const [sending, setSending] = useState(false);
+  const [debugEnabled, setDebugEnabledState] = useState(() => isDebugEnabled());
+  const [frontPanelEchoEnabled, setFrontPanelEchoEnabledState] = useState(() => isEchoEnabled());
   const { output, sendCommand, isRunning, yieldSteps, setYieldSteps } = useEmulatorConsole();
   const { onProgramStopClick } = useEmulatorActions();
   const textAreaRef = useRef<HTMLTextAreaElement>(null);
@@ -77,6 +83,16 @@ export default function EmulatorConsole() {
     }
   };
 
+  const handleDebugToggle = (checked: boolean) => {
+    setDebugEnabled(checked);
+    setDebugEnabledState(checked);
+  };
+
+  const handleFrontPanelEchoToggle = (checked: boolean) => {
+    setEchoEnabled(checked);
+    setFrontPanelEchoEnabledState(checked);
+  };
+
   return (
     <Stack gap={5}>
       <TextArea
@@ -102,20 +118,6 @@ export default function EmulatorConsole() {
             ref={commandInputRef}
           />
         </div>
-        <div style={{ width: '9rem' }}>
-          <TextInput
-            id="yield-steps"
-            labelText="Yield steps"
-            type="number"
-            min={1}
-            max={100000}
-            step={1}
-            value={String(yieldSteps)}
-            onChange={(e) => setYieldSteps(Number(e.target.value))}
-            disabled={busy}
-            size="lg"
-          />
-        </div>
         {busy ? (
           <Button
             kind="danger"
@@ -135,6 +137,37 @@ export default function EmulatorConsole() {
             Send
           </Button>
         )}
+      </div>
+      <div style={{ borderTop: '1px solid #e0e0e0', paddingTop: '1rem' }}>
+        <div style={{ marginBottom: '0.5rem', fontWeight: 600 }}>Advanced options</div>
+        <div style={{ display: 'flex', gap: '1rem', alignItems: 'flex-end' }}>
+          <div style={{ width: '9rem' }}>
+            <TextInput
+              id="yield-steps"
+              labelText="Yield steps"
+              type="number"
+              min={1}
+              max={100000}
+              step={1}
+              value={String(yieldSteps)}
+              onChange={(e) => setYieldSteps(Number(e.target.value))}
+              disabled={busy}
+              size="lg"
+            />
+          </div>
+          <Checkbox
+            id="simh-debug"
+            labelText="Enable SIMH debug logging"
+            checked={debugEnabled}
+            onChange={(e) => handleDebugToggle((e.target as HTMLInputElement).checked)}
+          />
+          <Checkbox
+            id="simh-echo-front-panel"
+            labelText="Echo front panel SIMH commands"
+            checked={frontPanelEchoEnabled}
+            onChange={(e) => handleFrontPanelEchoToggle((e.target as HTMLInputElement).checked)}
+          />
+        </div>
       </div>
     </Stack>
   );

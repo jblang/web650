@@ -23,11 +23,13 @@ export async function restart(moduleName: string): Promise<void> {
   stop();
 
   const scriptPath = `/${moduleName}.js`;
-  const oldScript = document.querySelector(`script[src="${scriptPath}"]`);
-  if (oldScript) oldScript.remove();
+  if (typeof document !== 'undefined') {
+    const oldScript = document.querySelector(`script[src="${scriptPath}"]`);
+    if (oldScript) oldScript.remove();
+  }
 
   const moduleKey = `create${moduleName.charAt(0).toUpperCase() + moduleName.slice(1)}Module`;
-  delete (window as unknown as Record<string, unknown>)[moduleKey];
+  delete (globalThis as unknown as Record<string, unknown>)[moduleKey];
 
   resetModule();
   await init(moduleName);

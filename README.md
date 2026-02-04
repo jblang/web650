@@ -1,26 +1,12 @@
 # SIMH IBM 650 Simulator Web UI
 
-This project provides a web-based user interface for the [Open SIMH](https://opensimh.org) IBM 650 simulator. The simulator runs entirely in the browser via WebAssembly, compiled from Open SIMH using Emscripten.
+This project provides a web-based user interface for [Open SIMH](https://opensimh.org)'s [IBM 650](https://opensimh.org/simdocs/i650_doc.html) simulator. The simulator runs entirely in the browser via WebAssembly, compiled from Open SIMH using [Emscripten](https://emscripten.org/).
 
 ![Front Panel](front_panel.png)
 
 ![Punched Card](punched_card.png)
 
 ## Getting Started
-
-### Build the WASM Simulator
-
-The simulator is compiled to WebAssembly using [Emscripten](https://emscripten.org). The SIMH source is included as a git submodule.
-
-1. Install the [Emscripten SDK](https://emscripten.org/docs/getting_started/downloads.html) and activate it in your shell.
-2. Initialize the submodule and run the build script:
-
-```bash
-git submodule update --init
-./scripts/build-wasm.sh
-```
-
-This produces `i650.js`, `i650.wasm`, and `i650.data` in the `public/` directory.
 
 ### Install Dependencies
 
@@ -42,46 +28,9 @@ npm run dev
 
 Open [http://localhost:3000](http://localhost:3000) with your browser to access the UI.
 
-## Testing
+## Developer Notes
 
-The project includes comprehensive test coverage:
-
-### Unit Tests
-
-The codebase includes unit tests for utility functions and React components. Run them with:
-
-```bash
-npm test
-```
-
-### Integration Tests
-
-The i650 WASM module has a full integration test suite that runs in Node.js:
-
-```bash
-npm test -- __tests__
-```
-
-The integration tests cover:
-- SIMH command execution (EXAMINE, DEPOSIT, RESET, etc.)
-- Memory read/write operations across all configurations (1K, 2K, 4K)
-- Register operations (AR, PR, DIST, ACCLO, ACCUP, CSW)
-- CPU instruction execution via the step() function
-- Special register-mapped memory addresses (8000-8003)
-- Full program loading and execution
-- The complete SIMH i650 test suite
-
-To run a specific test file:
-
-```bash
-npm test -- i650-test-suite.integration.test.ts
-```
-
-To generate a coverage report:
-
-```bash
-npm test -- --coverage
-```
+For architecture details, testing guidance, and build notes, see [DEVNOTES.md](DEVNOTES.md).
 
 ## About the IBM 650
 
@@ -95,26 +44,18 @@ Further reading:
 - [Other IBM 650 Documentation](https://bitsavers.org/pdf/ibm/650/) (bitsavers.org)
 - [IBM's Early Computers](https://mitpress.mit.edu/9780262523936/ibms-early-computers/) by Bashe, Pugh, Palmer and Johnson (mitpress.mit.edu)
 
-## About Open SIMH
-
-[Open SIMH](https://opensimh.org) a collection of simulators started by Robert Supnik and developed by a group of volunteers.  It includes simulators for many famous mini- and mainframe computers from the 1950s onwards, and specifically an [IBM 650 simulator](https://opensimh.org/simdocs/i650_doc) by Roberto Sancho.
-
-## About Next.js
-
-This project is built on [Next.js](https://nextjs.org). To learn more, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## About Carbon Design System
-
-This project uses the [Carbon Design System](https://carbondesignsystem.com), IBM's open-source design system and React Framework.
-
 ## About Me
 
 Hi, I'm [J.B. Langston](https://www.linkedin.com/in/jblangston/). I happen to work for IBM, but this project is not affiliated with or endorsed by IBM. I made this on my own time for fun.
+
+## Credits
+
+- [Open SIMH](https://opensimh.org) — simulator core (including the [IBM 650 simulator](https://opensimh.org/simdocs/i650_doc)).
+- [Emscripten](https://emscripten.org) — compiles SIMH to WebAssembly for in-browser execution.
+- [Next.js](https://nextjs.org) — web framework for the UI.
+- [React](https://react.dev) — UI component model.
+- [Carbon Design System](https://carbondesignsystem.com) — IBM’s open source design system and React components.
+- [Vitest](https://vitest.dev) — test runner.
 
 ## MIT License
 

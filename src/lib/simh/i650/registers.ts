@@ -2,7 +2,7 @@
  * I650 register operations.
  */
 
-import { depositState, sendCommand } from '../core';
+import { deposit, sendCommand } from '../core';
 import { examineI650State } from './memory';
 import { validateWord, validateAddress } from './format';
 import { ZERO_ADDRESS, ZERO_DATA } from './constants';
@@ -60,7 +60,7 @@ export function getAddressRegister(): string {
  */
 export function setAddressRegister(value: string): void {
   validateAddress(value);
-  depositState('AR', value);
+  deposit('AR', value);
 }
 
 /**
@@ -78,7 +78,7 @@ export function getProgramRegister(): string {
  */
 export function setProgramRegister(value: string): void {
   validateWord(value);
-  depositState('PR', value);
+  deposit('PR', value);
 }
 
 /**
@@ -96,7 +96,7 @@ export function getDistributor(): string {
  */
 export function setDistributor(value: string): void {
   validateWord(value);
-  depositState('DIST', value);
+  deposit('DIST', value);
 }
 
 /**
@@ -114,7 +114,7 @@ export function getLowerAccumulator(): string {
  */
 export function setLowerAccumulator(value: string): void {
   validateWord(value);
-  depositState('ACCLO', value);
+  deposit('ACCLO', value);
 }
 
 /**
@@ -132,7 +132,7 @@ export function getUpperAccumulator(): string {
  */
 export function setUpperAccumulator(value: string): void {
   validateWord(value);
-  depositState('ACCUP', value);
+  deposit('ACCUP', value);
 }
 
 /**
@@ -150,7 +150,7 @@ export function getConsoleSwitches(): string {
  */
 export function setConsoleSwitches(value: string): void {
   validateWord(value);
-  depositState('CSW', value);
+  deposit('CSW', value);
 }
 
 /**
@@ -167,7 +167,7 @@ export function getProgrammedStop(): boolean {
  * @param value - true to enable, false to disable
  */
 export function setProgrammedStop(value: boolean): void {
-  depositState('CSWPS', value ? '1' : '0');
+  deposit('CSWPS', value ? '1' : '0');
 }
 
 /**
@@ -184,7 +184,7 @@ export function getOverflowStop(): boolean {
  * @param value - true to enable, false to disable
  */
 export function setOverflowStop(value: boolean): void {
-  depositState('CSWOS', value ? '1' : '0');
+  deposit('CSWOS', value ? '1' : '0');
 }
 
 /**
@@ -201,7 +201,7 @@ export function getHalfCycle(): boolean {
  * @param value - true to enable, false to disable
  */
 export function setHalfCycle(value: boolean): void {
-  depositState('HALF', value ? '1' : '0');
+  deposit('HALF', value ? '1' : '0');
 }
 
 /**
@@ -218,7 +218,7 @@ export function getOverflow(): boolean {
  * @param value - true to set, false to clear
  */
 export function setOverflow(value: boolean): void {
-  depositState('OV', value ? '1' : '0');
+  deposit('OV', value ? '1' : '0');
 }
 
 /**

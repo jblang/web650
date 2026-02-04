@@ -148,8 +148,8 @@ The wrapper code is now organized into generic SIMH framework (`src/lib/simh/`) 
 |----------|-----------|----------|
 | Pure logic (exported) | `parseKeyValues` in `core.ts` — parses SIMH EXAMINE output into key-value pairs. `postProcessI650Values` in `i650/memory.ts` — I650-specific AR truncation. `getDisplayValue` in `EmulatorProvider.tsx` — maps display switch to register. | Unit test directly. |
 | Browser-specific glue | `init(moduleName)` in `core.ts` (DOM script injection), `startRunning`/`stopRunning` in `control.ts` (`requestAnimationFrame` tick loop) | Generic and accepts module name parameter. Could be made testable by accepting an injected module instance and replacing `requestAnimationFrame` with a pluggable scheduler. |
-| WASM integration logic | `sendCommand`, `examineState`, `depositState` in `core.ts`; `step`, output capture in `control.ts`; filesystem ops in `filesystem.ts` | Generic SIMH framework, testable in Node.js. Integration tests can call `createI650Module` directly and test the SIMH C API via `ccall`. |
-| I650-specific logic | Register accessors in `i650/registers.ts`, memory validation in `i650/memory.ts`, constants in `i650/constants.ts` | Depends on generic SIMH framework. Unit testable with mocked `examineState`/`depositState`. |
+| WASM integration logic | `sendCommand`, `examine`, `deposit` in `core.ts`; `step`, output capture in `control.ts`; filesystem ops in `filesystem.ts` | Generic SIMH framework, testable in Node.js. Integration tests can call `createI650Module` directly and test the SIMH C API via `ccall`. |
+| I650-specific logic | Register accessors in `i650/registers.ts`, memory validation in `i650/memory.ts`, constants in `i650/constants.ts` | Depends on generic SIMH framework. Unit testable with mocked `examine`/`deposit`. |
 
 **`EmulatorProvider.tsx` — testability analysis:**
 
@@ -236,7 +236,7 @@ The provider's React logic (register state management, display derivation, contr
 
 1. **Client-side WASM architecture.** The migration from a server-side PTY/REST API to client-side WebAssembly eliminates network latency, removes server-side security concerns (command injection, unauthenticated endpoints), and enables deployment as a static site.
 
-2. **Clean WASM abstraction.** `src/lib/simh/` provides a well-structured wrapper over Emscripten: output capture, register access via `examineState`/`depositState`, virtual filesystem support, and a `requestAnimationFrame`-based tick loop for smooth 60fps execution.
+2. **Clean WASM abstraction.** `src/lib/simh/` provides a well-structured wrapper over Emscripten: output capture, register access via `examine`/`deposit`, virtual filesystem support, and a `requestAnimationFrame`-based tick loop for smooth 60fps execution.
 
 3. **Modular architecture.** Generic SIMH framework code (`src/lib/simh/core.ts`, `control.ts`, `filesystem.ts`) is separated from I650-specific functionality (`src/lib/simh/i650/`), making it easier to add support for other SIMH simulators.
 

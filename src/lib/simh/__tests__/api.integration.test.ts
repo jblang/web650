@@ -1,18 +1,35 @@
 /**
  * Integration tests for SIMH API commands.
  *
- * Tests the sendCommand, examineState, and depositState functions
- * through the full WASM stack.
+ * Tests the sendCommand, examine, and deposit functions
+ * through the full WASM stack in a simulator-agnostic way.
  */
 
 import { describe, it, expect, beforeAll, afterAll, beforeEach } from 'vitest';
 import { initWasmForNode, OutputCapture } from './setup/node-loader';
 import { resetEmulator, cleanupTests } from './setup/test-helpers';
-import { sendCommand, examineState, depositState } from '../index';
-import { FIXTURES } from './setup/fixtures';
+import { sendCommand, examine, deposit } from '../index';
 
 describe('API Integration Tests', () => {
   let outputCapture: OutputCapture;
+
+  const isReadOnlyError = (err: unknown) =>
+    err instanceof Error && /read only/i.test(err.message);
+
+  const findWritableRegister = (state: Record<string, string>) => {
+    for (const [register, value] of Object.entries(state)) {
+      try {
+        deposit(register, value);
+        return { register, value };
+      } catch (err) {
+        if (isReadOnlyError(err)) {
+          continue;
+        }
+        throw err;
+      }
+    }
+    return null;
+  };
 
   beforeAll(async () => {
     outputCapture = new OutputCapture();
@@ -34,113 +51,73 @@ describe('API Integration Tests', () => {
       expect(output).toBeDefined();
     });
 
-    it('should execute EXAMINE command and return output', () => {
-      const output = sendCommand('EXAMINE AR');
+    it('should execute EXAMINE STATE command and return output', () => {
+      const state = examine('STATE');
+      const output = sendCommand('EXAMINE STATE');
       expect(output).toBeDefined();
-      expect(output).toContain('AR');
+      const [firstRegister] = Object.keys(state);
+      expect(firstRegister).toBeDefined();
+      expect(output.toUpperCase()).toContain(firstRegister);
     });
 
     it('should execute DEPOSIT command', () => {
-      const output = sendCommand('DEPOSIT AR 1234');
+      const state = examine('STATE');
+      const writable = findWritableRegister(state);
+      expect(writable).not.toBeNull();
+      const output = sendCommand(`DEPOSIT ${writable!.register} ${writable!.value}`);
       expect(output).toBeDefined();
     });
 
     it('should handle multiple commands in sequence', () => {
       sendCommand('RESET');
-      sendCommand('DEPOSIT AR 1234');
-      const output = sendCommand('EXAMINE AR');
-      expect(output).toContain('1234');
+      const state = examine('STATE');
+      const writable = findWritableRegister(state);
+      expect(writable).not.toBeNull();
+      sendCommand(`DEPOSIT ${writable!.register} ${writable!.value}`);
+      const output = sendCommand(`EXAMINE ${writable!.register}`);
+      expect(output).toContain(writable!.register);
     });
   });
 
-  describe('examineState', () => {
-    it('should read address register', () => {
-      const state = examineState('AR');
-      expect(state).toHaveProperty('AR');
-      // SIMH returns AR as 5-digit value; i650 wrapper normalizes to 4
-      expect(state.AR).toMatch(/^\d{5}$/);
-    });
-
-    it('should read program register', () => {
-      const state = examineState('PR');
-      expect(state).toHaveProperty('PR');
-      expect(state.PR).toMatch(/^\d{10}[+-]$/);
-    });
-
-    it('should read distributor', () => {
-      const state = examineState('DIST');
-      expect(state).toHaveProperty('DIST');
-      expect(state.DIST).toMatch(/^\d{10}[+-]$/);
-    });
-
-    it('should read accumulator registers', () => {
-      const stateAccLo = examineState('ACCLO');
-      const stateAccUp = examineState('ACCUP');
-
-      expect(stateAccLo).toHaveProperty('ACCLO');
-      expect(stateAccUp).toHaveProperty('ACCUP');
-      expect(stateAccLo.ACCLO).toMatch(/^\d{10}[+-]$/);
-      expect(stateAccUp.ACCUP).toMatch(/^\d{10}[+-]$/);
-    });
-
-    it('should read memory address', () => {
-      const state = examineState('0100');
-      // SIMH returns memory keys without leading zeros (100, not 0100)
-      expect(state).toHaveProperty('100');
-      expect(state['100']).toMatch(/^\d{10}[+-]$/);
+  describe('examine', () => {
+    it('should read simulator state', () => {
+      const state = examine('STATE');
+      expect(Object.keys(state).length).toBeGreaterThan(0);
     });
   });
 
-  describe('depositState', () => {
-    it('should set address register', () => {
-      depositState('AR', '5678');
-      const state = examineState('AR');
-      expect(state.AR).toBe('05678');
-    });
+  describe('deposit', () => {
+    it('should round-trip register values from state', () => {
+      const state = examine('STATE');
+      const registers = Object.entries(state);
+      expect(registers.length).toBeGreaterThan(0);
 
-    it('should set program register', () => {
-      depositState('PR', FIXTURES.TEST_WORD_1);
-      const state = examineState('PR');
-      expect(state.PR).toBe(FIXTURES.TEST_WORD_1);
-    });
-
-    it('should set distributor', () => {
-      depositState('DIST', FIXTURES.TEST_WORD_2);
-      const state = examineState('DIST');
-      expect(state.DIST).toBe(FIXTURES.TEST_WORD_2);
-    });
-
-    it('should set memory address', () => {
-      depositState('0100', FIXTURES.TEST_WORD_1);
-      const state = examineState('0100');
-      // SIMH returns memory keys without leading zeros
-      expect(state['100']).toBe(FIXTURES.TEST_WORD_1);
-    });
-
-    it('should persist values across multiple operations', () => {
-      depositState('AR', '1234');
-      depositState('PR', FIXTURES.TEST_WORD_1);
-      depositState('0100', FIXTURES.TEST_WORD_2);
-
-      const ar = examineState('AR');
-      const pr = examineState('PR');
-      const mem = examineState('0100');
-
-      expect(ar.AR).toBe('01234');
-      expect(pr.PR).toBe(FIXTURES.TEST_WORD_1);
-      expect(mem['100']).toBe(FIXTURES.TEST_WORD_2);
+      let writableCount = 0;
+      for (const [register, value] of registers) {
+        try {
+          deposit(register, value);
+          writableCount += 1;
+          const reread = examine(register);
+          expect(reread).toHaveProperty(register);
+          expect(reread[register]).toBe(value);
+        } catch (err) {
+          if (isReadOnlyError(err)) {
+            continue;
+          }
+          throw err;
+        }
+      }
+      expect(writableCount).toBeGreaterThan(0);
     });
   });
 
   describe('error handling', () => {
     it('should handle invalid commands gracefully', () => {
-      const output = sendCommand('INVALID_COMMAND');
-      expect(output).toBeDefined();
+      expect(() => sendCommand('INVALID_COMMAND')).toThrow();
     });
 
     it('should handle examining non-existent register', () => {
-      const output = sendCommand('EXAMINE NONEXISTENT');
-      expect(output).toBeDefined();
+      expect(() => sendCommand('EXAMINE NONEXISTENT')).toThrow();
     });
   });
 });

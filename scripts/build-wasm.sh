@@ -15,10 +15,10 @@ BUILD_DIR="$SIMH_DIR/emscripten-build"
 
 echo "=== Building I650 WASM module ==="
 
-# Reconfigure cmake (picks up emscripten-wasm.cmake changes)
+# Reconfigure cmake (picks up toolchain changes)
 cd "$BUILD_DIR"
 rm -f CMakeCache.txt
-cmake -DCMAKE_TOOLCHAIN_FILE=./emscripten-wasm.cmake "$SIMH_DIR"
+cmake -DCMAKE_TOOLCHAIN_FILE="$SIMH_DIR/cmake/emscripten-wasm.cmake" "$SIMH_DIR"
 
 # Build the i650 target
 make i650

@@ -16,6 +16,8 @@ type RunStateMessage = { type: 'runstate'; running: boolean };
 
 type AnyMessage = ResponseMessage | OutputMessage | RunStateMessage;
 
+import { debugLog } from './debug';
+
 let worker: Worker | null = null;
 let requestId = 1;
 const pending = new Map<number, { resolve: (value: unknown) => void; reject: (err: Error) => void }>();
@@ -23,6 +25,8 @@ let outputCallback: ((text: string) => void) | null = null;
 let runStateCallback: ((running: boolean) => void) | null = null;
 let running = false;
 let initPromise: Promise<void> | null = null;
+let initModuleName: string | null = null;
+let echoEnabled = false;
 
 function ensureWorker(): Worker {
   if (worker) return worker;
@@ -83,8 +87,7 @@ function call<T = unknown>(method: string, ...args: unknown[]): Promise<T> {
 
 async function ensureInit(): Promise<void> {
   if (!initPromise) {
-    await init();
-    return;
+    throw new Error('Worker client not initialized. Call init(moduleName) first.');
   }
   try {
     await initPromise;
@@ -94,23 +97,53 @@ async function ensureInit(): Promise<void> {
   }
 }
 
-export async function init(): Promise<void> {
+export async function init(moduleName: string): Promise<void> {
+  initModuleName = moduleName;
   const baseUrl = typeof window !== 'undefined' ? window.location.origin : '';
-  initPromise = call('init', baseUrl);
-  await initPromise;
+  debugLog('worker init start', { moduleName });
+  initPromise = call('init', moduleName, baseUrl);
+  try {
+    await initPromise;
+    await call('setEcho', echoEnabled);
+    debugLog('worker init done', { moduleName, echoEnabled });
+  } catch (err) {
+    initPromise = null;
+    throw err;
+  }
 }
 
-export async function restart(): Promise<void> {
+export async function restart(moduleName?: string): Promise<void> {
   await ensureInit();
-  await call('restart');
+  const targetModule = moduleName ?? initModuleName;
+  if (!targetModule) {
+    throw new Error('Worker client not initialized. Call init(moduleName) first.');
+  }
+  await call('restart', targetModule);
 }
 
 export async function sendCommand(
   command: string,
-  options?: { streamOutput?: boolean }
+  options?: { streamOutput?: boolean; echo?: boolean }
 ): Promise<string> {
   await ensureInit();
   return call<string>('sendCommand', command, options);
+}
+
+export async function examine(
+  ref: string,
+  options?: { echo?: boolean }
+): Promise<Record<string, string>> {
+  await ensureInit();
+  return call('examine', ref, options);
+}
+
+export async function deposit(
+  ref: string,
+  value: string,
+  options?: { echo?: boolean }
+): Promise<void> {
+  await ensureInit();
+  await call('deposit', ref, value, options);
 }
 
 export async function readFile(path: string): Promise<string> {
@@ -133,86 +166,6 @@ export async function unlink(path: string): Promise<void> {
   await call('unlink', path);
 }
 
-export async function getRegisterSnapshot(): Promise<{
-  addressRegister: string;
-  programRegister: string;
-  lowerAccumulator: string;
-  upperAccumulator: string;
-  distributor: string;
-  consoleSwitches: string;
-  programmedStop: boolean;
-  overflowStop: boolean;
-  halfCycle: boolean;
-}> {
-  await ensureInit();
-  return call('getRegisterSnapshot');
-}
-
-export async function setAddressRegister(value: string): Promise<void> {
-  await ensureInit();
-  await call('setAddressRegister', value);
-}
-
-export async function setProgramRegister(value: string): Promise<void> {
-  await ensureInit();
-  await call('setProgramRegister', value);
-}
-
-export async function setDistributor(value: string): Promise<void> {
-  await ensureInit();
-  await call('setDistributor', value);
-}
-
-export async function setConsoleSwitches(value: string): Promise<void> {
-  await ensureInit();
-  await call('setConsoleSwitches', value);
-}
-
-export async function setProgrammedStop(value: boolean): Promise<void> {
-  await ensureInit();
-  await call('setProgrammedStop', value);
-}
-
-export async function setOverflowStop(value: boolean): Promise<void> {
-  await ensureInit();
-  await call('setOverflowStop', value);
-}
-
-export async function setHalfCycle(value: boolean): Promise<void> {
-  await ensureInit();
-  await call('setHalfCycle', value);
-}
-
-export async function resetAccumulator(): Promise<void> {
-  await ensureInit();
-  await call('resetAccumulator');
-}
-
-export async function reset(): Promise<void> {
-  await ensureInit();
-  await call('reset');
-}
-
-export async function setMemorySize(size: '1K' | '2K' | '4K'): Promise<void> {
-  await ensureInit();
-  await call('setMemorySize', size);
-}
-
-export async function readMemory(address: string): Promise<string> {
-  await ensureInit();
-  return call('readMemory', address);
-}
-
-export async function writeMemory(address: string, value: string): Promise<void> {
-  await ensureInit();
-  await call('writeMemory', address, value);
-}
-
-export async function stopCpu(): Promise<void> {
-  await ensureInit();
-  await call('stopCpu');
-}
-
 export async function getYieldSteps(): Promise<number> {
   await ensureInit();
   return call('getYieldSteps');
@@ -221,6 +174,23 @@ export async function getYieldSteps(): Promise<number> {
 export async function setYieldSteps(steps: number): Promise<void> {
   await ensureInit();
   await call('setYieldSteps', steps);
+}
+
+export function isEchoEnabled(): boolean {
+  return echoEnabled;
+}
+
+export function setEchoEnabled(enabled: boolean): void {
+  echoEnabled = enabled;
+  debugLog('worker echo set', { enabled });
+  if (worker) {
+    void call('setEcho', enabled);
+  }
+}
+
+export async function stop(): Promise<void> {
+  await ensureInit();
+  await call('stop');
 }
 
 export function isRunning(): boolean {
