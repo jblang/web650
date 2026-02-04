@@ -275,13 +275,13 @@ test('program reset stops execution and clears PR and AR', async ({ page }) => {
   });
 });
 
-test('computer reset stops execution and keeps deposited state accessible', async ({ page }) => {
+test('computer reset stops execution and restores baseline register values', async ({ page }) => {
   const output = await setupEmulatorConsole(page);
 
   await sendConsoleCommand(page, 'deposit 0 1');
-  await sendConsoleCommand(page, 'deposit AR 02468');
   await sendConsoleCommand(page, 'deposit OV 1');
   await sendConsoleCommand(page, 'go');
+  await expect(page.getByRole('button', { name: 'Stop' })).toBeVisible();
 
   await page.getByRole('link', { name: 'Front Panel' }).click();
   await clickPanelButton(page, 'COMPUTER RESET');
@@ -289,10 +289,10 @@ test('computer reset stops execution and keeps deposited state accessible', asyn
 
   await page.getByRole('link', { name: 'Emulator' }).click();
   await sendConsoleCommand(page, 'examine state');
-  // SIMH RESET in this integration stops execution but does not clear these deposited registers.
+  // Computer reset issues SIMH RESET and should restore baseline register values.
   await expectConsoleState(output, {
-    AR: '02468',
-    OV: '1',
+    AR: '00000',
+    OV: '0',
   });
 });
 

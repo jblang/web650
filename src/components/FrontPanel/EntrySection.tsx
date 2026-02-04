@@ -45,9 +45,9 @@ const EntrySection: React.FC<EntrySectionProps> = ({
   };
 
   return (
-    <div data-testid="entry-section" data-entry-value={normalizedValue}>
+    <>
       {/* Knobs row */}
-      <div className={styles.knobsRow}>
+      <div className={styles.knobsRow} data-testid="entry-section" data-entry-value={normalizedValue}>
         <div className={styles.digitContainer}>
           {digits.map((digit, i) => (
             <div key={i} className={styles.cell}>
@@ -68,7 +68,7 @@ const EntrySection: React.FC<EntrySectionProps> = ({
           SIGN
         </div>
       </div>
-    </div>
+    </>
   );
 };
 
