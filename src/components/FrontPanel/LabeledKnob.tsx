@@ -14,9 +14,10 @@ interface LabeledKnobProps {
   onChange?: (position: number) => void;
   className?: string;
   labelRadius?: number;
+  testId?: string;
 }
 
-const LabeledKnob: React.FC<LabeledKnobProps> = ({ position, positions, onChange, className, labelRadius }) => {
+const LabeledKnob: React.FC<LabeledKnobProps> = ({ position, positions, onChange, className, labelRadius, testId }) => {
   const rotation = positions[position]?.angle ?? 0;
 
   const handleLeftClick = () => {
@@ -44,7 +45,12 @@ const LabeledKnob: React.FC<LabeledKnobProps> = ({ position, positions, onChange
   const showTickmarks = positions.length > 2;
 
   return (
-    <div className={cn(styles.knobContainer, className)}>
+    <div
+      className={cn(styles.knobContainer, className)}
+      data-testid={testId}
+      data-position={position}
+      data-current-label={positions[position]?.label ?? ''}
+    >
       <div className={styles.labeledKnobInnerContainer} style={{ width: `${scaledContainerWidth}px`, height: `${scaledContainerHeight}px` }}>
         {positions.map((p, i) => {
           const angleRad = (p.angle - 90) * (Math.PI / 180);

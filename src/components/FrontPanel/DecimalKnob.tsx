@@ -7,9 +7,10 @@ interface DecimalKnobProps {
   style?: React.CSSProperties;
   value: number; // 0-9
   onChange?: (value: number) => void;
+  testId?: string;
 }
 
-const DecimalKnob: React.FC<DecimalKnobProps> = ({ value, onChange, style }) => {
+const DecimalKnob: React.FC<DecimalKnobProps> = ({ value, onChange, style, testId }) => {
   const [showPopup, setShowPopup] = useState(false);
   const [popupOffset, setPopupOffset] = useState(0);
   const wrapperRef = useRef<HTMLDivElement>(null);
@@ -65,7 +66,7 @@ const DecimalKnob: React.FC<DecimalKnobProps> = ({ value, onChange, style }) => 
   }, [showPopup]);
 
   return (
-    <div className={cn(styles.knobContainer, styles.decimalKnobContainer)} style={style}>
+    <div className={cn(styles.knobContainer, styles.decimalKnobContainer)} style={style} data-testid={testId}>
       <div className={styles.decimalDisplayWrapper} ref={wrapperRef}>
         <div
           className={styles.decimalDisplay}
@@ -94,11 +95,13 @@ const DecimalKnob: React.FC<DecimalKnobProps> = ({ value, onChange, style }) => 
           className={cn(styles.knobHalf, styles.knobHalfLeft, styles.decimalDecCursor)}
           onClick={handleLeftClick}
           title="DECREMENT"
+          data-testid={testId ? `${testId}-dec` : undefined}
         />
         <div
           className={cn(styles.knobHalf, styles.knobHalfRight, styles.decimalIncCursor)}
           onClick={handleRightClick}
           title="INCREMENT"
+          data-testid={testId ? `${testId}-inc` : undefined}
         />
       </div>
     </div>

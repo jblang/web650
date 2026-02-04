@@ -56,6 +56,7 @@ Hi, I'm [J.B. Langston](https://www.linkedin.com/in/jblangston/). I happen to wo
 - [React](https://react.dev) — UI component model.
 - [Carbon Design System](https://carbondesignsystem.com) — IBM’s open source design system and React components.
 - [Vitest](https://vitest.dev) — test runner.
+- [Playwright](https://playwright.dev) — end-to-end browser tests.
 
 ## MIT License
 

@@ -50,7 +50,13 @@ const OperatingStatus: React.FC<OperatingStatusProps> = ({ state }) => {
               const isLit = state[config.key];
               return (
                 <div key={rowIndex} className={styles.ledUnit}>
-                  <div className={styles.bulb}>{isLit ? litBulb : unlitBulb}</div>
+                  <div
+                    className={styles.bulb}
+                    data-testid={`operating-${config.key}`}
+                    data-lit={isLit ? 'true' : 'false'}
+                  >
+                    {isLit ? litBulb : unlitBulb}
+                  </div>
                   <div className={styles.ledLabel}>{config.label}</div>
                 </div>
               );

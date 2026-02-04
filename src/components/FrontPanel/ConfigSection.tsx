@@ -50,13 +50,13 @@ const ConfigSection: React.FC<ConfigSectionProps> = ({
 }) => {
   return (
     <div className={styles.finalKnobsRow}>
-      <LabeledKnob position={programmed} positions={STOP_RUN_POS} onChange={onProgrammedChange} />
-      <LabeledKnob position={halfCycle} positions={HALF_RUN_POS} onChange={onHalfCycleChange} />
+      <LabeledKnob position={programmed} positions={STOP_RUN_POS} onChange={onProgrammedChange} testId="programmed-knob" />
+      <LabeledKnob position={halfCycle} positions={HALF_RUN_POS} onChange={onHalfCycleChange} testId="half-cycle-knob" />
       <AddressSelection value={addressSelection} onChange={onAddressChange} />
-      <LabeledKnob position={control} positions={CONTROL_POS} onChange={(pos) => onControlChange(pos as ControlPosition)} labelRadius={48} />
-      <LabeledKnob position={display} positions={DISPLAY_POS} onChange={(pos) => onDisplayChange(pos as DisplayPosition)} className={styles.displayKnob} labelRadius={56} />
-      <LabeledKnob position={overflow} positions={OVERFLOW_POS} onChange={onOverflowChange} />
-      <LabeledKnob position={error} positions={ERROR_POS} onChange={(pos) => onErrorChange(pos as ErrorSwitchPosition)} />
+      <LabeledKnob position={control} positions={CONTROL_POS} onChange={(pos) => onControlChange(pos as ControlPosition)} labelRadius={48} testId="control-knob" />
+      <LabeledKnob position={display} positions={DISPLAY_POS} onChange={(pos) => onDisplayChange(pos as DisplayPosition)} className={styles.displayKnob} labelRadius={56} testId="display-knob" />
+      <LabeledKnob position={overflow} positions={OVERFLOW_POS} onChange={onOverflowChange} testId="overflow-knob" />
+      <LabeledKnob position={error} positions={ERROR_POS} onChange={(pos) => onErrorChange(pos as ErrorSwitchPosition)} testId="error-knob" />
       <div className={cn(styles.knobLabel, styles.programmed)}>PROGRAMMED</div>
       <div className={cn(styles.knobLabel, styles.halfCycle)}>HALF CYCLE</div>
       <div className={cn(styles.knobLabel, styles.addressSelection)}>ADDRESS SELECTION</div>

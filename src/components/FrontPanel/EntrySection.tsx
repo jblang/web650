@@ -45,13 +45,13 @@ const EntrySection: React.FC<EntrySectionProps> = ({
   };
 
   return (
-    <>
+    <div data-testid="entry-section" data-entry-value={normalizedValue}>
       {/* Knobs row */}
       <div className={styles.knobsRow}>
         <div className={styles.digitContainer}>
           {digits.map((digit, i) => (
             <div key={i} className={styles.cell}>
-              <DecimalKnob value={digit} onChange={handleDigitChange(i)} />
+              <DecimalKnob value={digit} onChange={handleDigitChange(i)} testId={`entry-digit-${i}`} />
             </div>
           ))}
         </div>
@@ -62,13 +62,13 @@ const EntrySection: React.FC<EntrySectionProps> = ({
 
       <div className={styles.signKnobCell}>
         <div className={styles.cell}>
-          <LabeledKnob position={signKnobPosition} positions={SIGN_POS} onChange={handleSignChange} />
+          <LabeledKnob position={signKnobPosition} positions={SIGN_POS} onChange={handleSignChange} testId="entry-sign-knob" />
         </div>
         <div className={styles.signLabel}>
           SIGN
         </div>
       </div>
-    </>
+    </div>
   );
 };
 

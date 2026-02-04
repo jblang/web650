@@ -20,10 +20,10 @@ const AddressSelection: React.FC<AddressSelectionProps> = ({ value, onChange }) 
 
   return (
     <>
-      <DecimalKnob value={digits[0]} onChange={handleDigitChange(0)} />
-      <DecimalKnob value={digits[1]} onChange={handleDigitChange(1)} />
-      <DecimalKnob value={digits[2]} onChange={handleDigitChange(2)} />
-      <DecimalKnob value={digits[3]} onChange={handleDigitChange(3)} />
+      <DecimalKnob value={digits[0]} onChange={handleDigitChange(0)} testId="address-digit-0" />
+      <DecimalKnob value={digits[1]} onChange={handleDigitChange(1)} testId="address-digit-1" />
+      <DecimalKnob value={digits[2]} onChange={handleDigitChange(2)} testId="address-digit-2" />
+      <DecimalKnob value={digits[3]} onChange={handleDigitChange(3)} testId="address-digit-3" />
     </>
   );
 };

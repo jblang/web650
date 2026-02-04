@@ -17,7 +17,7 @@ const DisplaySection: React.FC<DisplaySectionProps> = ({ value }) => {
   return (
     <>
       {/* Labels row */}
-      <div className={styles.labelBar}>
+      <div className={styles.labelBar} data-testid="display-section" data-display-value={normalizedValue}>
         <div className={styles.labelDisplay}>DISPLAY</div>
         <div className={styles.labelSign}>SIGN</div>
       </div>

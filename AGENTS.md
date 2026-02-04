@@ -4,6 +4,12 @@ Guidance for AI coding agents working on this codebase.
 
 For background context and deep dives, see `DEVNOTES.md`.
 
+## Documentation Policy
+
+- `README.md` is user-facing only (what the app is, how to run it as a user).
+- Developer-specific and implementation-detail documentation belongs in `DEVNOTES.md`.
+- Keep only a minimal synopsis in `AGENTS.md`; point to `DEVNOTES.md` for detailed procedures.
+
 ## Project Summary
 
 Web-based UI for the Open SIMH IBM 650 simulator. The simulator runs entirely in the browser via WebAssembly, compiled from Open SIMH using Emscripten. A Next.js app serves static pages, and a modular TypeScript wrapper (`src/lib/simh/`) provides the FFI layer over the Emscripten module. The frontend renders an interactive front panel simulation with knobs, switches, and indicator lights using IBM Carbon Design System.

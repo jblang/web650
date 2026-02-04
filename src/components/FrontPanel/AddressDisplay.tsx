@@ -12,7 +12,7 @@ const AddressDisplay: React.FC<AddressDisplayProps> = ({ value }) => {
   const digits = displayValue.split('').map(Number);
 
   return (
-    <div className={styles.addressDisplay}>
+    <div className={styles.addressDisplay} data-testid="address-display" data-address-value={displayValue}>
       <div className={styles.title}>
         ADDRESS
       </div>

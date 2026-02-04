@@ -19,6 +19,7 @@ export const useFrontPanelControls = () => {
     programmedStop,
     halfCycle,
     overflowStop,
+    isRunning,
   } = useEmulatorState();
 
   const {
@@ -42,7 +43,10 @@ export const useFrontPanelControls = () => {
     onEmulatorResetClick,
   } = useEmulatorActions();
 
-  const operatingLights: OperatingState = INITIAL_OPERATING_STATE;
+  const operatingLights: OperatingState = {
+    ...INITIAL_OPERATING_STATE,
+    program: isRunning,
+  };
   const checkingLights: CheckingState = INITIAL_CHECKING_STATE;
 
   // Ensure front panel reflects emulator state when loaded or when display knob changes.

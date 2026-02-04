@@ -120,6 +120,28 @@ npm test -- i650-test-suite.integration.test.ts
 npm test -- --coverage
 ```
 
+### End-to-end tests (Playwright)
+
+E2E specs live under `e2e/` and run against the Next.js app.
+
+One-time browser install:
+
+```bash
+npx playwright install chromium
+```
+
+Common commands:
+
+```bash
+npm run test:e2e
+npx playwright test e2e/front-panel.spec.ts
+npx playwright test e2e/front-panel.spec.ts --workers=1
+```
+
+Notes:
+- `--workers=1` is useful when debugging stateful emulator flows.
+- Some front-panel controls currently use forced/programmatic clicks in tests due to occasional actionability conflicts in dense Carbon layouts.
+
 ## Rebuilding the SIMH WASM Module
 
 The simulator is compiled to WebAssembly using Emscripten. The SIMH source is included as a git submodule.
