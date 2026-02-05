@@ -80,7 +80,7 @@ function call<T = unknown>(method: string, ...args: unknown[]): Promise<T> {
   const payload: RequestMessage = { id, method, args };
   const activeWorker = ensureWorker();
   return new Promise<T>((resolve, reject) => {
-    pending.set(id, { resolve, reject });
+    pending.set(id, { resolve: resolve as (value: unknown) => void, reject });
     activeWorker.postMessage(payload);
   });
 }

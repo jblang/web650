@@ -50,6 +50,31 @@ describe('EntrySection', () => {
 
     expect(onChange).toHaveBeenCalledWith('0000000000-');
   });
+
+  it('keeps negative sign when changing digits', () => {
+    const onChange = vi.fn();
+    render(<EntrySection value="0000000000-" onChange={onChange} />);
+
+    const incButtons = container.querySelectorAll('[title="INCREMENT"]');
+    const firstDigitInc = incButtons[0];
+    act(() => {
+      firstDigitInc?.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+    });
+
+    expect(onChange).toHaveBeenCalledWith('1000000000-');
+  });
+
+  it('toggles sign knob back to positive', () => {
+    const onChange = vi.fn();
+    render(<EntrySection value="0000000000-" onChange={onChange} />);
+
+    const signKnob = container.querySelector('[title="CW"]');
+    act(() => {
+      signKnob?.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+    });
+
+    expect(onChange).toHaveBeenCalledWith('0000000000+');
+  });
 });
 
 /* @vitest-environment jsdom */

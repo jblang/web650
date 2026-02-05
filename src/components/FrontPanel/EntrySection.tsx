@@ -1,7 +1,7 @@
 import React from 'react';
 import DecimalKnob from './DecimalKnob';
 import LabeledKnob from './LabeledKnob';
-import { normalizeWord } from '../../lib/format';
+import { normalizeWord } from '../../lib/simh/i650/format';
 import styles from './EntrySection.module.scss';
 
 const SIGN_POS = [{label: '-', angle: -30}, {label: '+', angle: 30}];

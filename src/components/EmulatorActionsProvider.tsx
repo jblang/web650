@@ -2,8 +2,8 @@
 
 import { createContext, useContext, useCallback, useMemo, ReactNode } from 'react';
 import { Programmed, HalfCycle, Overflow } from './FrontPanel/ConfigSection';
-import { i650Service } from '@/lib/simh/client';
-import type { DisplayPosition, ControlPosition, ErrorSwitchPosition } from '@/lib/simh/client';
+import * as i650Service from '@/lib/simh/i650/service';
+import type { DisplayPosition, ControlPosition, ErrorSwitchPosition } from '@/lib/simh/i650/controls';
 import { useEmulatorConsole } from './EmulatorConsoleProvider';
 
 interface EmulatorActionsContextType {

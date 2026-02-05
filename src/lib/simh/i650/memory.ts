@@ -52,9 +52,7 @@ export function readMemory(address: string): string {
   // Try different formats that SIMH might return
   const numeric = String(parseInt(address, 10));
   return (
-    result[address] ??
     result[numeric] ??
-    result[numeric.padStart(4, '0')] ??
     undefined
   );
 }

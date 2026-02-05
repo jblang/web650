@@ -46,13 +46,7 @@ export default function EmulatorConsole() {
   }, [isRunning, sending]);
 
   useEffect(() => {
-    if (!sending) {
-      if (sendTimeoutRef.current) {
-        clearTimeout(sendTimeoutRef.current);
-        sendTimeoutRef.current = null;
-      }
-      return;
-    }
+    if (!sending) return;
     sendTimeoutRef.current = setTimeout(() => {
       setSending(false);
     }, 15000);

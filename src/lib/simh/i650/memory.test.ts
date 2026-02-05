@@ -24,14 +24,14 @@ describe('i650 memory helpers', () => {
     expect(result.PR).toBe(ZERO_DATA);
   });
 
-  it('reads memory using exact key', () => {
-    examineMock.mockReturnValue({ '0100': '1111111111+' });
-    expect(readMemory('0100')).toBe('1111111111+');
-  });
-
-  it('reads memory using numeric key fallback', () => {
+  it('reads memory using numeric key', () => {
     examineMock.mockReturnValue({ '100': '2222222222+' });
     expect(readMemory('0100')).toBe('2222222222+');
+  });
+
+  it('returns undefined when numeric key is missing', () => {
+    examineMock.mockReturnValue({ '0100': '1111111111+' });
+    expect(readMemory('0100')).toBeUndefined();
   });
 
   it('returns undefined when examine throws', () => {

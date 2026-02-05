@@ -3,8 +3,9 @@
 import { createContext, useContext, useState, useEffect, useMemo, ReactNode } from 'react';
 import type { OperatingState } from './FrontPanel/OperatingStatus';
 import type { CheckingState } from './FrontPanel/CheckingStatus';
-import { i650Service } from '@/lib/simh/client';
-import type { DisplayPosition, ControlPosition, ErrorSwitchPosition, I650EmulatorState } from '@/lib/simh/client';
+import * as i650Service from '@/lib/simh/i650/service';
+import type { DisplayPosition, ControlPosition, ErrorSwitchPosition } from '@/lib/simh/i650/controls';
+import type { I650EmulatorState } from '@/lib/simh/i650/service';
 
 // Static state constants - frozen at module level
 export const INITIAL_OPERATING_STATE: OperatingState = Object.freeze({

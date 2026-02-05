@@ -84,6 +84,22 @@ describe('i650 registers', () => {
     });
   });
 
+  it('falls back to defaults in register snapshot when values are missing', () => {
+    examineMock.mockReturnValue({});
+    const snapshot = getRegisterSnapshot();
+    expect(snapshot).toEqual({
+      addressRegister: ZERO_ADDRESS,
+      programRegister: ZERO_DATA,
+      lowerAccumulator: ZERO_DATA,
+      upperAccumulator: ZERO_DATA,
+      distributor: ZERO_DATA,
+      consoleSwitches: ZERO_DATA,
+      programmedStop: false,
+      overflowStop: false,
+      halfCycle: false,
+    });
+  });
+
   it('falls back to zero values when state is missing', () => {
     examineMock.mockReturnValue({});
     expect(getAddressRegister()).toBe(ZERO_ADDRESS);

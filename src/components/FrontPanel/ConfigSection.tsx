@@ -3,8 +3,8 @@ import LabeledKnob from './LabeledKnob';
 import AddressSelection from './AddressSelection';
 import styles from './ConfigSection.module.scss';
 import cn from 'classnames';
-import { Programmed, HalfCycle, Control, Display, Overflow, ErrorSwitch } from '@/lib/simh';
-import type { DisplayPosition, ControlPosition, ErrorSwitchPosition } from '@/lib/simh';
+import { Programmed, HalfCycle, Control, Display, Overflow, ErrorSwitch } from '@/lib/simh/i650/controls';
+import type { DisplayPosition, ControlPosition, ErrorSwitchPosition } from '@/lib/simh/i650/controls';
 
 // Knob position configurations
 const STOP_RUN_POS = [{label: 'STOP', angle: -30}, {label: 'RUN', angle: 30}];

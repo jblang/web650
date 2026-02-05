@@ -1,7 +1,7 @@
 import React from 'react';
 import BiQuinaryDigit from './BiQuinaryDigit';
 import SignDisplay from './SignDisplay';
-import { normalizeWord } from '../../lib/format';
+import { normalizeWord } from '../../lib/simh/i650/format';
 import styles from './DisplaySection.module.scss';
 
 interface DisplaySectionProps {

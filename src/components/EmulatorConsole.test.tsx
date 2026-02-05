@@ -1,19 +1,19 @@
 import React, { act } from 'react';
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { createRoot, Root } from 'react-dom/client';
 import EmulatorConsole from './EmulatorConsole';
 
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
 
-// Mock Carbon components to simple HTML equivalents
 type InputProps = {
   id?: string;
-  onChange?: (e: { target: { value: string } }) => void;
+  onChange?: (e: { target: { value: string; checked?: boolean } }) => void;
+  onKeyDown?: (e: { key: string; preventDefault: () => void }) => void;
 } & Record<string, unknown>;
 type ButtonProps = { onClick?: (e?: unknown) => void } & Record<string, unknown>;
-let lastInputProps: InputProps | undefined;
+
 const inputPropsById = new Map<string, InputProps>();
-let lastButtonProps: ButtonProps | undefined;
+let allowTextAreaRef = true;
 
 const stripDomProps = (props: Record<string, unknown>) => {
   const { labelText, renderIcon, ...rest } = props;
@@ -23,22 +23,26 @@ const stripDomProps = (props: Record<string, unknown>) => {
 };
 
 vi.mock('@carbon/react', () => ({
-  TextInput: ({ onChange, ...props }: InputProps) => {
-    const merged = { ...props, onChange };
-    lastInputProps = merged as InputProps;
+  TextInput: ({ onChange, onKeyDown, ...props }: InputProps) => {
+    const merged = { ...props, onChange, onKeyDown };
     if (typeof merged.id === 'string') {
       inputPropsById.set(merged.id, merged as InputProps);
     }
     return <input {...stripDomProps(merged)} />;
   },
-  TextArea: (props: Record<string, unknown>) => <textarea {...stripDomProps(props)} />,
+  TextArea: (props: Record<string, unknown>) => {
+    const { ref, ...rest } = props as Record<string, unknown> & { ref?: React.Ref<HTMLTextAreaElement> };
+    return <textarea {...stripDomProps(rest)} ref={allowTextAreaRef ? (ref as React.Ref<HTMLTextAreaElement>) : undefined} />;
+  },
   Checkbox: ({ onChange, ...props }: InputProps) => {
     const merged = { ...props, onChange };
+    if (typeof merged.id === 'string') {
+      inputPropsById.set(merged.id, merged as InputProps);
+    }
     return <input type="checkbox" {...stripDomProps(merged)} />;
   },
   Button: ({ onClick, ...props }: ButtonProps) => {
     const merged = { ...props, onClick };
-    lastButtonProps = merged as ButtonProps;
     return <button type="button" {...stripDomProps(merged)} />;
   },
   Stack: (props: Record<string, unknown>) => <div {...props} />,
@@ -46,26 +50,52 @@ vi.mock('@carbon/react', () => ({
 
 vi.mock('@carbon/icons-react', () => ({
   Send: () => null,
+  Stop: () => null,
 }));
 
-// Mock useEmulatorConsole to control output and capture sends
-const sendCommand = vi.fn(async () => '');
-const setYieldSteps = vi.fn();
-let outputValue = 'hello\n';
+const emulatorConsoleState = vi.hoisted(() => ({
+  sendCommand: vi.fn(async () => ''),
+  setYieldSteps: vi.fn(),
+  outputValue: 'hello\n',
+  isRunningValue: false,
+  yieldStepsValue: 1000,
+}));
+
 vi.mock('./EmulatorConsoleProvider', () => ({
   useEmulatorConsole: () => ({
-    output: outputValue,
-    sendCommand,
-    yieldSteps: 1000,
-    setYieldSteps,
-    isRunning: false,
+    output: emulatorConsoleState.outputValue,
+    sendCommand: emulatorConsoleState.sendCommand,
+    isRunning: emulatorConsoleState.isRunningValue,
+    yieldSteps: emulatorConsoleState.yieldStepsValue,
+    setYieldSteps: emulatorConsoleState.setYieldSteps,
   }),
+}));
+
+const actionMocks = vi.hoisted(() => ({
+  onProgramStopClick: vi.fn(),
 }));
 
 vi.mock('./EmulatorActionsProvider', () => ({
   useEmulatorActions: () => ({
-    onProgramStopClick: vi.fn(),
+    onProgramStopClick: actionMocks.onProgramStopClick,
   }),
+}));
+
+const optionState = vi.hoisted(() => ({
+  setDebugEnabled: vi.fn(),
+  setEchoEnabled: vi.fn(),
+  debugEnabled: false,
+  echoEnabled: false,
+}));
+
+vi.mock('@/lib/simh/debug', () => ({
+  setDebugEnabled: optionState.setDebugEnabled,
+  isDebugEnabled: () => optionState.debugEnabled,
+}));
+
+vi.mock('@/lib/simh/echo', () => ({
+  setEchoEnabled: optionState.setEchoEnabled,
+  isEchoEnabled: () => optionState.echoEnabled,
 }));
 
 let container: HTMLDivElement;
@@ -77,57 +107,223 @@ const render = (ui: React.ReactElement) => {
   });
 };
 
+const typeCommand = (value: string) => {
+  act(() => {
+    const commandInput = inputPropsById.get('command');
+    commandInput?.onChange?.({ target: { value } });
+  });
+};
+
 describe('EmulatorConsole', () => {
   beforeEach(() => {
     container = document.createElement('div');
     document.body.appendChild(container);
     root = createRoot(container);
-    sendCommand.mockClear();
-    lastInputProps = undefined;
     inputPropsById.clear();
-    lastButtonProps = undefined;
+    allowTextAreaRef = true;
+    emulatorConsoleState.sendCommand.mockReset();
+    emulatorConsoleState.sendCommand.mockImplementation(async () => '');
+    emulatorConsoleState.setYieldSteps.mockClear();
+    actionMocks.onProgramStopClick.mockClear();
+    optionState.setDebugEnabled.mockClear();
+    optionState.setEchoEnabled.mockClear();
+    emulatorConsoleState.outputValue = 'hello\n';
+    emulatorConsoleState.isRunningValue = false;
+    emulatorConsoleState.yieldStepsValue = 1000;
+    optionState.debugEnabled = false;
+    optionState.echoEnabled = false;
   });
 
   afterEach(() => {
+    vi.useRealTimers();
     act(() => root.unmount());
     container.remove();
   });
 
-  it('shows emulator output and appends new lines', () => {
+  it('shows output updates', () => {
     render(<EmulatorConsole />);
     const textarea = container.querySelector('textarea') as HTMLTextAreaElement;
     expect(textarea.value).toContain('hello');
 
-    // simulate new output
-    outputValue = 'hello\nworld\n';
+    emulatorConsoleState.outputValue = 'hello\nworld\n';
     render(<EmulatorConsole />);
     expect(textarea.value).toContain('world');
   });
 
-  it('sends command on button click and clears input', async () => {
+  it('skips auto-scroll when output ref is unavailable', () => {
+    allowTextAreaRef = false;
     render(<EmulatorConsole />);
-    act(() => {
-      const commandInput = inputPropsById.get('command') ?? lastInputProps;
-      commandInput?.onChange?.({ target: { value: '  SHOW DEV  ' } });
-    });
 
+    emulatorConsoleState.outputValue = 'next line\n';
+    render(<EmulatorConsole />);
+  });
+
+  it('sends command on send click and trims input', async () => {
+    render(<EmulatorConsole />);
+    typeCommand('  SHOW DEV  ');
+
+    const sendButton = container.querySelector('button') as HTMLButtonElement;
     await act(async () => {
-      lastButtonProps.onClick?.({ preventDefault() {} });
+      sendButton.click();
     });
 
-    expect(sendCommand).toHaveBeenCalledWith('SHOW DEV');
+    expect(emulatorConsoleState.sendCommand).toHaveBeenCalledWith('SHOW DEV');
+  });
+
+  it('submits command on Enter key', async () => {
+    render(<EmulatorConsole />);
+    typeCommand('RESET');
+
+    const commandInput = inputPropsById.get('command');
+    await act(async () => {
+      commandInput?.onKeyDown?.({ key: 'Enter', preventDefault: vi.fn() });
+    });
+
+    expect(emulatorConsoleState.sendCommand).toHaveBeenCalledWith('RESET');
+  });
+
+  it('ignores non-Enter key presses', async () => {
+    render(<EmulatorConsole />);
+    typeCommand('RESET');
+
+    const commandInput = inputPropsById.get('command');
+    await act(async () => {
+      commandInput?.onKeyDown?.({ key: 'Escape', preventDefault: vi.fn() });
+    });
+
+    expect(emulatorConsoleState.sendCommand).not.toHaveBeenCalled();
   });
 
   it('ignores empty commands', async () => {
     render(<EmulatorConsole />);
-    const button = container.querySelector('button') as HTMLButtonElement;
+    const sendButton = container.querySelector('button') as HTMLButtonElement;
 
     await act(async () => {
-      button.click();
+      sendButton.click();
     });
 
-    expect(sendCommand).not.toHaveBeenCalled();
+    expect(emulatorConsoleState.sendCommand).not.toHaveBeenCalled();
   });
-});
 
-/* @vitest-environment jsdom */
+  it('ignores whitespace-only commands on Enter', async () => {
+    render(<EmulatorConsole />);
+    typeCommand('   ');
+
+    const commandInput = inputPropsById.get('command');
+    await act(async () => {
+      commandInput?.onKeyDown?.({ key: 'Enter', preventDefault: vi.fn() });
+    });
+
+    expect(emulatorConsoleState.sendCommand).not.toHaveBeenCalled();
+  });
+
+  it('shows stop button while running and calls stop handler', async () => {
+    emulatorConsoleState.isRunningValue = true;
+    render(<EmulatorConsole />);
+
+    const stopButton = container.querySelector('button') as HTMLButtonElement;
+    expect(stopButton.textContent).toContain('Stop');
+    await act(async () => {
+      stopButton.click();
+    });
+    expect(actionMocks.onProgramStopClick).toHaveBeenCalledTimes(1);
+
+    const commandInput = container.querySelector('#command') as HTMLInputElement;
+    expect(commandInput.disabled).toBe(true);
+  });
+
+  it('updates yield steps from advanced options', () => {
+    render(<EmulatorConsole />);
+    act(() => {
+      inputPropsById.get('yield-steps')?.onChange?.({ target: { value: '2500' } });
+    });
+    expect(emulatorConsoleState.setYieldSteps).toHaveBeenCalledWith(2500);
+  });
+
+  it('toggles debug and front panel echo options', () => {
+    render(<EmulatorConsole />);
+    act(() => {
+      inputPropsById.get('simh-debug')?.onChange?.({ target: { value: '', checked: true } });
+      inputPropsById.get('simh-echo-front-panel')?.onChange?.({ target: { value: '', checked: true } });
+    });
+    expect(optionState.setDebugEnabled).toHaveBeenCalledWith(true);
+    expect(optionState.setEchoEnabled).toHaveBeenCalledWith(true);
+  });
+
+  it('clears send timeout when command finishes', async () => {
+    const setTimeoutSpy = vi.spyOn(globalThis, 'setTimeout');
+    const clearTimeoutSpy = vi.spyOn(globalThis, 'clearTimeout');
+    let resolveSend: (() => void) | null = null;
+    let timeoutCallback: (() => void) | null = null;
+    setTimeoutSpy.mockImplementation((cb) => {
+      timeoutCallback = cb as () => void;
+      return 123 as unknown as ReturnType<typeof setTimeout>;
+    });
+    emulatorConsoleState.sendCommand.mockImplementation(
+      () =>
+        new Promise<string>((resolve) => {
+          resolveSend = () => resolve('');
+        })
+    );
+
+    render(<EmulatorConsole />);
+    typeCommand('LONG');
+    const sendButton = container.querySelector('button') as HTMLButtonElement;
+    await act(async () => {
+      sendButton.click();
+    });
+
+    expect(setTimeoutSpy).toHaveBeenCalled();
+
+    await act(async () => {
+      await Promise.resolve();
+    });
+
+    await act(async () => {
+      resolveSend?.();
+    });
+
+    expect(clearTimeoutSpy).toHaveBeenCalled();
+    expect(timeoutCallback).toBeDefined();
+  });
+
+  it('clears sending state after timeout fires', async () => {
+    const setTimeoutSpy = vi.spyOn(globalThis, 'setTimeout');
+    const clearTimeoutSpy = vi.spyOn(globalThis, 'clearTimeout');
+    emulatorConsoleState.sendCommand.mockImplementation(
+      () =>
+        new Promise<string>(() => {
+          // never resolves
+        })
+    );
+    let timeoutCallback: (() => void) | null = null;
+    setTimeoutSpy.mockImplementation((cb) => {
+      timeoutCallback = cb as () => void;
+      return 456 as unknown as ReturnType<typeof setTimeout>;
+    });
+
+    render(<EmulatorConsole />);
+    typeCommand('LONG RUN');
+    const sendButton = container.querySelector('button') as HTMLButtonElement;
+
+    await act(async () => {
+      sendButton.click();
+    });
+
+    await act(async () => {
+      await Promise.resolve();
+    });
+
+    await act(async () => {
+      timeoutCallback?.();
+    });
+    await act(async () => {
+      await Promise.resolve();
+    });
+    const updatedSendButton = container.querySelector('button') as HTMLButtonElement;
+    expect(updatedSendButton.disabled).toBe(false);
+    expect(setTimeoutSpy).toHaveBeenCalledWith(expect.any(Function), 15000);
+    expect(clearTimeoutSpy).toHaveBeenCalled();
+  });
+
+});

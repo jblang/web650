@@ -2,6 +2,7 @@ import React, { act } from 'react';
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { createRoot, Root } from 'react-dom/client';
 import ControlSection from './ControlSection';
+import controlStyles from './ControlSection.module.scss';
 import DecimalKnob from './DecimalKnob';
 import LabeledKnob from './LabeledKnob';
 
@@ -76,6 +77,29 @@ describe('FrontPanel controls', () => {
     expect(handlers.onTransferClick).toHaveBeenCalledTimes(1);
   });
 
+  it('shows pressed state while holding a control button', () => {
+    render(<ControlSection />);
+
+    const button = Array.from(container.querySelectorAll('button')).find((b) => b.textContent === 'TRANSFER');
+    if (!button) throw new Error('button not found');
+
+    act(() => {
+      button.dispatchEvent(new MouseEvent('mousedown', { bubbles: true }));
+    });
+    expect(button.classList.contains(controlStyles.pressed)).toBe(true);
+
+    act(() => {
+      button.dispatchEvent(new MouseEvent('mouseup', { bubbles: true }));
+    });
+    expect(button.classList.contains(controlStyles.pressed)).toBe(false);
+
+    act(() => {
+      button.dispatchEvent(new MouseEvent('mousedown', { bubbles: true }));
+      button.dispatchEvent(new MouseEvent('mouseout', { bubbles: true }));
+    });
+    expect(button.classList.contains(controlStyles.pressed)).toBe(false);
+  });
+
   it('DecimalKnob increments and decrements via click zones', () => {
     const onChange = vi.fn();
     render(<DecimalKnob value={3} onChange={onChange} />);
@@ -107,6 +131,32 @@ describe('FrontPanel controls', () => {
 
     expect(onChange).toHaveBeenCalledWith(positions.length - 1);
     expect(onChange).toHaveBeenCalledWith(1);
+  });
+
+  it('LabeledKnob selects a position when label clicked', () => {
+    const positions = [
+      { label: 'A', angle: -30 },
+      { label: 'B', angle: 30 },
+      { label: 'C', angle: 90 },
+    ];
+    const onChange = vi.fn();
+    render(<LabeledKnob position={0} positions={positions} onChange={onChange} />);
+
+    const label = Array.from(container.querySelectorAll('span')).find((el) => el.textContent === 'B');
+    click(label ?? null);
+
+    expect(onChange).toHaveBeenCalledWith(1);
+  });
+
+  it('LabeledKnob handles out-of-range position values', () => {
+    const positions = [
+      { label: 'A', angle: -30 },
+      { label: 'B', angle: 30 },
+    ];
+    render(<LabeledKnob position={99} positions={positions} />);
+
+    const knob = container.querySelector('[data-current-label]');
+    expect(knob?.getAttribute('data-current-label')).toBe('');
   });
 });
 

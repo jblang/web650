@@ -74,6 +74,15 @@ describe('CardDeckProvider', () => {
     expect(state.file?.name).toBe('deck.txt');
   });
 
+  it('throws when useCardDeck is used outside a provider', () => {
+    const Probe = () => {
+      useCardDeck();
+      return null;
+    };
+
+    expect(() => render(<Probe />)).toThrow('useCardDeck must be used within a CardDeckProvider');
+  });
+
   it('handles Carbon onAddFiles path', async () => {
     const state: { deck?: string[]; handleFileChange?: (e: React.ChangeEvent<HTMLInputElement> | { addedFiles: File[] }) => void } = {};
     const Probe = () => {
@@ -110,6 +119,32 @@ describe('CardDeckProvider', () => {
 
     expect(state.deck).toEqual(['A', 'B']);
     global.FileReader = OriginalFileReader;
+  });
+
+  it('clears deck when Carbon add files is empty', async () => {
+    const state: { deck?: string[]; file?: File | null; handleFileChange?: (e: React.ChangeEvent<HTMLInputElement> | { addedFiles: File[] }) => void } = {};
+    const Probe = () => {
+      const ctx = useCardDeck();
+      React.useEffect(() => {
+        state.handleFileChange = ctx.handleFileChange;
+        state.deck = ctx.cardDeck;
+        state.file = ctx.uploadedFile;
+      }, [ctx]);
+      return null;
+    };
+
+    render(
+      <CardDeckProvider>
+        <Probe />
+      </CardDeckProvider>
+    );
+
+    await act(async () => {
+      state.handleFileChange?.({ addedFiles: [] });
+    });
+
+    expect(state.deck).toEqual([]);
+    expect(state.file).toBeNull();
   });
 
   it('clears deck when no file provided', async () => {
@@ -166,6 +201,35 @@ describe('CardDeckProvider', () => {
 
     expect(state.deck).toEqual([]);
     expect(state.file).toBeNull();
+  });
+
+  it('logs unexpected event types and leaves deck untouched', async () => {
+    const state: { deck?: string[]; handleFileChange?: (e: React.ChangeEvent<HTMLInputElement> | { addedFiles: File[] }) => void } = {};
+    const Probe = () => {
+      const ctx = useCardDeck();
+      React.useEffect(() => {
+        state.handleFileChange = ctx.handleFileChange;
+        state.deck = ctx.cardDeck;
+      }, [ctx]);
+      return null;
+    };
+
+    render(
+      <CardDeckProvider>
+        <Probe />
+      </CardDeckProvider>
+    );
+
+    const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+
+    await act(async () => {
+      state.handleFileChange?.({ foo: 'bar' } as unknown as React.ChangeEvent<HTMLInputElement>);
+    });
+
+    expect(consoleSpy).toHaveBeenCalledWith('Unexpected event type for handleFileChange:', { foo: 'bar' });
+    expect(state.deck).toEqual([]);
+
+    consoleSpy.mockRestore();
   });
 });
 

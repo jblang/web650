@@ -8,7 +8,7 @@ import EntrySection from './EntrySection';
 import ConfigSection from './ConfigSection';
 import ControlSection from './ControlSection';
 import styles from './FrontPanel.module.scss';
-import type { DisplayPosition, ControlPosition, ErrorSwitchPosition } from '@/lib/simh';
+import type { DisplayPosition, ControlPosition, ErrorSwitchPosition } from '@/lib/simh/i650/controls';
 
 export const litBulb = '🟡';
 export const unlitBulb = '⚫';
