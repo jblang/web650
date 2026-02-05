@@ -8,6 +8,11 @@ const coreMocks = vi.hoisted(() => ({
 
 vi.mock('./core', () => coreMocks);
 
+function resolveScriptSrc(path: string): string {
+  if (!path.startsWith('/')) return path;
+  return `${window.location.origin}${path}`;
+}
+
 describe('simh control', () => {
   beforeEach(() => {
     vi.resetModules();
@@ -43,16 +48,16 @@ describe('simh control', () => {
     coreMocks.init.mockResolvedValue(undefined);
     (globalThis as Record<string, unknown>).createI650Module = vi.fn();
     const existingScript = document.createElement('script');
-    existingScript.src = '/i650.js';
+    existingScript.src = resolveScriptSrc('/i650.js');
     document.head.appendChild(existingScript);
-    expect(document.querySelector('script[src="/i650.js"]')).toBeTruthy();
+    expect(document.querySelector(`script[src="${resolveScriptSrc('/i650.js')}"]`)).toBeTruthy();
 
     const control = await import('./control');
     await control.restart('i650');
 
     expect(coreMocks.resetModule).toHaveBeenCalledTimes(1);
     expect(coreMocks.init).toHaveBeenCalledWith('i650');
-    expect(document.querySelector('script[src="/i650.js"]')).toBeNull();
+    expect(document.querySelector(`script[src="${resolveScriptSrc('/i650.js')}"]`)).toBeNull();
     expect((globalThis as Record<string, unknown>).createI650Module).toBeUndefined();
   });
 

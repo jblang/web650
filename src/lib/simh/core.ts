@@ -87,16 +87,7 @@ function loadScript(url: string): Promise<void> {
       const importer = (globalThis as unknown as { importScripts?: (...urls: string[]) => void }).importScripts;
       if (importer) {
         try {
-          const loc = (globalThis as unknown as { location?: Location }).location;
-          let resolved = url;
-          if (loc) {
-            if (url.startsWith('/') && loc.origin && loc.origin !== 'null') {
-              resolved = `${loc.origin}${url}`;
-            } else {
-              resolved = new URL(url, loc.href).toString();
-            }
-          }
-          importer(resolveModuleAsset(resolved));
+          importer(resolveModuleAsset(url));
           resolve();
         } catch (err) {
           reject(err);
@@ -107,13 +98,14 @@ function loadScript(url: string): Promise<void> {
       return;
     }
 
-    if (document.querySelector(`script[src="${url}"]`)) {
+    const resolvedUrl = resolveModuleAsset(url);
+    if (document.querySelector(`script[src="${resolvedUrl}"]`)) {
       resolve();
       return;
     }
 
     const script = document.createElement('script');
-    script.src = url;
+    script.src = resolvedUrl;
     script.onload = () => resolve();
     script.onerror = () => reject(new Error(`Failed to load ${url}`));
     document.head.appendChild(script);

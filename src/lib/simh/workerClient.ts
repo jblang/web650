@@ -97,10 +97,31 @@ async function ensureInit(): Promise<void> {
   }
 }
 
+function inferBasePathFromScripts(): string {
+  if (typeof document === 'undefined') return '';
+  const script = document.querySelector<HTMLScriptElement>('script[src*="/_next/"]');
+  if (!script?.src) return '';
+  try {
+    const url = new URL(script.src);
+    const marker = '/_next/';
+    const index = url.pathname.indexOf(marker);
+    if (index <= 0) return '';
+    const prefix = url.pathname.slice(0, index);
+    return prefix === '/' ? '' : prefix;
+  } catch {
+    return '';
+  }
+}
+
 export async function init(moduleName: string): Promise<void> {
   initModuleName = moduleName;
-  const baseUrl = typeof window !== 'undefined' ? window.location.origin : '';
-  debugLog('worker init start', { moduleName });
+  const envBasePath = typeof window !== 'undefined' ? (process.env.NEXT_PUBLIC_BASE_PATH ?? '') : '';
+  const normalizedEnvBasePath = envBasePath && envBasePath !== '/' ? envBasePath.replace(/\/$/, '') : '';
+  const scriptBasePath = inferBasePathFromScripts();
+  const inferredBasePath = normalizedEnvBasePath || scriptBasePath;
+  const baseUrl =
+    typeof window !== 'undefined' ? `${window.location.origin}${inferredBasePath}` : '';
+  debugLog('worker init start', { moduleName, baseUrl });
   initPromise = call('init', moduleName, baseUrl);
   try {
     await initPromise;

@@ -21,9 +21,15 @@ jobs:
 
       - name: Install
         run: npm ci
+        env:
+          NEXT_TELEMETRY_DISABLED: 1
 
       - name: Lint
         run: npm run lint
+        env:
+          NEXT_TELEMETRY_DISABLED: 1
 
       - name: Unit Tests
         run: npx vitest run
+        env:
+          NEXT_TELEMETRY_DISABLED: 1

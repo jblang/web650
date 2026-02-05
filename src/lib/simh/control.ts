@@ -24,8 +24,9 @@ export async function restart(moduleName: string): Promise<void> {
 
   const scriptPath = `/${moduleName}.js`;
   if (typeof document !== 'undefined') {
-    const oldScript = document.querySelector(`script[src="${scriptPath}"]`);
-    if (oldScript) oldScript.remove();
+    const scripts = Array.from(document.querySelectorAll<HTMLScriptElement>('script[src]'));
+    const targetScript = scripts.find((script) => script.src.endsWith(scriptPath));
+    if (targetScript) targetScript.remove();
   }
 
   const moduleKey = `create${moduleName.charAt(0).toUpperCase() + moduleName.slice(1)}Module`;

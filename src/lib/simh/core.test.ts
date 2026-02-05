@@ -3,8 +3,13 @@ import { SCPE_BREAK, SCPE_STOP } from './constants';
 
 function addExistingScript(src: string): void {
   const script = document.createElement('script');
-  script.src = src;
+  script.src = resolveScriptSrc(src);
   document.head.appendChild(script);
+}
+
+function resolveScriptSrc(path: string): string {
+  if (!path.startsWith('/')) return path;
+  return `${window.location.origin}${path}`;
 }
 
 function createFakeModule(simhInitStatus = 0) {
@@ -62,7 +67,7 @@ describe('core init', () => {
     const initPromise = core.init('i650');
 
     const appendedScript = document.querySelector(
-      'script[src="/i650.js"]'
+      `script[src="${resolveScriptSrc('/i650.js')}"]`
     ) as HTMLScriptElement | null;
     expect(appendedScript).toBeTruthy();
     appendedScript?.onload?.(new Event('load'));
@@ -73,7 +78,6 @@ describe('core init', () => {
   });
 
   it('passes locateFile using configured asset base', async () => {
-    addExistingScript('/i650.js');
     const fakeModule = createFakeModule();
     let moduleConfig: Record<string, unknown> | undefined;
     (globalThis as Record<string, unknown>).createI650Module = vi.fn(async (config: Record<string, unknown>) => {
@@ -83,7 +87,13 @@ describe('core init', () => {
 
     const core = await import('./core');
     core.setAssetBase('https://cdn.example.com/assets');
-    await core.init('i650');
+    const initPromise = core.init('i650');
+    const appendedScript = document.querySelector(
+      'script[src="https://cdn.example.com/assets/i650.js"]'
+    ) as HTMLScriptElement | null;
+    expect(appendedScript).toBeTruthy();
+    appendedScript?.onload?.(new Event('load'));
+    await initPromise;
 
     const locateFile = moduleConfig?.locateFile as ((path: string) => string) | undefined;
     expect(locateFile).toBeDefined();
@@ -159,7 +169,7 @@ describe('core init', () => {
     const core = await import('./core');
     const initPromise = core.init('i650');
     const appendedScript = document.querySelector(
-      'script[src="/i650.js"]'
+      `script[src="${resolveScriptSrc('/i650.js')}"]`
     ) as HTMLScriptElement | null;
     expect(appendedScript).toBeTruthy();
     appendedScript?.onerror?.(new Event('error'));

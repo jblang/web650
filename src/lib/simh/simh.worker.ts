@@ -28,8 +28,18 @@ simh.onOutput((text) => {
 
 const handlers: Record<string, (...args: unknown[]) => unknown> = {
   init: (moduleName?: unknown, baseUrl?: unknown) => {
-    if (typeof baseUrl === 'string') {
+    if (typeof baseUrl === 'string' && baseUrl.length > 0) {
       simh.setAssetBase(baseUrl);
+    } else if (typeof self !== 'undefined' && self.location?.pathname) {
+      const marker = '/_next/';
+      const path = self.location.pathname;
+      const index = path.indexOf(marker);
+      if (index > 0) {
+        const prefix = path.slice(0, index);
+        simh.setAssetBase(`${self.location.origin}${prefix}`);
+      } else {
+        simh.setAssetBase(self.location.origin);
+      }
     }
     return simh.init(String(moduleName));
   },

@@ -30,5 +30,12 @@
     ".next/dev/types/**/*.ts",
     "**/*.mts"
   ],
-  "exclude": ["node_modules", "simh/emscripten-build"]
+  "exclude": [
+    "node_modules",
+    "simh/emscripten-build",
+    "out",
+    ".next",
+    "coverage",
+    "test-results"
+  ]
 }
