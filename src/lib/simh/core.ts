@@ -5,7 +5,16 @@
  */
 
 import type { EmscriptenModule } from './types';
-import { SCPE_OK, SCPE_STOP, SCPE_EXIT, SCPE_EXPECT, SCPE_BREAK, SCPE_KFLAG, SCPE_NOMESSAGE } from './constants';
+import {
+  SCPE_OK,
+  SCPE_STOP,
+  SCPE_EXIT,
+  SCPE_EXPECT,
+  SCPE_STEP,
+  SCPE_BREAK,
+  SCPE_KFLAG,
+  SCPE_NOMESSAGE,
+} from './constants';
 
 // Emscripten's default TTY driver calls prompt() when C code reads from stdin.
 // We never want interactive stdin, so kill it at module-import time before any script loads.
@@ -180,7 +189,8 @@ export async function init(moduleName: string): Promise<void> {
     locateFile: (path: string) => resolveModuleAsset(path),
   });
 
-  const rc = Module.ccall('simh_init', 'number', [], []) as number;
+  const rcResult = Module.ccall('simh_init', 'number', [], []) as number | Promise<number>;
+  const rc = typeof rcResult === 'number' ? rcResult : await rcResult;
   if (rc !== 0) {
     throw new Error(`simh_init failed with code ${rc}`);
   }
@@ -208,17 +218,10 @@ export async function init(moduleName: string): Promise<void> {
  * onOutput callback — the caller decides whether to echo it.
  */
 const SCPE_FLAG_MASK = SCPE_BREAK | SCPE_KFLAG | SCPE_NOMESSAGE;
-const SIMH_OK_STATUSES = new Set([SCPE_OK, SCPE_STOP, SCPE_EXIT, SCPE_EXPECT]);
+const SIMH_OK_STATUSES = new Set([SCPE_OK, SCPE_STOP, SCPE_EXIT, SCPE_EXPECT, SCPE_STEP]);
 
 function bareStatus(rc: number): number {
   return rc & ~SCPE_FLAG_MASK;
-}
-
-function throwSimhError(rc: number, output: string): never {
-  const message = output.trim() || `SIMH error (${rc})`;
-  const error = new Error(message);
-  (error as { code?: number }).code = rc;
-  throw error;
 }
 
 export function sendCommand(
@@ -254,7 +257,7 @@ export function sendCommand(
     }
   }
   if (!SIMH_OK_STATUSES.has(status)) {
-    throwSimhError(status, output);
+    return output;
   }
   return output;
 }
@@ -293,7 +296,7 @@ export async function sendCommandAsync(
     }
   }
   if (!SIMH_OK_STATUSES.has(status)) {
-    throwSimhError(status, output);
+    return output;
   }
   return output;
 }
@@ -331,6 +334,117 @@ export function getYieldEnabled(): boolean {
 export function setYieldEnabled(enabled: boolean): void {
   const emModule = getModule();
   emModule.ccall('simh_set_yield_enabled', 'void', ['number'], [enabled ? 1 : 0]);
+}
+
+export type StateStreamSample = {
+  pr: string;
+  ar: string;
+  ic: string;
+  accLo: string;
+  accUp: string;
+  dist: string;
+  ov: number;
+};
+
+const STATE_STREAM_OFFSETS = {
+  pr: 0,
+  ar: 12,
+  ic: 17,
+  accLo: 22,
+  accUp: 34,
+  dist: 46,
+  ov: 58,
+  size: 59,
+} as const;
+
+let stateStreamSampleSize: number | null = null;
+let stateStreamBufferPtr: number | null = null;
+
+function readCString(bytes: Uint8Array, offset: number, length: number): string {
+  let end = offset;
+  const max = offset + length;
+  while (end < max && bytes[end] !== 0) end += 1;
+  return String.fromCharCode(...bytes.subarray(offset, end));
+}
+
+function getHeapU8(emModule: EmscriptenModule): Uint8Array | null {
+  const heap = emModule.HEAPU8 as Uint8Array | undefined;
+  if (heap) return heap;
+  const globalModule = (globalThis as { Module?: { HEAPU8?: Uint8Array } }).Module;
+  return globalModule?.HEAPU8 ?? null;
+}
+
+function ensureStateStreamBuffer(emModule: EmscriptenModule): number {
+  if (stateStreamSampleSize === null) {
+    stateStreamSampleSize = emModule.ccall('simh_state_stream_sample_size', 'number', [], []) as number;
+  }
+  const sampleSize = stateStreamSampleSize ?? STATE_STREAM_OFFSETS.size;
+  if (sampleSize !== STATE_STREAM_OFFSETS.size) {
+    throw new Error(`State stream sample size mismatch (expected ${STATE_STREAM_OFFSETS.size}, got ${sampleSize})`);
+  }
+  if (!stateStreamBufferPtr) {
+    stateStreamBufferPtr = emModule.ccall('simh_state_stream_buffer_ptr', 'number', [], []) as number;
+  }
+  return stateStreamBufferPtr;
+}
+
+export function enableStateStream(enabled: boolean): void {
+  const emModule = getModule();
+  emModule.ccall('simh_state_stream_enable', 'void', ['number'], [enabled ? 1 : 0]);
+}
+
+export function setStateStreamStride(stride: number): void {
+  const emModule = getModule();
+  emModule.ccall('simh_state_stream_set_stride', 'void', ['number'], [stride]);
+}
+
+export function clearStateStream(): void {
+  const emModule = getModule();
+  emModule.ccall('simh_state_stream_clear', 'void', [], []);
+}
+
+export function readStateStream(maxSamples = 64): StateStreamSample[] {
+  const emModule = getModule();
+  const heap = getHeapU8(emModule);
+  if (!heap) {
+    return [];
+  }
+  const bufferPtr = ensureStateStreamBuffer(emModule);
+  const count = emModule.ccall(
+    'simh_state_stream_read_to_buffer',
+    'number',
+    ['number'],
+    [maxSamples]
+  ) as number;
+  if (!count) return [];
+
+  const sampleSize = stateStreamSampleSize ?? STATE_STREAM_OFFSETS.size;
+  const bytes = new Uint8Array(heap.buffer, bufferPtr, count * sampleSize);
+  const samples: StateStreamSample[] = [];
+  for (let i = 0; i < count; i += 1) {
+    const base = i * sampleSize;
+    samples.push({
+      pr: readCString(bytes, base + STATE_STREAM_OFFSETS.pr, 12),
+      ar: readCString(bytes, base + STATE_STREAM_OFFSETS.ar, 5),
+      ic: readCString(bytes, base + STATE_STREAM_OFFSETS.ic, 5),
+      accLo: readCString(bytes, base + STATE_STREAM_OFFSETS.accLo, 12),
+      accUp: readCString(bytes, base + STATE_STREAM_OFFSETS.accUp, 12),
+      dist: readCString(bytes, base + STATE_STREAM_OFFSETS.dist, 12),
+      ov: bytes[base + STATE_STREAM_OFFSETS.ov] ?? 0,
+    });
+  }
+  return samples;
+}
+
+export function readStateStreamLastSample(): StateStreamSample | null {
+  const emModule = getModule();
+  const json = emModule.ccall('simh_state_stream_read_last_json', 'string', [], []) as string;
+  if (!json) return null;
+  try {
+    return JSON.parse(json) as StateStreamSample;
+  } catch {
+    return null;
+  }
 }
 
 

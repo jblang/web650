@@ -33,6 +33,11 @@ export {
   setYieldSteps,
   getYieldEnabled,
   setYieldEnabled,
+  enableStateStream,
+  setStateStreamStride,
+  clearStateStream,
+  readStateStream,
+  readStateStreamLastSample,
 } from './core';
 
 // Generic SIMH Control

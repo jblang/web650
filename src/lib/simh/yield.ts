@@ -3,6 +3,7 @@ const YIELD_STORAGE_KEY = '__SIMH_YIELD_STEPS__';
 function normalizeYieldSteps(value: number | null | undefined): number | null {
   if (value === null || value === undefined) return null;
   if (!Number.isFinite(value)) return null;
+  if (value === 0) return 0;
   return Math.max(1, Math.min(100000, Math.round(value)));
 }
 

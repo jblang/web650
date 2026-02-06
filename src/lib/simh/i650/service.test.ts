@@ -21,6 +21,27 @@ const simhMocks = {
   deposit: vi.fn<(ref: string, value: string, options?: { echo?: boolean }) => Promise<void>>(),
   getYieldSteps: vi.fn<() => Promise<number>>(),
   setYieldSteps: vi.fn<(steps: number) => Promise<void>>(),
+  enableStateStream: vi.fn<(enabled: boolean) => Promise<void>>(),
+  setStateStreamStride: vi.fn<(stride: number) => Promise<void>>(),
+  clearStateStream: vi.fn<() => Promise<void>>(),
+  readStateStream: vi.fn<() => Promise<Array<{
+    pr: string;
+    ar: string;
+    ic: string;
+    accLo: string;
+    accUp: string;
+    dist: string;
+    ov: number;
+  }>>>(),
+  onStateStream: vi.fn<(listener: (sample: {
+    pr: string;
+    ar: string;
+    ic: string;
+    accLo: string;
+    accUp: string;
+    dist: string;
+    ov: number;
+  }) => void) => void>(),
   stop: vi.fn<() => Promise<void>>(),
 };
 
@@ -322,6 +343,7 @@ describe('i650 service', () => {
     await service.init();
     await flushPromises();
 
+    runStateListener = simhMocks.onRunState.mock.calls.at(-1)?.[0] ?? null;
     runStateListener?.(true);
     await service.resetProgram();
 
@@ -383,14 +405,14 @@ describe('i650 service', () => {
     await flushPromises();
 
     await service.setYieldSteps(0.4);
-    expect(simhMocks.setYieldSteps).toHaveBeenCalledWith(1);
-    expect(yieldMocks.persistYieldSteps).toHaveBeenCalledWith(1);
+    expect(simhMocks.setYieldSteps).toHaveBeenLastCalledWith(0);
+    expect(yieldMocks.persistYieldSteps).toHaveBeenCalledWith(0);
 
     await service.setYieldSteps(200000);
-    expect(simhMocks.setYieldSteps).toHaveBeenCalledWith(100000);
+    expect(simhMocks.setYieldSteps).toHaveBeenLastCalledWith(100000);
 
     await service.setYieldSteps(Number.NaN);
-    expect(simhMocks.setYieldSteps).toHaveBeenCalledWith(1000);
+    expect(simhMocks.setYieldSteps).toHaveBeenLastCalledWith(1000);
   });
 
   it('maps register snapshot booleans from trimmed values', async () => {
@@ -435,6 +457,7 @@ describe('i650 service', () => {
     await service.init();
     await flushPromises();
 
+    runStateListener = simhMocks.onRunState.mock.calls.at(-1)?.[0] ?? null;
     runStateListener?.(true);
     await service.resetComputer();
 
@@ -482,6 +505,7 @@ describe('i650 service', () => {
     await flushPromises();
 
     service.setControlSwitch(Control.RUN);
+    runStateListener = simhMocks.onRunState.mock.calls.at(-1)?.[0] ?? null;
     runStateListener?.(true);
     await service.startProgramOrTransfer();
 

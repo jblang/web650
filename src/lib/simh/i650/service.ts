@@ -26,6 +26,7 @@ export type I650EmulatorState = {
   halfCycle: boolean;
   displayValue: string;
   operation: string;
+  stateStreamTick: number;
 };
 
 type StateListener = (state: I650EmulatorState) => void;
@@ -53,12 +54,107 @@ let state: I650EmulatorState = {
   halfCycle: false,
   displayValue: ZERO_DATA,
   operation: ZERO_OPERATION,
+  stateStreamTick: 0,
 };
 
 let initialized = false;
 let outputInitialized = false;
 let initPromise: Promise<void> | null = null;
 const moduleName = 'i650';
+const DEBUG_STREAM_THROTTLE_MS = 50;
+let debugStreamTimer: ReturnType<typeof setTimeout> | null = null;
+let debugStreamPending: Partial<I650EmulatorState> | null = null;
+let debugStreamLastEmit = 0;
+const STATE_STREAM_STRIDE = 1;
+let stateStreamInitialized = false;
+let stateStreamActive = false;
+let runRequestedUntil = 0;
+let stateStreamActivationId = 0;
+
+const stateStreamListener = (sample: {
+  pr: string;
+  ar: string;
+  ic: string;
+  accLo: string;
+  accUp: string;
+  dist: string;
+  ov: number;
+}) => {
+  if (!stateStreamActive) return;
+  mergeState({
+    programRegister: sample.pr,
+    addressRegister: sample.ar,
+    lowerAccumulator: sample.accLo,
+    upperAccumulator: sample.accUp,
+    distributor: sample.dist,
+    stateStreamTick: state.stateStreamTick + 1,
+  });
+};
+
+function queueDebugStreamPatch(patch: Partial<I650EmulatorState>): void {
+  debugStreamPending = { ...(debugStreamPending ?? {}), ...patch };
+  if (debugStreamTimer) return;
+  const now = Date.now();
+  const delay = Math.max(0, DEBUG_STREAM_THROTTLE_MS - (now - debugStreamLastEmit));
+  debugStreamTimer = setTimeout(() => {
+    if (debugStreamPending) {
+      mergeState(debugStreamPending);
+      debugStreamPending = null;
+      debugStreamLastEmit = Date.now();
+    }
+    debugStreamTimer = null;
+  }, delay);
+}
+
+function parseDebugLine(line: string): Partial<I650EmulatorState> | null {
+  if (!line.includes('DBG(')) return null;
+
+  if (line.includes('CPU DETAIL')) {
+    const match = line.match(/ACC:\s+(\d{10})\s+(\d{10}[+-])?,\s*OV:\s*([01])/);
+    if (!match) return null;
+    const upperRaw = match[1] ? `${match[1]}+` : ZERO_DATA;
+    const lowerRaw = match[2] ?? ZERO_DATA;
+    return {
+      upperAccumulator: upperRaw,
+      lowerAccumulator: lowerRaw,
+    };
+  }
+
+  if (line.includes('CPU CMD: Exec')) {
+    const match = line.match(/CPU CMD:\s+Exec\s+(\d{4}):\s+(\d{2})\s+\S+\s+(\d{4})\s+(\d{4})/);
+    if (!match) return null;
+    const opcode = match[2];
+    const dataAddress = match[3];
+    const instructionAddress = match[4];
+    return {
+      programRegister: `${opcode}${dataAddress}${instructionAddress}+`,
+    };
+  }
+
+  return null;
+}
+
+async function startStateStream(): Promise<void> {
+  if (stateStreamInitialized) return;
+  await simh.clearStateStream();
+  await simh.enableStateStream(true);
+  await simh.setStateStreamStride(STATE_STREAM_STRIDE);
+  simh.onStateStream(stateStreamListener);
+  stateStreamInitialized = true;
+}
+
+export async function setStateStreamActive(active: boolean): Promise<void> {
+  stateStreamActive = active;
+  const activationId = ++stateStreamActivationId;
+  await ensureInit();
+  if (activationId !== stateStreamActivationId) return;
+  if (active) {
+    if (!stateStreamInitialized) {
+      await startStateStream();
+    }
+    return;
+  }
+}
 function computeDerived(next: I650EmulatorState): I650EmulatorState {
   const displayValue = getDisplayValue(next.displaySwitch, {
     lowerAccumulator: next.lowerAccumulator,
@@ -104,6 +200,11 @@ async function writeMemory(address: string, value: string): Promise<void> {
   validateAddress(address);
   validateWord(value);
   await simh.deposit(address, value);
+}
+
+export async function depositMemory(address: string, value: string): Promise<void> {
+  await ensureInit();
+  await writeMemory(address, value);
 }
 
 async function getRegisterSnapshot(): Promise<{
@@ -156,6 +257,13 @@ export async function init(): Promise<void> {
           for (const listener of outputListeners) {
             listener(text);
           }
+          const lines = text.split('\n').filter((line) => line.trim().length > 0);
+          for (const line of lines) {
+            const patch = parseDebugLine(line);
+            if (patch) {
+              queueDebugStreamPatch(patch);
+            }
+          }
         });
       }
 
@@ -175,9 +283,19 @@ export async function init(): Promise<void> {
 
         await refreshRegisters();
         mergeState({ initialized: true });
+        void startStateStream().catch((err) => {
+          debugLog('i650 state stream init error', err);
+        });
 
         simh.onRunState((runningFlag) => {
           debugLog('i650 runstate', { runningFlag });
+          const now = Date.now();
+          if (!runningFlag && runRequestedUntil > now) {
+            return;
+          }
+          if (runningFlag) {
+            runRequestedUntil = 0;
+          }
           mergeState({ isRunning: runningFlag });
           void refreshRegisters();
         });
@@ -272,14 +390,36 @@ export async function executeCommand(
   options?: { streamOutput?: boolean; echo?: boolean }
 ): Promise<string> {
   await ensureInit();
-  const result = await simh.sendCommand(command, options);
-  await refreshRegisters();
-  return result;
+  const trimmed = command.trim();
+  const keyword = trimmed.split(/\s+/)[0]?.toUpperCase() ?? '';
+  const isRunCommand = keyword === 'GO' || keyword === 'CONT' || keyword === 'RUN';
+  if (isRunCommand && !state.isRunning) {
+    runRequestedUntil = Date.now() + 1500;
+    mergeState({ isRunning: true });
+  }
+  try {
+    const result = await simh.sendCommand(command, options);
+    await refreshRegisters();
+    return result;
+  } finally {
+    if (isRunCommand) {
+      runRequestedUntil = 0;
+      mergeState({ isRunning: false });
+    }
+  }
 }
 
 export async function setYieldSteps(steps: number): Promise<void> {
   await ensureInit();
-  const next = Number.isFinite(steps) ? Math.max(1, Math.min(100000, Math.round(steps))) : 1000;
+  if (!Number.isFinite(steps)) {
+    const fallback = 1000;
+    await simh.setYieldSteps(fallback);
+    mergeState({ yieldSteps: fallback });
+    persistYieldSteps(fallback);
+    return;
+  }
+  const normalized = Math.round(steps);
+  const next = normalized === 0 ? 0 : Math.max(1, Math.min(100000, normalized));
   await simh.setYieldSteps(next);
   mergeState({ yieldSteps: next });
   persistYieldSteps(next);
@@ -377,8 +517,7 @@ export async function handleDrumTransfer(): Promise<void> {
 }
 
 export async function startProgram(): Promise<void> {
-  await ensureInit();
-  await simh.sendCommand('GO', { streamOutput: true });
+  await executeCommand('GO', { streamOutput: true });
 }
 
 export async function startProgramOrTransfer(): Promise<void> {

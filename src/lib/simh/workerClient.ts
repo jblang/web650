@@ -13,8 +13,20 @@ type ResponseMessage = {
 
 type OutputMessage = { type: 'output'; text: string };
 type RunStateMessage = { type: 'runstate'; running: boolean };
+type StateStreamMessage = {
+  type: 'state';
+  sample: {
+    pr: string;
+    ar: string;
+    ic: string;
+    accLo: string;
+    accUp: string;
+    dist: string;
+    ov: number;
+  };
+};
 
-type AnyMessage = ResponseMessage | OutputMessage | RunStateMessage;
+type AnyMessage = ResponseMessage | OutputMessage | RunStateMessage | StateStreamMessage;
 
 import { debugLog } from './debug';
 
@@ -23,6 +35,7 @@ let requestId = 1;
 const pending = new Map<number, { resolve: (value: unknown) => void; reject: (err: Error) => void }>();
 let outputCallback: ((text: string) => void) | null = null;
 let runStateCallback: ((running: boolean) => void) | null = null;
+let stateStreamCallback: ((sample: StateStreamMessage['sample']) => void) | null = null;
 let running = false;
 let initPromise: Promise<void> | null = null;
 let initModuleName: string | null = null;
@@ -43,6 +56,10 @@ function ensureWorker(): Worker {
           running = data.running;
           runStateCallback?.(data.running);
         }
+        return;
+      }
+      if (data.type === 'state') {
+        stateStreamCallback?.(data.sample);
         return;
       }
     }
@@ -197,6 +214,34 @@ export async function setYieldSteps(steps: number): Promise<void> {
   await call('setYieldSteps', steps);
 }
 
+export async function enableStateStream(enabled: boolean): Promise<void> {
+  await ensureInit();
+  await call('stateStreamEnable', enabled);
+}
+
+export async function setStateStreamStride(stride: number): Promise<void> {
+  await ensureInit();
+  await call('stateStreamSetStride', stride);
+}
+
+export async function clearStateStream(): Promise<void> {
+  await ensureInit();
+  await call('stateStreamClear');
+}
+
+export async function readStateStream(maxSamples: number): Promise<Array<{
+  pr: string;
+  ar: string;
+  ic: string;
+  accLo: string;
+  accUp: string;
+  dist: string;
+  ov: number;
+}>> {
+  await ensureInit();
+  return call('stateStreamRead', maxSamples);
+}
+
 export function isEchoEnabled(): boolean {
   return echoEnabled;
 }
@@ -225,4 +270,8 @@ export async function onOutput(cb: ((text: string) => void) | null): Promise<voi
 
 export function onRunState(cb: ((running: boolean) => void) | null): void {
   runStateCallback = cb;
+}
+
+export function onStateStream(cb: ((sample: StateStreamMessage['sample']) => void) | null): void {
+  stateStreamCallback = cb;
 }

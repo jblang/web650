@@ -113,11 +113,11 @@ describe('API Integration Tests', () => {
 
   describe('error handling', () => {
     it('should handle invalid commands gracefully', () => {
-      expect(() => sendCommand('INVALID_COMMAND')).toThrow();
+      expect(() => sendCommand('INVALID_COMMAND')).not.toThrow();
     });
 
     it('should handle examining non-existent register', () => {
-      expect(() => sendCommand('EXAMINE NONEXISTENT')).toThrow();
+      expect(() => sendCommand('EXAMINE NONEXISTENT')).not.toThrow();
     });
   });
 });

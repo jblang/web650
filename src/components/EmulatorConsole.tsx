@@ -140,7 +140,7 @@ export default function EmulatorConsole() {
               id="yield-steps"
               labelText="Yield steps"
               type="number"
-              min={1}
+              min={0}
               max={100000}
               step={1}
               value={String(yieldSteps)}

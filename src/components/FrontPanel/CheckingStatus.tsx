@@ -1,5 +1,5 @@
 import React from 'react';
-import { litBulb, unlitBulb } from './FrontPanel';
+import Bulb from './Bulb';
 import styles from './CheckingStatus.module.scss';
 
 export interface CheckingState {
@@ -50,7 +50,7 @@ const CheckingStatus: React.FC<CheckingStatusProps> = ({ state }) => {
               const isLit = state[config.key];
               return (
                 <div key={rowIndex} className={styles.checkingUnit}>
-                  <div className={styles.bulb}>{isLit ? litBulb : unlitBulb}</div>
+                  <div className={styles.bulb}><Bulb lit={isLit} /></div>
                   <div className={styles.checkingLabel}>{config.label}</div>
                 </div>
               );

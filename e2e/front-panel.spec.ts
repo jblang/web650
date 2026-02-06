@@ -61,12 +61,12 @@ async function setupEmulatorConsole(page: import('@playwright/test').Page) {
 test('loads the front panel and allows navigation from the header', async ({ page }) => {
   await page.goto('/');
 
-  await expect(page).toHaveURL(/\/front-panel$/);
+  await expect(page).toHaveURL(/\/front-panel\/?$/);
   await expect(page.getByRole('banner', { name: 'SIMH i650' })).toBeVisible();
   await expect(page.getByRole('button', { name: 'EMULATOR RESET' })).toBeVisible();
 
   await page.getByRole('link', { name: 'Documentation' }).click();
-  await expect(page).toHaveURL(/\/docs$/);
+  await expect(page).toHaveURL(/\/docs\/?$/);
 });
 
 test('manual transfer, then start and stop program from front panel', async ({ page }) => {
@@ -200,7 +200,7 @@ test('console register deposit round-trip and front panel display mapping', asyn
   await expect(output).toHaveValue(/HALF:\s*1/);
 
   await page.getByRole('link', { name: 'Front Panel' }).click();
-  await expect(page).toHaveURL(/\/front-panel$/);
+  await expect(page).toHaveURL(/\/front-panel\/?$/);
 
   await expect(page.getByTestId('entry-section')).toHaveAttribute('data-entry-value', '0918273645-');
   await expect(page.getByTestId('address-display')).toHaveAttribute('data-address-value', /0?2468/);
@@ -227,7 +227,7 @@ test('console register deposit round-trip and front panel display mapping', asyn
   await expect(page.getByTestId('display-section')).toHaveAttribute('data-display-value', '0123498765+');
 
   await page.getByRole('link', { name: 'Emulator' }).click();
-  await expect(page).toHaveURL(/\/emulator$/);
+  await expect(page).toHaveURL(/\/emulator\/?$/);
   await sendConsoleCommand(page, 'examine state');
   await expectConsoleState(output, {
     ACCLO: '0123456789+',
@@ -243,7 +243,7 @@ test('console register deposit round-trip and front panel display mapping', asyn
   });
 
   await page.getByRole('link', { name: 'Front Panel' }).click();
-  await expect(page).toHaveURL(/\/front-panel$/);
+  await expect(page).toHaveURL(/\/front-panel\/?$/);
   await expect(page.getByTestId('entry-section')).toHaveAttribute('data-entry-value', '0918273645-');
 });
 
@@ -320,7 +320,7 @@ test('display selector changes visible value without mutating register state', a
   await sendConsoleCommand(page, 'deposit DIST 1029384756+');
 
   await page.getByRole('link', { name: 'Front Panel' }).click();
-  await expect(page).toHaveURL(/\/front-panel$/);
+  await expect(page).toHaveURL(/\/front-panel\/?$/);
 
   await page.getByTestId('display-knob').getByText('LOWER ACCUM').click();
   await expect(page.getByTestId('display-section')).toHaveAttribute('data-display-value', '1122334455+');
@@ -452,7 +452,7 @@ test('yield steps control remains usable across navigation', async ({ page }) =>
   await expect(yieldInput).toHaveValue('777');
 
   await page.getByRole('link', { name: 'Front Panel' }).click();
-  await expect(page).toHaveURL(/\/front-panel$/);
+  await expect(page).toHaveURL(/\/front-panel\/?$/);
   await page.getByRole('link', { name: 'Emulator' }).click();
 
   await expect(page.locator('#yield-steps')).toBeVisible();

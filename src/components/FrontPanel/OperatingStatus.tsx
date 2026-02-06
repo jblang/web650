@@ -1,5 +1,5 @@
 import React from 'react';
-import { litBulb, unlitBulb } from './FrontPanel';
+import Bulb from './Bulb';
 import styles from './OperatingStatus.module.scss';
 
 export interface OperatingState {
@@ -55,7 +55,7 @@ const OperatingStatus: React.FC<OperatingStatusProps> = ({ state }) => {
                     data-testid={`operating-${config.key}`}
                     data-lit={isLit ? 'true' : 'false'}
                   >
-                    {isLit ? litBulb : unlitBulb}
+                    <Bulb lit={isLit} />
                   </div>
                   <div className={styles.ledLabel}>{config.label}</div>
                 </div>

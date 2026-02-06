@@ -2,14 +2,17 @@ import React from 'react';
 import BiQuinaryDigit from './BiQuinaryDigit';
 import SignDisplay from './SignDisplay';
 import { normalizeWord } from '../../lib/simh/i650/format';
+import { useDisplayDecay } from './useDisplayDecay';
 import styles from './DisplaySection.module.scss';
 
 interface DisplaySectionProps {
   value: string | number;
+  tick: number;
 }
 
-const DisplaySection: React.FC<DisplaySectionProps> = ({ value }) => {
+const DisplaySection: React.FC<DisplaySectionProps> = ({ value, tick }) => {
   const normalizedValue = normalizeWord(value);
+  const intensity = useDisplayDecay(normalizedValue, tick);
   // Extract 10 digits and sign (sign is at end: 0000000000+)
   const sign = normalizedValue.charAt(10) as '+' | '-';
   const digits = normalizedValue.substring(0, 10).split('').map(Number);
@@ -26,7 +29,7 @@ const DisplaySection: React.FC<DisplaySectionProps> = ({ value }) => {
       <div className={styles.digitGroup1}>
         {digits.slice(0, 2).map((digit, i) => (
           <div key={i} className={styles.cell}>
-            <BiQuinaryDigit value={digit} />
+            <BiQuinaryDigit value={digit} intensity={intensity.digits[i]} />
           </div>
         ))}
       </div>
@@ -34,7 +37,7 @@ const DisplaySection: React.FC<DisplaySectionProps> = ({ value }) => {
       <div className={styles.digitGroup2}>
         {digits.slice(2, 6).map((digit, i) => (
           <div key={i + 2} className={styles.cell}>
-            <BiQuinaryDigit value={digit} />
+            <BiQuinaryDigit value={digit} intensity={intensity.digits[i + 2]} />
           </div>
         ))}
       </div>
@@ -42,13 +45,13 @@ const DisplaySection: React.FC<DisplaySectionProps> = ({ value }) => {
       <div className={styles.digitGroup3}>
         {digits.slice(6, 10).map((digit, i) => (
           <div key={i + 6} className={styles.cell}>
-            <BiQuinaryDigit value={digit} />
+            <BiQuinaryDigit value={digit} intensity={intensity.digits[i + 6]} />
           </div>
         ))}
       </div>
 
       <div className={styles.signGroup}>
-        <SignDisplay value={sign} />
+        <SignDisplay value={sign} intensity={intensity.sign} />
       </div>
     </>
   );

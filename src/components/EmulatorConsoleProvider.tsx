@@ -79,8 +79,13 @@ export function EmulatorConsoleProvider({ children }: { children: ReactNode }) {
 
       enqueueOutput(`sim> ${trimmed}\n`);
 
-      const result = await i650Service.executeCommand(trimmed, { streamOutput: true, echo: false });
-      return result;
+      try {
+        const result = await i650Service.executeCommand(trimmed, { streamOutput: true, echo: false });
+        return result;
+      } catch {
+        // Errors are already printed to the console output stream.
+        return '';
+      }
     },
     [enqueueOutput]
   );
@@ -88,6 +93,7 @@ export function EmulatorConsoleProvider({ children }: { children: ReactNode }) {
   const setYieldSteps = useCallback((steps: number) => {
     void i650Service.setYieldSteps(steps);
   }, []);
+
 
   const consoleValue = useMemo(
     () => ({

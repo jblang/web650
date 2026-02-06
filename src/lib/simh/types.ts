@@ -7,6 +7,7 @@ export interface EmscriptenModule {
     argTypes: string[],
     args: unknown[],
   ) => unknown;
+  HEAPU8?: Uint8Array;
   FS: {
     writeFile(path: string, data: string | Uint8Array): void;
     readFile(path: string, opts?: { encoding?: string }): string | Uint8Array;

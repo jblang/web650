@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { SCPE_BREAK, SCPE_STOP } from './constants';
+import { SCPE_BREAK, SCPE_STOP, SCPE_STEP } from './constants';
 
 function addExistingScript(src: string): void {
   const script = document.createElement('script');
@@ -213,7 +213,7 @@ describe('core command execution', () => {
     expect(() => core.sendCommand('BAD')).toThrow('boom');
   });
 
-  it('throws command error using SIMH output text', async () => {
+  it('returns SIMH output text on command error', async () => {
     const core = await import('./core');
     const fakeModule = {
       ccall: vi.fn(() => {
@@ -223,23 +223,33 @@ describe('core command execution', () => {
     };
     core.setModule(fakeModule as unknown as Parameters<typeof core.setModule>[0]);
 
-    expect(() => core.sendCommand('BAD')).toThrow('bad command');
+    expect(core.sendCommand('BAD')).toContain('bad command');
   });
 
-  it('throws command error with fallback message when output is empty', async () => {
+  it('returns empty output on command error when output is empty', async () => {
     const core = await import('./core');
     const fakeModule = {
       ccall: vi.fn(() => 99),
     };
     core.setModule(fakeModule as unknown as Parameters<typeof core.setModule>[0]);
 
-    expect(() => core.sendCommand('BAD')).toThrow('SIMH error (99)');
+    expect(core.sendCommand('BAD')).toBe('');
   });
 
   it('accepts valid statuses even when flag bits are set', async () => {
     const core = await import('./core');
     const fakeModule = {
       ccall: vi.fn(() => SCPE_STOP | SCPE_BREAK),
+    };
+    core.setModule(fakeModule as unknown as Parameters<typeof core.setModule>[0]);
+
+    expect(() => core.sendCommand('STEP')).not.toThrow();
+  });
+
+  it('accepts SCPE_STEP as a successful status', async () => {
+    const core = await import('./core');
+    const fakeModule = {
+      ccall: vi.fn(() => SCPE_STEP),
     };
     core.setModule(fakeModule as unknown as Parameters<typeof core.setModule>[0]);
 
@@ -372,14 +382,14 @@ describe('core command execution', () => {
     await expect(core.sendCommandAsync('BAD')).rejects.toThrow('async boom');
   });
 
-  it('throws async SIMH errors for invalid status codes', async () => {
+  it('resolves async SIMH errors as output for invalid status codes', async () => {
     const core = await import('./core');
     const fakeModule = {
       ccall: vi.fn(async () => 99),
     };
     core.setModule(fakeModule as unknown as Parameters<typeof core.setModule>[0]);
 
-    await expect(core.sendCommandAsync('BAD')).rejects.toThrow('SIMH error (99)');
+    await expect(core.sendCommandAsync('BAD')).resolves.toBe('');
   });
 });
 

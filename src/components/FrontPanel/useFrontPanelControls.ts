@@ -15,6 +15,7 @@ export const useFrontPanelControls = () => {
     addressSwitches,
     addressRegister,
     operation,
+    stateStreamTick,
     consoleSwitches,
     programmedStop,
     halfCycle,
@@ -67,6 +68,7 @@ export const useFrontPanelControls = () => {
     entryValue,
     addressDisplay,
     operation,
+    stateStreamTick,
     operatingState: operatingLights,
     checkingState: checkingLights,
     // Knob positions

@@ -19,6 +19,7 @@ export interface FrontPanelProps {
   entryValue: string;
   addressDisplay: string;
   operation: string;
+  stateStreamTick: number;
   operatingState: OperatingState;
   checkingState: CheckingState;
   programmed: number;
@@ -54,15 +55,15 @@ export interface FrontPanelProps {
 const FrontPanel: React.FC<FrontPanelProps> = (props) => {
   return (
     <div className={styles.container}>
-      <DisplaySection value={props.displayValue} />
+      <DisplaySection value={props.displayValue} tick={props.stateStreamTick} />
 
       <EntrySection
         value={props.entryValue}
         onChange={props.onEntryValueChange}
       />
 
-      <OperationDisplay value={props.operation} />
-      <AddressDisplay value={props.addressDisplay} />
+      <OperationDisplay value={props.operation} tick={props.stateStreamTick} />
+      <AddressDisplay value={props.addressDisplay} tick={props.stateStreamTick} />
       <OperatingStatus state={props.operatingState} />
       <CheckingStatus state={props.checkingState} />
 

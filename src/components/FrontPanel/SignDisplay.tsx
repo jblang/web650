@@ -1,19 +1,22 @@
 import React from 'react';
-import { litBulb, unlitBulb } from './FrontPanel';
+import Bulb from './Bulb';
 import styles from './SignDisplay.module.scss';
 import cn from 'classnames';
 
 interface SignDisplayProps {
   value: '+' | '-';
+  intensity?: { plus: number; minus: number };
 }
 
-const SignDisplay: React.FC<SignDisplayProps> = ({ value }) => {
+const SignDisplay: React.FC<SignDisplayProps> = ({ value, intensity }) => {
+  const plus = intensity?.plus;
+  const minus = intensity?.minus;
   const rows = [0, 1, 2, 3, 4];
 
   return (
     <div className={styles.container}>
       {/* Top row placeholder to align with BiQuinaryDigit */}
-      <div className={cn(styles.bulb, styles.hidden)}>{unlitBulb}</div>
+      <div className={cn(styles.bulb, styles.hidden)}><Bulb lit={false} /></div>
       <div></div>
 
       {/* 5 rows - only show bulbs for + (row 0) and - (row 3) */}
@@ -25,8 +28,10 @@ const SignDisplay: React.FC<SignDisplayProps> = ({ value }) => {
         return (
           <React.Fragment key={rowIndex}>
             <div className={cn(styles.bulb, { [styles.hidden]: !showRow })}>
-              {isPlus ? (value === '+' ? litBulb : unlitBulb) :
-               isMinus ? (value === '-' ? litBulb : unlitBulb) : unlitBulb}
+              <Bulb
+                lit={isPlus ? value === '+' : isMinus ? value === '-' : false}
+                intensity={isPlus ? plus : isMinus ? minus : undefined}
+              />
             </div>
             <div className={cn(styles.sign, { [styles.hidden]: !showRow })}>
               {isPlus ? '+' : isMinus ? '-' : ''}
@@ -39,4 +44,3 @@ const SignDisplay: React.FC<SignDisplayProps> = ({ value }) => {
 };
 
 export default SignDisplay;
-

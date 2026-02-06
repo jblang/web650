@@ -15,6 +15,9 @@ type ResponseMessage = {
 
 let outputEnabled = false;
 let echoEnabled = false;
+let stateStreamEnabled = false;
+let stateStreamInterval: ReturnType<typeof setInterval> | null = null;
+const STATE_STREAM_POLL_MS = 16;
 
 const ctx = self as unknown as {
   postMessage: (message: unknown) => void;
@@ -65,6 +68,23 @@ const handlers: Record<string, (...args: unknown[]) => unknown> = {
   isEmulatorBusy: () => simh.isEmulatorBusy(),
   getYieldSteps: () => simh.getYieldSteps(),
   setYieldSteps: (steps: unknown) => simh.setYieldSteps(Number(steps)),
+  stateStreamEnable: (enabled: unknown) => {
+    stateStreamEnabled = Boolean(enabled);
+    simh.enableStateStream(stateStreamEnabled);
+    if (stateStreamEnabled && !stateStreamInterval) {
+      stateStreamInterval = setInterval(() => {
+        const sample = simh.readStateStreamLastSample();
+        if (!sample) return;
+        ctx.postMessage({ type: 'state', sample });
+      }, STATE_STREAM_POLL_MS);
+    } else if (!stateStreamEnabled && stateStreamInterval) {
+      clearInterval(stateStreamInterval);
+      stateStreamInterval = null;
+    }
+  },
+  stateStreamSetStride: (stride: unknown) => simh.setStateStreamStride(Number(stride)),
+  stateStreamClear: () => simh.clearStateStream(),
+  stateStreamRead: (max: unknown) => simh.readStateStream(Number(max)),
   stop: () => simh.stop(),
 };
 

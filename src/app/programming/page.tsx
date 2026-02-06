@@ -12,32 +12,41 @@ import {
   ComboBox,
   TextInput,
   Button,
+  Checkbox,
 } from '@carbon/react';
 import { TrashCan, Draggable } from '@carbon/icons-react';
+import {
+  I650_DEFAULT_MNEMONICS_BY_OPCODE,
+  I650_SOAP_MNEMONICS_BY_OPCODE,
+  ZERO_ADDRESS,
+} from '@/lib/simh/i650/constants';
+import { normalizeAddress, normalizeWord } from '@/lib/simh/i650/format';
+import { depositMemory } from '@/lib/simh/i650/service';
 
-const operations = [
-  '00 (NOP)', '01 (HLT)', '02 (UFA)', '03 (RTC)', '04 (RTN)', '05 (RTA)',
-  '06 (WTN)', '07 (WTA)', '08 (LIB)', '09 (LDI)', '10 (AUP)', '11 (SUP)',
-  '14 (DIV)', '15 (ALO)', '16 (SLO)', '17 (AML)', '18 (SML)', '19 (MPY)',
-  '20 (STL)', '21 (STU)', '22 (SDA)', '23 (SIA)', '24 (STD)', '25 (NTS)',
-  '26 (BIN)', '27 (SET)', '28 (SIB)', '29 (STI)', '30 (SRT)', '31 (SRD)',
-  '32 (FAD)', '33 (FSB)', '34 (FDV)', '35 (SLT)', '36 (SCT)', '37 (FAM)',
-  '38 (FSM)', '39 (FMP)', '40 (NZA)', '41 (BMA)', '42 (NZB)', '43 (BMB)',
-  '44 (NZU)', '45 (NZE)', '46 (BMI)', '47 (BOV)', '48 (NZC)', '49 (BMC)',
-  '50 (AXA)', '51 (SXA)', '52 (AXB)', '53 (SXB)', '54 (NEF)', '55 (RWD)',
-  '56 (WTM)', '57 (BST)', '58 (AXC)', '59 (SXC)', '60 (RAU)', '61 (RSU)',
-  '64 (DVR)', '65 (RAL)', '66 (RSL)', '67 (RAM)', '68 (RSM)', '69 (LDD)',
-  '70 (RD1)', '71 (WR1)', '72 (RC1)', '73 (RD2)', '74 (WR2)', '75 (RC2)',
-  '76 (RD3)', '77 (WR3)', '78 (RC3)', '79 (RPY)', '80 (RAA)', '81 (RSA)',
-  '82 (RAB)', '83 (RSB)', '84 (TLU)', '85 (SDS)', '86 (RDS)', '87 (WDS)',
-  '88 (RAC)', '89 (RSC)', '90 (BDO)', '91 (BD1)', '92 (BD2)', '93 (BD3)',
-  '94 (BD4)', '95 (BD5)', '96 (BD6)', '97 (BD7)', '98 (BD8)', '99 (BD9)',
-];
+type OperationItem = {
+  opcode: number;
+  label: string;
+};
+
+const formatOpcodeLabel = (opcode: number, mnemonic: string) =>
+  `${String(opcode).padStart(2, '0')} (${mnemonic})`;
+
+const buildOperationsList = (
+  mnemonicsByOpcode: Record<number, string>
+): OperationItem[] =>
+  Object.entries(mnemonicsByOpcode)
+    .map(([opcode, mnemonic]) => ({
+      opcode: Number(opcode),
+      label: formatOpcodeLabel(Number(opcode), mnemonic),
+    }))
+    .sort((a, b) => a.opcode - b.opcode);
 
 interface ProgramRow {
   id: string;
   instrNo: string;
   location: string;
+  isData: boolean;
+  dataWord: string;
   opAbbrv: string;
   opCode: string;
   addrData: string;
@@ -48,6 +57,7 @@ interface ProgramRow {
 const headers = [
   { key: 'instrNo', header: 'Instr. No.' },
   { key: 'location', header: 'Location' },
+  { key: 'isData', header: 'Data' },
   { key: 'opCode', header: 'Operation' },
   { key: 'addrData', header: 'Data Address' },
   { key: 'addrInstruction', header: 'Next Address' },
@@ -58,6 +68,8 @@ const createEmptyRow = (id: number): ProgramRow => ({
   id: String(id),
   instrNo: String(id),
   location: '',
+  isData: false,
+  dataWord: '',
   opAbbrv: '',
   opCode: '',
   addrData: '',
@@ -68,10 +80,22 @@ const createEmptyRow = (id: number): ProgramRow => ({
 export default function ProgrammingPage() {
   const [rows, setRows] = useState<ProgramRow[]>(() => [createEmptyRow(1)]);
   const [draggedRowId, setDraggedRowId] = useState<string | null>(null);
+  const [useSoapMnemonics, setUseSoapMnemonics] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [loadError, setLoadError] = useState<string | null>(null);
 
-  const isRowEmpty = (row: ProgramRow) =>
-    !row.location && !row.opCode &&
-    !row.addrData && !row.addrInstruction && !row.remarks;
+  const mnemonicsByOpcode = useSoapMnemonics
+    ? I650_SOAP_MNEMONICS_BY_OPCODE
+    : I650_DEFAULT_MNEMONICS_BY_OPCODE;
+  const operations = buildOperationsList(mnemonicsByOpcode);
+
+  const isRowEmpty = (row: ProgramRow) => {
+    if (row.isData) {
+      return !row.location && !row.dataWord && !row.remarks;
+    }
+    return !row.location && !row.opCode &&
+      !row.addrData && !row.addrInstruction && !row.remarks;
+  };
 
   const handleDragStart = (e: React.DragEvent, rowId: string) => {
     setDraggedRowId(rowId);
@@ -124,17 +148,67 @@ export default function ProgrammingPage() {
     });
   };
 
-  const updateCell = (rowId: string, key: keyof ProgramRow, value: string) => {
+  const updateCell = <K extends keyof ProgramRow>(
+    rowId: string,
+    key: K,
+    value: ProgramRow[K]
+  ) => {
     setRows((prevRows) => {
       const lastRow = prevRows[prevRows.length - 1];
       const isEditingLastRow = rowId === lastRow.id;
       const wasLastRowEmpty = isRowEmpty(lastRow);
 
-      const updatedRows = prevRows.map((row) =>
-        row.id === rowId ? { ...row, [key]: value } : row
-      );
+      const updatedRows = prevRows.map((row) => {
+        if (row.id !== rowId) return row;
 
-      if (isEditingLastRow && wasLastRowEmpty && value) {
+        if (key === 'isData') {
+          const nextIsData = Boolean(value);
+          if (nextIsData === row.isData) {
+            return { ...row, [key]: value };
+          }
+
+          if (nextIsData) {
+            if (row.dataWord) {
+              return { ...row, isData: true };
+            }
+            if (row.opCode) {
+              const opcode = row.opCode.padStart(2, '0');
+              const dataAddress = normalizeAddress(row.addrData || ZERO_ADDRESS);
+              const instructionAddress = normalizeAddress(row.addrInstruction || ZERO_ADDRESS);
+              const dataWord = `${opcode}${dataAddress}${instructionAddress}+`;
+              return { ...row, isData: true, dataWord };
+            }
+            return { ...row, isData: true };
+          }
+
+          if (row.dataWord) {
+            try {
+              const normalized = normalizeWord(row.dataWord);
+              return {
+                ...row,
+                isData: false,
+                opCode: normalized.slice(0, 2),
+                addrData: normalized.slice(2, 6),
+                addrInstruction: normalized.slice(6, 10),
+              };
+            } catch {
+              return { ...row, isData: false };
+            }
+          }
+
+          return { ...row, isData: false };
+        }
+
+        return { ...row, [key]: value };
+      });
+
+      const shouldAppend =
+        isEditingLastRow &&
+        wasLastRowEmpty &&
+        typeof value === 'string' &&
+        value.length > 0;
+
+      if (shouldAppend) {
         return [...updatedRows, createEmptyRow(prevRows.length + 1)];
       }
 
@@ -142,8 +216,68 @@ export default function ProgrammingPage() {
     });
   };
 
+  const handleMnemonicToggle = (checked: boolean) => {
+    setUseSoapMnemonics(checked);
+  };
+
+  const handleLoadToMemory = async () => {
+    setLoadError(null);
+    setIsLoading(true);
+    try {
+      const rowsToLoad = rows.filter(
+        (row) =>
+          row.location &&
+          (row.isData ? row.dataWord : row.opCode) &&
+          !isRowEmpty(row)
+      );
+
+      for (const row of rowsToLoad) {
+        const location = normalizeAddress(row.location);
+        if (row.isData) {
+          const word = normalizeWord(row.dataWord);
+          await depositMemory(location, word);
+          continue;
+        }
+        if (!/^\d{1,2}$/.test(row.opCode)) {
+          throw new Error(`Invalid opcode "${row.opCode}" at instruction ${row.instrNo}`);
+        }
+        const dataAddress = normalizeAddress(row.addrData || ZERO_ADDRESS);
+        const instructionAddress = normalizeAddress(row.addrInstruction || ZERO_ADDRESS);
+        const opcode = row.opCode.padStart(2, '0');
+        const word = `${opcode}${dataAddress}${instructionAddress}+`;
+        await depositMemory(location, word);
+      }
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to load programming sheet.';
+      setLoadError(message);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return (
     <div style={{ width: '100%', overflow: 'visible', paddingBottom: '250px' }}>
+      <div style={{ marginBottom: '1rem', display: 'flex', gap: '1rem', alignItems: 'center' }}>
+        <Checkbox
+          id="soap-mnemonics"
+          labelText="Use SOAP mnemonics"
+          checked={useSoapMnemonics}
+          onChange={(e) =>
+            handleMnemonicToggle((e.target as HTMLInputElement).checked)
+          }
+        />
+        <Button
+          size="sm"
+          kind="primary"
+          onClick={handleLoadToMemory}
+          disabled={isLoading}
+        >
+          {isLoading ? 'Loading...' : 'Load to Memory'}
+        </Button>
+      </div>
+      {loadError ? (
+        <div style={{ marginBottom: '1rem', color: '#da1e28' }}>{loadError}</div>
+      ) : null}
       <DataTable rows={rows} headers={headers}>
         {({ rows: tableRows, headers: tableHeaders, getTableProps, getHeaderProps, getRowProps }) => (
           <div style={{ overflow: 'visible' }}>
@@ -165,7 +299,12 @@ export default function ProgrammingPage() {
             </TableHead>
             <TableBody>
               {tableRows.map((row) => {
+                const sourceRow = rows.find((r) => r.id === row.id);
+                if (!sourceRow) return null;
                 const isLastRow = row.id === rows[rows.length - 1].id;
+                const cellMap = new Map(
+                  row.cells.map((cell) => [String(cell.info.header), cell])
+                );
                 return (
                 <TableRow
                   {...getRowProps({ row })}
@@ -196,52 +335,108 @@ export default function ProgrammingPage() {
                       disabled={isLastRow}
                     />
                   </TableCell>
-                  {row.cells.map((cell) => {
-                    const header = String(cell.info.header);
-                    const isInstrNo = header === 'instrNo';
-                    const isOpCode = header === 'opCode';
-                    const isAddressField = ['location', 'addrData', 'addrInstruction'].includes(header);
-                    const cellValue = typeof cell.value === 'string' ? cell.value : '';
-                    return (
-                      <TableCell key={cell.id}>
-                        {isInstrNo ? (
-                          cellValue
-                        ) : isOpCode ? (
-                          <div style={{ width: '9rem' }}>
-                            <ComboBox
-                              id={`op-${row.id}`}
-                              items={operations}
-                              selectedItem={cellValue || null}
-                              onChange={({ selectedItem }) => {
-                                const next = typeof selectedItem === 'string' ? selectedItem : '';
-                                updateCell(row.id, 'opCode', next);
-                              }}
-                              placeholder=""
-                              size="sm"
-                              titleText=""
-                            />
-                          </div>
-                        ) : (
-                          <div style={isAddressField ? { width: '4.25rem' } : undefined}>
+                  {(() => {
+                    const rendered: React.ReactNode[] = [];
+                    for (let i = 0; i < tableHeaders.length; i += 1) {
+                      const header = tableHeaders[i].key;
+                      const cell = cellMap.get(header);
+                      const cellValue = typeof cell?.value === 'string' ? cell.value : '';
+                      const isInstrNo = header === 'instrNo';
+                      const isOpCode = header === 'opCode';
+                      const isAddressField = ['location', 'addrData', 'addrInstruction'].includes(header);
+
+                      if (isOpCode && sourceRow.isData) {
+                        rendered.push(
+                          <TableCell key={`${row.id}-dataWord`} colSpan={3}>
                             <TextInput
-                              id={`${cell.info.header}-${row.id}`}
-                              value={cellValue}
-                              onChange={(e) => {
-                                let value = e.target.value;
-                                if (isAddressField) {
-                                  value = value.replace(/\D/g, '').slice(0, 4);
-                                }
-                                updateCell(row.id, cell.info.header as keyof ProgramRow, value);
-                              }}
-                              maxLength={isAddressField ? 4 : undefined}
+                              id={`dataWord-${row.id}`}
+                              value={sourceRow.dataWord}
+                              onChange={(e) =>
+                                updateCell(row.id, 'dataWord', e.target.value)
+                              }
+                              placeholder="Word (10 digits + sign)"
                               size="sm"
                               labelText=""
                             />
-                          </div>
-                        )}
-                      </TableCell>
-                    );
-                  })}
+                          </TableCell>
+                        );
+                        i += 2;
+                        continue;
+                      }
+
+                      if (header === 'isData') {
+                        rendered.push(
+                          <TableCell key={`${row.id}-isData`}>
+                            <Checkbox
+                              id={`isData-${row.id}`}
+                              labelText=""
+                              checked={sourceRow.isData}
+                              onChange={(e) =>
+                                updateCell(
+                                  row.id,
+                                  'isData',
+                                  (e.target as HTMLInputElement).checked
+                                )
+                              }
+                            />
+                          </TableCell>
+                        );
+                        continue;
+                      }
+
+                      rendered.push(
+                        <TableCell key={cell?.id ?? `${row.id}-${header}`}>
+                          {isInstrNo ? (
+                            cellValue
+                          ) : isOpCode ? (
+                            <div style={{ width: '9rem' }}>
+                              <ComboBox
+                                id={`op-${row.id}`}
+                                items={operations}
+                                itemToString={(item) => (item ? item.label : '')}
+                                selectedItem={
+                                  sourceRow.opCode
+                                    ? operations.find(
+                                        (item) => item.opcode === Number(sourceRow.opCode)
+                                      ) ?? null
+                                    : null
+                                }
+                                onChange={({ selectedItem }) => {
+                                  if (!selectedItem) {
+                                    updateCell(row.id, 'opCode', '');
+                                    return;
+                                  }
+                                  const nextOpcode = String(selectedItem.opcode).padStart(2, '0');
+                                  updateCell(row.id, 'opCode', nextOpcode);
+                                }}
+                                placeholder=""
+                                size="sm"
+                                titleText=""
+                              />
+                            </div>
+                          ) : (
+                            <div style={isAddressField ? { width: '4.25rem' } : undefined}>
+                              <TextInput
+                                id={`${header}-${row.id}`}
+                                value={cellValue}
+                                onChange={(e) => {
+                                  let value = e.target.value;
+                                  if (isAddressField) {
+                                    value = value.replace(/\D/g, '').slice(0, 4);
+                                  }
+                                  updateCell(row.id, header as keyof ProgramRow, value);
+                                }}
+                                maxLength={isAddressField ? 4 : undefined}
+                                size="sm"
+                                labelText=""
+                              />
+                            </div>
+                          )}
+                        </TableCell>
+                      );
+                    }
+                    return rendered;
+                  })()}
                 </TableRow>
                 );
               })}

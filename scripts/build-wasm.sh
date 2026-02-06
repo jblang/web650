@@ -15,10 +15,16 @@ BUILD_DIR="$SIMH_DIR/emscripten-build"
 
 echo "=== Building I650 WASM module ==="
 
+# Touch preload stamp so preloaded filesystem data rebuilds when tests change.
+touch "$SIMH_DIR/I650/tests/.preload-stamp"
+
 # Reconfigure cmake (picks up toolchain changes)
 cd "$BUILD_DIR"
 rm -f CMakeCache.txt
 cmake -DCMAKE_TOOLCHAIN_FILE="$SIMH_DIR/cmake/emscripten-wasm.cmake" "$SIMH_DIR"
+
+# Force relink so preloaded filesystem data refreshes (tests/sw changes).
+rm -f "$SIMH_DIR/BIN/i650.data"
 
 # Build the i650 target
 make i650

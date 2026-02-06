@@ -64,7 +64,8 @@ export async function initWasmForNode(): Promise<EmscriptenModule> {
   })) as EmscriptenModule;
 
   // Initialize SIMH
-  const rc = wasmModule.ccall('simh_init', 'number', [], []) as number;
+  const rcResult = wasmModule.ccall('simh_init', 'number', [], []) as number | Promise<number>;
+  const rc = typeof rcResult === 'number' ? rcResult : await rcResult;
   if (rc !== 0) {
     throw new Error(`simh_init failed with code ${rc}`);
   }
