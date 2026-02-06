@@ -19,9 +19,8 @@ A web-based UI for the Open SIMH IBM 650 simulator, a historic computer from the
 | 1 | **Medium** | Error handling gaps | [1](#1-error-handling-gaps-medium) |
 | 2 | **Medium** | Type safety issues | [2](#2-type-safety-issues-medium) |
 | 3 | **Medium** | Test coverage gaps | [3](#3-test-coverage-gaps-medium) |
-| 4 | **Low** | Code duplication and dead code | [4](#4-code-duplication-and-dead-code-low) |
-| 5 | **Low** | Configuration and build concerns | [5](#5-configuration-and-build-concerns-low) |
-| 6 | **Low** | Styling concerns | [6](#6-styling-concerns-low) |
+| 4 | **Low** | Configuration and build concerns | [4](#4-configuration-and-build-concerns-low) |
+| 5 | **Low** | Styling concerns | [5](#5-styling-concerns-low) |
 
 ---
 
@@ -45,15 +44,12 @@ Error handling has improved significantly since the last review (e.g., `Emulator
 | File | Line | Issue |
 |------|------|-------|
 | `DisplaySection.tsx` | 17 | `charAt(10) as '+' \| '-'` — unsafe assertion; returns `''` if string is shorter than 11 characters. |
-| `OperationDisplay.tsx` | 13 | `Number(value)` can produce `NaN`, propagating through `Math.abs` and `.padStart` to produce `"aN"`. |
-| `AddressDisplay.tsx` | 13 | Same `NaN` propagation issue as `OperationDisplay.tsx`. |
-| `AddressSelection.tsx` | 11 | Same `NaN` propagation issue. |
 | `ConfigSection.tsx` | 26 | `export const Error = ErrorSwitch` shadows the global `Error` constructor in the module scope. |
 | `ConfigSection.tsx` | 56-59 | Knob `onChange` callbacks use `as ControlPosition`, `as DisplayPosition`, `as ErrorSwitchPosition` — unsafe casts on runtime values from `LabeledKnob`. |
 | `programming/page.tsx` | 427 | `header as keyof ProgramRow` — unsafe type assertion on runtime value. |
 | `tsconfig.json` | 22 | Path alias `@/*` maps to both `./src/*` and `./node_modules/*` — the `node_modules` mapping can cause unexpected resolution. |
 
-**Recommendation:** Add `NaN` guards to all `Number()` conversions in display components. Remove `node_modules` from path alias. Rename the `Error` re-export to avoid shadowing.
+**Recommendation:** Remove `node_modules` from path alias. Rename the `Error` re-export to avoid shadowing.
 
 ---
 
@@ -77,8 +73,8 @@ The test suite has 29 test files with 238 tests, plus 1 Playwright E2E suite (19
 **Untested provider/component files (0% coverage, not in report):**
 - `EmulatorStateProvider.tsx`, `EmulatorConsoleProvider.tsx`, `EmulatorActionsProvider.tsx` — React providers wrapping the `i650/service` module
 - `useFrontPanelControls.ts` — Hook connecting providers to `FrontPanel`
-- `Providers.tsx`, `Header.tsx`, `UIShell.tsx`, `FrontPanel.tsx`
-- Display components: `DisplaySection.tsx`
+- `Providers.tsx`, `Header.tsx`, `FrontPanel.tsx`
+- Display components: `DisplaySection.tsx` (uses tested `BiQuinaryNumber` component)
 - Decay hooks: `useDisplayDecay.ts`, `useDigitDecay.ts`
 
 **Structural issues:**
@@ -87,18 +83,7 @@ The test suite has 29 test files with 238 tests, plus 1 Playwright E2E suite (19
 
 ---
 
-### 4. Code Duplication and Dead Code (Low)
-
-| Issue | Location | Details |
-|-------|----------|---------|
-| Dead component | `src/components/UIShell.tsx` | Pure pass-through `<>{children}</>` — does nothing. Only imported by `src/app/emulator/page.tsx`. |
-| Structural duplication | `OperationDisplay.tsx` + `AddressDisplay.tsx` | Nearly identical: both take `value` + `tick`, convert via `Number`/`padStart`/`slice`, render `BiQuinaryDigit` cells with `useDigitDecay`. Differ only in digit count (2 vs 4) and title text. |
-| Repeated padding logic | `AddressDisplay.tsx:13`, `AddressSelection.tsx:11`, `OperationDisplay.tsx:13` | Same `String(Math.abs(Number(value))).padStart(N, '0').slice(-N)` pattern in 3 files. |
-| Empty stub handlers | `EmulatorActionsProvider.tsx:124-126` | `onHelpClick` and `onCheatClick` are no-op `useCallback(() => {}, [])` — buttons are wired up but do nothing. |
-
----
-
-### 5. Configuration and Build Concerns (Low)
+### 4. Configuration and Build Concerns (Low)
 
 | File | Issue |
 |------|-------|
@@ -110,7 +95,7 @@ The test suite has 29 test files with 238 tests, plus 1 Playwright E2E suite (19
 
 ---
 
-### 6. Styling Concerns (Low)
+### 5. Styling Concerns (Low)
 
 | File | Issue |
 |------|-------|
@@ -137,10 +122,11 @@ The test suite has 29 test files with 238 tests, plus 1 Playwright E2E suite (19
 
 6. **Comprehensive I650 validation.** `format.ts` provides thorough validation functions (`validateWord`, `validateAddress`, `normalizeWord`, `normalizeAddress`) with 32 unit tests covering edge cases.
 
+7. **Consolidated bi-quinary display components.** The `BiQuinaryNumber` component provides a single, well-tested implementation for all bi-quinary encoded digit displays (operation codes, addresses, and data words). Supports both CSS Grid subgrid (for DisplaySection) and `display: contents` flattening (for OperationDisplay/AddressDisplay), eliminating ~60 lines of duplicated rendering logic while maintaining proper grid layout and decay effects.
+
 ---
 
 ## Files to Prioritize for Improvement
 
-1. **`src/components/FrontPanel/OperationDisplay.tsx`** + **`AddressDisplay.tsx`** — Add NaN guards; consider consolidating into one parameterized component
-2. **`src/app/docs/page.tsx`** — Add error handling and loading state to fetch
-3. **`src/components/CardDeckProvider.tsx`** — Add FileReader error handler and memoize context value
+1. **`src/app/docs/page.tsx`** — Add error handling and loading state to fetch
+2. **`src/components/CardDeckProvider.tsx`** — Add FileReader error handler and memoize context value

@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import styles from './ControlSection.module.scss';
 import cn from 'classnames';
 
-// Button labels (3 groups of 3)
+// Button labels (2 groups of 3, 1 group of 3)
 const BUTTON_GROUPS = [
   ["TRANSFER", "PROGRAM START", "PROGRAM STOP"],
   ["PROGRAM RESET", "COMPUTER RESET", "ACCUM RESET"],
@@ -17,8 +17,6 @@ interface ControlSectionProps {
   onProgramResetClick?: () => void;
   onComputerResetClick?: () => void;
   onAccumResetClick?: () => void;
-  onHelpClick?: () => void;
-  onCheatClick?: () => void;
   onEmulatorResetClick?: () => void;
 }
 
@@ -30,8 +28,6 @@ const handlerMap: { [key: string]: keyof ControlSectionProps } = {
   "PROGRAM RESET": "onProgramResetClick",
   "COMPUTER RESET": "onComputerResetClick",
   "ACCUM RESET": "onAccumResetClick",
-  "HELP": "onHelpClick",
-  "CHEAT": "onCheatClick",
   "EMULATOR RESET": "onEmulatorResetClick",
 };
 

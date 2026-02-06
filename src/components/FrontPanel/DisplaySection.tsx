@@ -1,5 +1,5 @@
 import React from 'react';
-import BiQuinaryDigit from './BiQuinaryDigit';
+import BiQuinaryNumber from './BiQuinaryNumber';
 import SignDisplay from './SignDisplay';
 import { normalizeWord } from '../../lib/simh/i650/format';
 import { useDisplayDecay } from './useDisplayDecay';
@@ -25,29 +25,34 @@ const DisplaySection: React.FC<DisplaySectionProps> = ({ value, tick }) => {
         <div className={styles.labelSign}>SIGN</div>
       </div>
 
-      {/* Digit groups row */}
-      <div className={styles.digitGroup1}>
-        {digits.slice(0, 2).map((digit, i) => (
-          <div key={i} className={styles.cell}>
-            <BiQuinaryDigit value={digit} intensity={intensity.digits[i]} />
-          </div>
-        ))}
-      </div>
+      {/* Digits row - digits render directly on parent grid */}
+      <div className={styles.digitsRow}>
+        <BiQuinaryNumber
+          value={digits.slice(0, 2)}
+          tick={tick}
+          digitCount={2}
+          intensity={intensity.digits.slice(0, 2)}
+          testIdPrefix="display"
+          className={styles.digitGroup1}
+        />
 
-      <div className={styles.digitGroup2}>
-        {digits.slice(2, 6).map((digit, i) => (
-          <div key={i + 2} className={styles.cell}>
-            <BiQuinaryDigit value={digit} intensity={intensity.digits[i + 2]} />
-          </div>
-        ))}
-      </div>
+        <BiQuinaryNumber
+          value={digits.slice(2, 6)}
+          tick={tick}
+          digitCount={4}
+          intensity={intensity.digits.slice(2, 6)}
+          testIdPrefix="display"
+          className={styles.digitGroup2}
+        />
 
-      <div className={styles.digitGroup3}>
-        {digits.slice(6, 10).map((digit, i) => (
-          <div key={i + 6} className={styles.cell}>
-            <BiQuinaryDigit value={digit} intensity={intensity.digits[i + 6]} />
-          </div>
-        ))}
+        <BiQuinaryNumber
+          value={digits.slice(6, 10)}
+          tick={tick}
+          digitCount={4}
+          intensity={intensity.digits.slice(6, 10)}
+          testIdPrefix="display"
+          className={styles.digitGroup3}
+        />
       </div>
 
       <div className={styles.signGroup}>

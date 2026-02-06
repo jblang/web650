@@ -22,8 +22,6 @@ interface EmulatorActionsContextType {
   onProgramResetClick: () => Promise<void>;
   onComputerResetClick: () => Promise<void>;
   onAccumResetClick: () => Promise<void>;
-  onHelpClick: () => void;
-  onCheatClick: () => void;
   onEmulatorResetClick: () => Promise<void>;
 }
 
@@ -121,10 +119,6 @@ export function EmulatorActionsProvider({ children }: { children: ReactNode }) {
     await i650Service.restart();
   }, [clearOutput]);
 
-  const onHelpClick = useCallback(() => {}, []);
-
-  const onCheatClick = useCallback(() => {}, []);
-
   const actionsValue = useMemo(
     () => ({
       refreshRegisters,
@@ -142,8 +136,6 @@ export function EmulatorActionsProvider({ children }: { children: ReactNode }) {
       onProgramResetClick,
       onComputerResetClick,
       onAccumResetClick,
-      onHelpClick,
-      onCheatClick,
       onEmulatorResetClick,
     }),
     [
@@ -162,8 +154,6 @@ export function EmulatorActionsProvider({ children }: { children: ReactNode }) {
       onProgramResetClick,
       onComputerResetClick,
       onAccumResetClick,
-      onHelpClick,
-      onCheatClick,
       onEmulatorResetClick,
     ]
   );

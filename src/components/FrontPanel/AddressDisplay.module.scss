@@ -4,14 +4,19 @@
   @include panel-section;
   grid-column: 3 / 7;
   grid-template-rows: auto 1fr;
+  gap: 4px; // Match parent grid gap
 }
 
-.title {
+.content {
+  display: contents;
+}
+
+.content :global(.title) {
   grid-column: span 4;
   @include section-heading-base;
   @include spaced-text(2.4em);
 }
 
-.cell {
+.content :global(.cell) {
   @include centered-cell;
 }

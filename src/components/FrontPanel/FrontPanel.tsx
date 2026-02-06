@@ -47,8 +47,6 @@ export interface FrontPanelProps {
   onProgramResetClick?: () => void;
   onComputerResetClick?: () => void;
   onAccumResetClick?: () => void;
-  onHelpClick?: () => void;
-  onCheatClick?: () => void;
   onEmulatorResetClick?: () => void;
 }
 
@@ -91,8 +89,6 @@ const FrontPanel: React.FC<FrontPanelProps> = (props) => {
         onProgramResetClick={props.onProgramResetClick}
         onComputerResetClick={props.onComputerResetClick}
         onAccumResetClick={props.onAccumResetClick}
-        onHelpClick={props.onHelpClick}
-        onCheatClick={props.onCheatClick}
         onEmulatorResetClick={props.onEmulatorResetClick}
       />
     </div>

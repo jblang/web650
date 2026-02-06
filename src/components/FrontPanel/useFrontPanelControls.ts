@@ -39,8 +39,6 @@ export const useFrontPanelControls = () => {
     onProgramResetClick,
     onComputerResetClick,
     onAccumResetClick,
-    onHelpClick,
-    onCheatClick,
     onEmulatorResetClick,
   } = useEmulatorActions();
 
@@ -95,8 +93,6 @@ export const useFrontPanelControls = () => {
     onProgramResetClick,
     onComputerResetClick,
     onAccumResetClick,
-    onHelpClick,
-    onCheatClick,
     onEmulatorResetClick,
   };
 };

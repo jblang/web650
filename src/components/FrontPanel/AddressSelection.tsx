@@ -1,5 +1,6 @@
 import React from 'react';
 import DecimalKnob from './DecimalKnob';
+import { normalizeAddress } from '../../lib/simh/i650/format';
 
 interface AddressSelectionProps {
   value: string | number;
@@ -7,8 +8,8 @@ interface AddressSelectionProps {
 }
 
 const AddressSelection: React.FC<AddressSelectionProps> = ({ value, onChange }) => {
-  // Ensure value is a string and pad to 4 digits
-  const displayValue = String(Math.abs(Number(value))).padStart(4, '0').slice(-4);
+  // Use normalizeAddress for consistent formatting and validation
+  const displayValue = normalizeAddress(value);
   const digits = displayValue.split('').map(Number);
 
   // Handler for digit changes

@@ -1,0 +1,29 @@
+.container {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+// Scoped versions for flex layout mode
+.title {
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  color: var(--cds-text-secondary);
+}
+
+.cell {
+  // Default styling for flex mode
+}
+
+// Global versions for grid layout mode (targeted by parent components)
+:global(.title) {
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  color: var(--cds-text-secondary);
+}
+
+:global(.cell) {
+  // Empty by default, styled by parent in grid mode
+}

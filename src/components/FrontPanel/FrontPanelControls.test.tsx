@@ -44,8 +44,6 @@ describe('FrontPanel controls', () => {
       onProgramResetClick: vi.fn(),
       onComputerResetClick: vi.fn(),
       onAccumResetClick: vi.fn(),
-      onHelpClick: vi.fn(),
-      onCheatClick: vi.fn(),
       onEmulatorResetClick: vi.fn(),
     };
 
@@ -61,8 +59,6 @@ describe('FrontPanel controls', () => {
     clickByLabel('PROGRAM RESET');
     clickByLabel('COMPUTER RESET');
     clickByLabel('ACCUM RESET');
-    clickByLabel('HELP');
-    clickByLabel('CHEAT');
     clickByLabel('EMULATOR RESET');
     clickByLabel('TRANSFER');
 
@@ -71,8 +67,6 @@ describe('FrontPanel controls', () => {
     expect(handlers.onProgramResetClick).toHaveBeenCalledTimes(1);
     expect(handlers.onComputerResetClick).toHaveBeenCalledTimes(1);
     expect(handlers.onAccumResetClick).toHaveBeenCalledTimes(1);
-    expect(handlers.onHelpClick).toHaveBeenCalledTimes(1);
-    expect(handlers.onCheatClick).toHaveBeenCalledTimes(1);
     expect(handlers.onEmulatorResetClick).toHaveBeenCalledTimes(1);
     expect(handlers.onTransferClick).toHaveBeenCalledTimes(1);
   });
