@@ -62,7 +62,7 @@ const EntrySection: React.FC<EntrySectionProps> = ({
 
       <div className={styles.signKnobCell}>
         <div className={styles.cell}>
-          <LabeledKnob position={signKnobPosition} positions={SIGN_POS} onChange={handleSignChange} testId="entry-sign-knob" />
+          <LabeledKnob position={signKnobPosition} positions={SIGN_POS} onChange={handleSignChange} testId="entry-sign-knob" label="Sign" />
         </div>
         <div className={styles.signLabel}>
           SIGN

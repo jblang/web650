@@ -33,6 +33,30 @@ const DecimalKnob: React.FC<DecimalKnobProps> = ({ value, onChange, style, testI
     setShowPopup(false);
   };
 
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    switch (e.key) {
+      case 'ArrowUp':
+      case 'ArrowRight':
+        e.preventDefault();
+        onChange?.((value + 1) % 10);
+        break;
+      case 'ArrowDown':
+      case 'ArrowLeft':
+        e.preventDefault();
+        onChange?.((value + 9) % 10);
+        break;
+      case 'Escape':
+        setShowPopup(false);
+        break;
+      default:
+        if (/^[0-9]$/.test(e.key)) {
+          e.preventDefault();
+          onChange?.(parseInt(e.key, 10));
+        }
+        break;
+    }
+  };
+
   useEffect(() => {
     if (!showPopup) return;
     const handleClickOutside = (e: MouseEvent) => {
@@ -66,7 +90,18 @@ const DecimalKnob: React.FC<DecimalKnobProps> = ({ value, onChange, style, testI
   }, [showPopup]);
 
   return (
-    <div className={cn(styles.knobContainer, styles.decimalKnobContainer)} style={style} data-testid={testId}>
+    <div
+      className={cn(styles.knobContainer, styles.decimalKnobContainer)}
+      style={style}
+      data-testid={testId}
+      role="spinbutton"
+      aria-valuenow={value}
+      aria-valuemin={0}
+      aria-valuemax={9}
+      aria-label="Digit selector"
+      tabIndex={0}
+      onKeyDown={handleKeyDown}
+    >
       <div className={styles.decimalDisplayWrapper} ref={wrapperRef}>
         <div
           className={styles.decimalDisplay}

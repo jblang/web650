@@ -49,6 +49,7 @@ const ControlSection: React.FC<ControlSectionProps> = (props) => {
             return (
               <button
                 key={buttonIndex}
+                type="button"
                 className={cn(styles.button, { [styles.red]: isRedButton, [styles.pressed]: isPressed })}
                 onClick={handler}
                 onMouseDown={() => setPressedButton(label)}

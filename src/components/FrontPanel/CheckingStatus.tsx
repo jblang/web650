@@ -39,7 +39,7 @@ interface CheckingStatusProps {
 
 const CheckingStatus: React.FC<CheckingStatusProps> = ({ state }) => {
   return (
-    <div className={styles.checkingBox}>
+    <div className={styles.checkingBox} role="group" aria-label="Checking status">
       <div className={styles.checkingTitle}>CHECKING</div>
 
       <div className={styles.columnContainer}>
@@ -50,7 +50,7 @@ const CheckingStatus: React.FC<CheckingStatusProps> = ({ state }) => {
               const isLit = state[config.key];
               return (
                 <div key={rowIndex} className={styles.checkingUnit}>
-                  <div className={styles.bulb}><Bulb lit={isLit} /></div>
+                  <div className={styles.bulb}><Bulb lit={isLit} label={config.label} /></div>
                   <div className={styles.checkingLabel}>{config.label}</div>
                 </div>
               );

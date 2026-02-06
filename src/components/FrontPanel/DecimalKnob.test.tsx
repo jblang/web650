@@ -134,6 +134,82 @@ describe('DecimalKnob', () => {
     }
   });
 
+  it('has spinbutton role and ARIA attributes', () => {
+    render(<DecimalKnob value={5} onChange={() => {}} testId="test-knob" />);
+    const knob = container.querySelector('[role="spinbutton"]');
+    expect(knob).not.toBeNull();
+    expect(knob?.getAttribute('aria-valuenow')).toBe('5');
+    expect(knob?.getAttribute('aria-valuemin')).toBe('0');
+    expect(knob?.getAttribute('aria-valuemax')).toBe('9');
+    expect(knob?.getAttribute('aria-label')).toBe('Digit selector');
+    expect(knob?.getAttribute('tabindex')).toBe('0');
+  });
+
+  it('increments on ArrowUp key', () => {
+    const onChange = vi.fn();
+    render(<DecimalKnob value={3} onChange={onChange} />);
+    const knob = container.querySelector('[role="spinbutton"]')!;
+    act(() => {
+      knob.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowUp', bubbles: true }));
+    });
+    expect(onChange).toHaveBeenCalledWith(4);
+  });
+
+  it('decrements on ArrowDown key', () => {
+    const onChange = vi.fn();
+    render(<DecimalKnob value={3} onChange={onChange} />);
+    const knob = container.querySelector('[role="spinbutton"]')!;
+    act(() => {
+      knob.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true }));
+    });
+    expect(onChange).toHaveBeenCalledWith(2);
+  });
+
+  it('selects digit on number key press', () => {
+    const onChange = vi.fn();
+    render(<DecimalKnob value={3} onChange={onChange} />);
+    const knob = container.querySelector('[role="spinbutton"]')!;
+    act(() => {
+      knob.dispatchEvent(new KeyboardEvent('keydown', { key: '7', bubbles: true }));
+    });
+    expect(onChange).toHaveBeenCalledWith(7);
+  });
+
+  it('wraps from 9 to 0 on ArrowRight key', () => {
+    const onChange = vi.fn();
+    render(<DecimalKnob value={9} onChange={onChange} />);
+    const knob = container.querySelector('[role="spinbutton"]')!;
+    act(() => {
+      knob.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true }));
+    });
+    expect(onChange).toHaveBeenCalledWith(0);
+  });
+
+  it('wraps from 0 to 9 on ArrowLeft key', () => {
+    const onChange = vi.fn();
+    render(<DecimalKnob value={0} onChange={onChange} />);
+    const knob = container.querySelector('[role="spinbutton"]')!;
+    act(() => {
+      knob.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowLeft', bubbles: true }));
+    });
+    expect(onChange).toHaveBeenCalledWith(9);
+  });
+
+  it('closes popup on Escape key', () => {
+    render(<DecimalKnob value={5} onChange={() => {}} />);
+    const display = container.querySelector('[title="CHOOSE"]');
+    act(() => display?.dispatchEvent(new MouseEvent('click', { bubbles: true })));
+    const openCount = getDigitNodes().length;
+    expect(openCount).toBeGreaterThan(1);
+
+    const knob = container.querySelector('[role="spinbutton"]')!;
+    act(() => {
+      knob.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+    });
+    const closedCount = getDigitNodes().length;
+    expect(closedCount).toBeLessThan(openCount);
+  });
+
   it('adjusts popup offset when overflowing on the right', () => {
     const onChange = vi.fn();
     const originalWidth = window.innerWidth;

@@ -73,6 +73,19 @@ describe('PunchedCard', () => {
     const columns = container.querySelectorAll('[data-testid^="card-column-"]');
     expect(columns.length).toBe(80);
   });
+
+  it('has role="img" with card text in aria-label', () => {
+    render(<PunchedCard text="HELLO WORLD" />);
+    const card = container.querySelector('[role="img"]');
+    expect(card).not.toBeNull();
+    expect(card?.getAttribute('aria-label')).toBe('Punched card: HELLO WORLD');
+  });
+
+  it('shows "blank" in aria-label for empty card', () => {
+    render(<PunchedCard text="   " />);
+    const card = container.querySelector('[role="img"]');
+    expect(card?.getAttribute('aria-label')).toBe('Punched card: blank');
+  });
 });
 
 /* @vitest-environment jsdom */

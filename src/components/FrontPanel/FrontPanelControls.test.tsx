@@ -158,6 +158,142 @@ describe('FrontPanel controls', () => {
     const knob = container.querySelector('[data-current-label]');
     expect(knob?.getAttribute('data-current-label')).toBe('');
   });
+
+  it('LabeledKnob has slider role and ARIA attributes', () => {
+    const positions = [
+      { label: 'STOP', angle: -30 },
+      { label: 'RUN', angle: 30 },
+      { label: 'FAST', angle: 90 },
+    ];
+    render(<LabeledKnob position={1} positions={positions} label="Control" />);
+
+    const slider = container.querySelector('[role="slider"]');
+    expect(slider).not.toBeNull();
+    expect(slider?.getAttribute('aria-valuenow')).toBe('1');
+    expect(slider?.getAttribute('aria-valuemin')).toBe('0');
+    expect(slider?.getAttribute('aria-valuemax')).toBe('2');
+    expect(slider?.getAttribute('aria-valuetext')).toBe('RUN');
+    expect(slider?.getAttribute('aria-label')).toBe('Control');
+    expect(slider?.getAttribute('tabindex')).toBe('0');
+  });
+
+  it('LabeledKnob falls back to testId for aria-label when no label prop', () => {
+    const positions = [
+      { label: 'A', angle: -30 },
+      { label: 'B', angle: 30 },
+    ];
+    render(<LabeledKnob position={0} positions={positions} testId="my-knob" />);
+
+    const slider = container.querySelector('[role="slider"]');
+    expect(slider?.getAttribute('aria-label')).toBe('my-knob');
+  });
+
+  it('LabeledKnob navigates with ArrowRight and ArrowLeft keys', () => {
+    const positions = [
+      { label: 'A', angle: -30 },
+      { label: 'B', angle: 0 },
+      { label: 'C', angle: 30 },
+    ];
+    const onChange = vi.fn();
+    render(<LabeledKnob position={1} positions={positions} onChange={onChange} />);
+
+    const slider = container.querySelector('[role="slider"]')!;
+    act(() => {
+      slider.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true }));
+    });
+    expect(onChange).toHaveBeenCalledWith(2);
+
+    onChange.mockClear();
+    act(() => {
+      slider.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowLeft', bubbles: true }));
+    });
+    expect(onChange).toHaveBeenCalledWith(0);
+  });
+
+  it('LabeledKnob navigates with ArrowUp and ArrowDown keys', () => {
+    const positions = [
+      { label: 'A', angle: -30 },
+      { label: 'B', angle: 0 },
+      { label: 'C', angle: 30 },
+    ];
+    const onChange = vi.fn();
+    render(<LabeledKnob position={1} positions={positions} onChange={onChange} />);
+
+    const slider = container.querySelector('[role="slider"]')!;
+    act(() => {
+      slider.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowUp', bubbles: true }));
+    });
+    expect(onChange).toHaveBeenCalledWith(2);
+
+    onChange.mockClear();
+    act(() => {
+      slider.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true }));
+    });
+    expect(onChange).toHaveBeenCalledWith(0);
+  });
+
+  it('LabeledKnob Home key selects first position', () => {
+    const positions = [
+      { label: 'A', angle: -30 },
+      { label: 'B', angle: 0 },
+      { label: 'C', angle: 30 },
+    ];
+    const onChange = vi.fn();
+    render(<LabeledKnob position={2} positions={positions} onChange={onChange} />);
+
+    const slider = container.querySelector('[role="slider"]')!;
+    act(() => {
+      slider.dispatchEvent(new KeyboardEvent('keydown', { key: 'Home', bubbles: true }));
+    });
+    expect(onChange).toHaveBeenCalledWith(0);
+  });
+
+  it('LabeledKnob End key selects last position', () => {
+    const positions = [
+      { label: 'A', angle: -30 },
+      { label: 'B', angle: 0 },
+      { label: 'C', angle: 30 },
+    ];
+    const onChange = vi.fn();
+    render(<LabeledKnob position={0} positions={positions} onChange={onChange} />);
+
+    const slider = container.querySelector('[role="slider"]')!;
+    act(() => {
+      slider.dispatchEvent(new KeyboardEvent('keydown', { key: 'End', bubbles: true }));
+    });
+    expect(onChange).toHaveBeenCalledWith(2);
+  });
+
+  it('LabeledKnob wraps around with arrow keys', () => {
+    const positions = [
+      { label: 'A', angle: -30 },
+      { label: 'B', angle: 30 },
+    ];
+    const onChange = vi.fn();
+    render(<LabeledKnob position={0} positions={positions} onChange={onChange} />);
+
+    const slider = container.querySelector('[role="slider"]')!;
+    act(() => {
+      slider.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowLeft', bubbles: true }));
+    });
+    expect(onChange).toHaveBeenCalledWith(1); // wraps from 0 to last
+
+    onChange.mockClear();
+    render(<LabeledKnob position={1} positions={positions} onChange={onChange} />);
+    const slider2 = container.querySelector('[role="slider"]')!;
+    act(() => {
+      slider2.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true }));
+    });
+    expect(onChange).toHaveBeenCalledWith(0); // wraps from last to 0
+  });
+
+  it('ControlSection buttons have type="button"', () => {
+    render(<ControlSection />);
+    const buttons = container.querySelectorAll('button');
+    buttons.forEach((btn) => {
+      expect(btn.getAttribute('type')).toBe('button');
+    });
+  });
 });
 
 /* @vitest-environment jsdom */

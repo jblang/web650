@@ -435,6 +435,95 @@ test('programmed stop and overflow stop conditions are surfaced in console outpu
   await expect(output).toHaveValue(/Overflow/i, { timeout: 20000 });
 });
 
+test('front panel ARIA roles and labels are present', async ({ page }) => {
+  await page.goto('/front-panel');
+
+  // Labeled knobs have slider role with aria-label
+  const controlKnob = page.getByTestId('control-knob');
+  await expect(controlKnob).toHaveRole('slider');
+  await expect(controlKnob).toHaveAttribute('aria-label', 'Control');
+  await expect(controlKnob).toHaveAttribute('aria-valuetext', /RUN|MANUAL OPERATION|ADDRESS STOP/);
+
+  const displayKnob = page.getByTestId('display-knob');
+  await expect(displayKnob).toHaveRole('slider');
+  await expect(displayKnob).toHaveAttribute('aria-label', 'Display');
+
+  const programmedKnob = page.getByTestId('programmed-knob');
+  await expect(programmedKnob).toHaveRole('slider');
+  await expect(programmedKnob).toHaveAttribute('aria-label', 'Programmed');
+
+  // Decimal knobs have spinbutton role
+  const entryDigit0 = page.getByTestId('entry-digit-0');
+  await expect(entryDigit0).toHaveRole('spinbutton');
+  await expect(entryDigit0).toHaveAttribute('aria-valuemin', '0');
+  await expect(entryDigit0).toHaveAttribute('aria-valuemax', '9');
+
+  // Operating status has group role
+  const operatingGroup = page.getByRole('group', { name: 'Operating status' });
+  await expect(operatingGroup).toBeVisible();
+
+  // Checking status has group role
+  const checkingGroup = page.getByRole('group', { name: 'Checking status' });
+  await expect(checkingGroup).toBeVisible();
+
+  // All control buttons have type="button"
+  const buttons = page.locator('button[type="button"]');
+  const transferButton = buttons.filter({ hasText: 'TRANSFER' });
+  await expect(transferButton).toBeVisible();
+});
+
+test('keyboard navigation works on labeled knobs', async ({ page }) => {
+  await page.goto('/front-panel');
+
+  // Focus the programmed knob (STOP/RUN) and use arrow keys
+  const programmedKnob = page.getByTestId('programmed-knob');
+  await expect(programmedKnob).toHaveAttribute('data-current-label', 'RUN');
+
+  await programmedKnob.focus();
+  await page.keyboard.press('ArrowLeft');
+  await expect(programmedKnob).toHaveAttribute('data-current-label', 'STOP');
+
+  await page.keyboard.press('ArrowRight');
+  await expect(programmedKnob).toHaveAttribute('data-current-label', 'RUN');
+
+  // Home and End keys on the control knob (3 positions)
+  const controlKnob = page.getByTestId('control-knob');
+  await controlKnob.focus();
+  await page.keyboard.press('End');
+  await expect(controlKnob).toHaveAttribute('data-current-label', 'MANUAL OPERATION');
+
+  await page.keyboard.press('Home');
+  await expect(controlKnob).toHaveAttribute('data-current-label', 'ADDRESS STOP');
+});
+
+test('keyboard navigation works on decimal knobs', async ({ page }) => {
+  await page.goto('/front-panel');
+
+  const digit0 = page.getByTestId('entry-digit-0');
+  await digit0.focus();
+
+  // Initial value should be 0
+  await expect(digit0).toHaveAttribute('aria-valuenow', '0');
+
+  // ArrowUp increments
+  await page.keyboard.press('ArrowUp');
+  await expect(digit0).toHaveAttribute('aria-valuenow', '1');
+
+  // ArrowDown decrements
+  await page.keyboard.press('ArrowDown');
+  await expect(digit0).toHaveAttribute('aria-valuenow', '0');
+
+  // Digit key directly sets value
+  await page.keyboard.press('5');
+  await expect(digit0).toHaveAttribute('aria-valuenow', '5');
+
+  // Wraps around: ArrowDown from 0 goes to 9
+  await page.keyboard.press('0');
+  await expect(digit0).toHaveAttribute('aria-valuenow', '0');
+  await page.keyboard.press('ArrowDown');
+  await expect(digit0).toHaveAttribute('aria-valuenow', '9');
+});
+
 test('yield steps control remains usable across navigation', async ({ page }) => {
   const output = await setupEmulatorConsole(page);
   const yieldInput = page.locator('#yield-steps');

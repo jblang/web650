@@ -26,7 +26,7 @@ export default function AppHeader() {
 
   return (
     <Header aria-label="SIMH i650">
-      <HeaderName href="#" prefix="SIMH">
+      <HeaderName href="/" prefix="SIMH">
         i650
       </HeaderName>
       <HeaderNavigation aria-label="Navigation">

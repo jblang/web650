@@ -15,9 +15,10 @@ interface LabeledKnobProps {
   className?: string;
   labelRadius?: number;
   testId?: string;
+  label?: string;
 }
 
-const LabeledKnob: React.FC<LabeledKnobProps> = ({ position, positions, onChange, className, labelRadius, testId }) => {
+const LabeledKnob: React.FC<LabeledKnobProps> = ({ position, positions, onChange, className, labelRadius, testId, label }) => {
   const rotation = positions[position]?.angle ?? 0;
 
   const handleLeftClick = () => {
@@ -26,6 +27,29 @@ const LabeledKnob: React.FC<LabeledKnobProps> = ({ position, positions, onChange
 
   const handleRightClick = () => {
     onChange?.((position + 1) % positions.length);
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    switch (e.key) {
+      case 'ArrowRight':
+      case 'ArrowUp':
+        e.preventDefault();
+        onChange?.((position + 1) % positions.length);
+        break;
+      case 'ArrowLeft':
+      case 'ArrowDown':
+        e.preventDefault();
+        onChange?.((position + positions.length - 1) % positions.length);
+        break;
+      case 'Home':
+        e.preventDefault();
+        onChange?.(0);
+        break;
+      case 'End':
+        e.preventDefault();
+        onChange?.(positions.length - 1);
+        break;
+    }
   };
 
   const scale = 1.1;
@@ -50,6 +74,14 @@ const LabeledKnob: React.FC<LabeledKnobProps> = ({ position, positions, onChange
       data-testid={testId}
       data-position={position}
       data-current-label={positions[position]?.label ?? ''}
+      role="slider"
+      aria-valuenow={position}
+      aria-valuemin={0}
+      aria-valuemax={positions.length - 1}
+      aria-valuetext={positions[position]?.label ?? ''}
+      aria-label={label ?? testId ?? 'Selector'}
+      tabIndex={0}
+      onKeyDown={handleKeyDown}
     >
       <div className={styles.labeledKnobInnerContainer} style={{ width: `${scaledContainerWidth}px`, height: `${scaledContainerHeight}px` }}>
         {positions.map((p, i) => {

@@ -14,7 +14,7 @@ const BiQuinaryDigit: React.FC<BiQuinaryDigitProps> = ({ value, intensity }) => 
   const rows = [0, 1, 2, 3, 4];
 
   return (
-    <div className={styles.container}>
+    <div className={styles.container} role="img" aria-label={`Digit: ${value}`}>
       {/* Bi (0-4 vs 5-9) indicator row */}
       <div className={styles.bulb}>
         <Bulb lit={isLeftColumnActive} intensity={intensity?.left} />

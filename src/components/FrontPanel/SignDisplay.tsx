@@ -14,7 +14,7 @@ const SignDisplay: React.FC<SignDisplayProps> = ({ value, intensity }) => {
   const rows = [0, 1, 2, 3, 4];
 
   return (
-    <div className={styles.container}>
+    <div className={styles.container} role="img" aria-label={`Sign: ${value === '+' ? 'plus' : 'minus'}`}>
       {/* Top row placeholder to align with BiQuinaryDigit */}
       <div className={cn(styles.bulb, styles.hidden)}><Bulb lit={false} /></div>
       <div></div>

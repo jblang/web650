@@ -212,7 +212,7 @@ const PunchedCard: React.FC<PunchedCardProps> = ({ text, style }) => {
   const columnPunches = paddedText.split('').map(char => getColumnPunches(char));
 
   return (
-    <div style={{
+    <div role="img" aria-label={`Punched card: ${text.trim() || 'blank'}`} style={{
       ...styles.cardContainer,
       ...style,
       width: `${CARD_WIDTH}px`,

@@ -39,7 +39,7 @@ interface OperatingStatusProps {
 
 const OperatingStatus: React.FC<OperatingStatusProps> = ({ state }) => {
   return (
-    <div className={styles.operatingBox}>
+    <div className={styles.operatingBox} role="group" aria-label="Operating status">
       <div className={styles.operatingTitle}>OPERATING</div>
 
       <div className={styles.columnContainer}>
@@ -55,7 +55,7 @@ const OperatingStatus: React.FC<OperatingStatusProps> = ({ state }) => {
                     data-testid={`operating-${config.key}`}
                     data-lit={isLit ? 'true' : 'false'}
                   >
-                    <Bulb lit={isLit} />
+                    <Bulb lit={isLit} label={config.label} />
                   </div>
                   <div className={styles.ledLabel}>{config.label}</div>
                 </div>
