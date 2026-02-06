@@ -119,7 +119,7 @@ export function getDisplayValue(
 /* ── Manual Drum Operations ───────────────────────────────────── */
 
 export type DrumTransferResult =
-  | { type: 'read'; value: string }
+  | { type: 'read'; value: string | undefined }
   | { type: 'write'; address: string; value: string }
   | { type: 'none' };
 

@@ -41,7 +41,7 @@ export function examineI650State(ref: string): Record<string, string> {
  * @param address - Drum address (0000-9999)
  * @returns 10-digit word with sign
  */
-export function readMemory(address: string): string {
+export function readMemory(address: string): string | undefined {
   validateAddress(address);
   let result: Record<string, string>;
   try {
