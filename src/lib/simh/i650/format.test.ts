@@ -4,10 +4,13 @@ import {
   validateAddress,
   normalizeWord,
   normalizeAddress,
+  normalizeAddresses,
   extractOperationCode,
   extractDataAddress,
   extractInstructionAddress,
+  extractSign,
 } from './format';
+import { ZERO_DATA } from './constants';
 
 describe('validateWord', () => {
   it('does not throw for valid values', () => {
@@ -187,11 +190,44 @@ describe('normalizeAddress', () => {
   });
 });
 
+describe('normalizeAddresses', () => {
+  it('normalizes 5-digit addresses in values', () => {
+    const result = normalizeAddresses({ AR: '01234', PR: ZERO_DATA });
+    expect(result.AR).toBe('1234');
+    expect(result.PR).toBe(ZERO_DATA);
+  });
+
+  it('leaves non-5-digit values unchanged', () => {
+    const result = normalizeAddresses({
+      SHORT: '123',
+      EXACT: '1234',
+      LONG: '123456',
+      WORD: ZERO_DATA
+    });
+    expect(result.SHORT).toBe('123');
+    expect(result.EXACT).toBe('1234');
+    expect(result.LONG).toBe('123456');
+    expect(result.WORD).toBe(ZERO_DATA);
+  });
+
+  it('handles empty object', () => {
+    const result = normalizeAddresses({});
+    expect(result).toEqual({});
+  });
+});
+
 describe('extractOperationCode', () => {
   it('extracts first 2 digits as operation code', () => {
     expect(extractOperationCode('6912340567+')).toBe('69');
     expect(extractOperationCode('0000000000+')).toBe('00');
     expect(extractOperationCode('1523456789-')).toBe('15');
+  });
+
+  it('normalizes input before extracting', () => {
+    expect(extractOperationCode('6912340567')).toBe('69');
+    expect(extractOperationCode('+6912340567')).toBe('69');
+    expect(extractOperationCode('-1523456789')).toBe('15');
+    expect(extractOperationCode(123)).toBe('00');
   });
 });
 
@@ -201,6 +237,13 @@ describe('extractDataAddress', () => {
     expect(extractDataAddress('0000000000+')).toBe('0000');
     expect(extractDataAddress('1523456789-')).toBe('2345');
   });
+
+  it('normalizes input before extracting', () => {
+    expect(extractDataAddress('6912340567')).toBe('1234');
+    expect(extractDataAddress('+6912340567')).toBe('1234');
+    expect(extractDataAddress('-1523456789')).toBe('2345');
+    expect(extractDataAddress(123)).toBe('0000');
+  });
 });
 
 describe('extractInstructionAddress', () => {
@@ -208,5 +251,28 @@ describe('extractInstructionAddress', () => {
     expect(extractInstructionAddress('6912340567+')).toBe('0567');
     expect(extractInstructionAddress('0000000000+')).toBe('0000');
     expect(extractInstructionAddress('1523456789-')).toBe('6789');
+  });
+
+  it('normalizes input before extracting', () => {
+    expect(extractInstructionAddress('6912340567')).toBe('0567');
+    expect(extractInstructionAddress('+6912340567')).toBe('0567');
+    expect(extractInstructionAddress('-1523456789')).toBe('6789');
+    expect(extractInstructionAddress(123)).toBe('0123');
+  });
+});
+
+describe('extractSign', () => {
+  it('extracts position 10 as sign', () => {
+    expect(extractSign('6912340567+')).toBe('+');
+    expect(extractSign('0000000000-')).toBe('-');
+    expect(extractSign('1523456789+')).toBe('+');
+  });
+
+  it('normalizes input before extracting', () => {
+    expect(extractSign('6912340567')).toBe('+');
+    expect(extractSign('+6912340567')).toBe('+');
+    expect(extractSign('-1523456789')).toBe('-');
+    expect(extractSign(123)).toBe('+');
+    expect(extractSign(-456)).toBe('-');
   });
 });

@@ -33,7 +33,7 @@ const mockConsoleMocks = vi.hoisted(() => ({
   useEmulatorConsole: vi.fn(),
 }));
 
-vi.mock('@/lib/simh/i650/service', () => mockServiceMocks);
+vi.mock('@/lib/simh/i650', () => mockServiceMocks);
 vi.mock('./EmulatorConsoleProvider', () => mockConsoleMocks);
 
 const render = (ui: React.ReactElement) => {

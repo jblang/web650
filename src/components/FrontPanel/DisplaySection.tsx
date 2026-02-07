@@ -1,7 +1,7 @@
 import React from 'react';
 import BiQuinaryNumber from './BiQuinaryNumber';
 import SignDisplay from './SignDisplay';
-import { normalizeWord } from '../../lib/simh/i650/format';
+import { normalizeWord, extractSign } from '../../lib/simh/i650/format';
 import { useDisplayDecay } from './useDisplayDecay';
 import styles from './DisplaySection.module.scss';
 
@@ -14,7 +14,7 @@ const DisplaySection: React.FC<DisplaySectionProps> = ({ value, tick }) => {
   const normalizedValue = normalizeWord(value);
   const intensity = useDisplayDecay(normalizedValue, tick);
   // Extract 10 digits and sign (sign is at end: 0000000000+)
-  const signChar = normalizedValue.charAt(10);
+  const signChar = extractSign(normalizedValue);
   const sign: '+' | '-' = signChar === '-' ? '-' : '+';
   const digits = normalizedValue.substring(0, 10).split('').map(Number);
 

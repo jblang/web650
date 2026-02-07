@@ -3,7 +3,14 @@ import LabeledKnob from './LabeledKnob';
 import AddressSelection from './AddressSelection';
 import styles from './ConfigSection.module.scss';
 import cn from 'classnames';
-import type { DisplayPosition, ControlPosition, ErrorSwitchPosition } from '@/lib/simh/i650/controls';
+import type {
+  DisplayPosition,
+  ControlPosition,
+  ErrorSwitchPosition,
+  ProgrammedPosition,
+  HalfCyclePosition,
+  OverflowPosition,
+} from '@/lib/simh/i650/controls';
 
 // Knob position configurations
 const STOP_RUN_POS = [{label: 'STOP', angle: -30}, {label: 'RUN', angle: 30}];
@@ -22,20 +29,20 @@ const DISPLAY_POS = [
 
 interface ConfigSectionProps {
   // Values
-  programmed: number;
-  halfCycle: number;
+  programmed: ProgrammedPosition;
+  halfCycle: HalfCyclePosition;
   addressSelection: string;
   control: ControlPosition;
   display: DisplayPosition;
-  overflow: number;
+  overflow: OverflowPosition;
   error: ErrorSwitchPosition;
   // Handlers
-  onProgrammedChange: (value: number) => void;
-  onHalfCycleChange: (value: number) => void;
+  onProgrammedChange: (value: ProgrammedPosition) => void;
+  onHalfCycleChange: (value: HalfCyclePosition) => void;
   onAddressChange: (value: string) => void;
   onControlChange: (value: ControlPosition) => void;
   onDisplayChange: (value: DisplayPosition) => void;
-  onOverflowChange: (value: number) => void;
+  onOverflowChange: (value: OverflowPosition) => void;
   onErrorChange: (value: ErrorSwitchPosition) => void;
 }
 
@@ -45,6 +52,18 @@ const ConfigSection: React.FC<ConfigSectionProps> = ({
 }) => {
   // Helper functions to safely convert knob positions (indices) to typed positions
   // These casts are safe because the positions arrays define exactly the valid range
+  const handleProgrammedChange = (pos: number) => {
+    if (pos >= 0 && pos < STOP_RUN_POS.length) {
+      onProgrammedChange(pos as ProgrammedPosition);
+    }
+  };
+
+  const handleHalfCycleChange = (pos: number) => {
+    if (pos >= 0 && pos < HALF_RUN_POS.length) {
+      onHalfCycleChange(pos as HalfCyclePosition);
+    }
+  };
+
   const handleControlChange = (pos: number) => {
     if (pos >= 0 && pos < CONTROL_POS.length) {
       onControlChange(pos as ControlPosition);
@@ -57,6 +76,12 @@ const ConfigSection: React.FC<ConfigSectionProps> = ({
     }
   };
 
+  const handleOverflowChange = (pos: number) => {
+    if (pos >= 0 && pos < OVERFLOW_POS.length) {
+      onOverflowChange(pos as OverflowPosition);
+    }
+  };
+
   const handleErrorChange = (pos: number) => {
     if (pos >= 0 && pos < ERROR_POS.length) {
       onErrorChange(pos as ErrorSwitchPosition);
@@ -65,12 +90,12 @@ const ConfigSection: React.FC<ConfigSectionProps> = ({
 
   return (
     <div className={styles.finalKnobsRow}>
-      <LabeledKnob position={programmed} positions={STOP_RUN_POS} onChange={onProgrammedChange} testId="programmed-knob" label="Programmed" />
-      <LabeledKnob position={halfCycle} positions={HALF_RUN_POS} onChange={onHalfCycleChange} testId="half-cycle-knob" label="Half cycle" />
+      <LabeledKnob position={programmed} positions={STOP_RUN_POS} onChange={handleProgrammedChange} testId="programmed-knob" label="Programmed" />
+      <LabeledKnob position={halfCycle} positions={HALF_RUN_POS} onChange={handleHalfCycleChange} testId="half-cycle-knob" label="Half cycle" />
       <AddressSelection value={addressSelection} onChange={onAddressChange} />
       <LabeledKnob position={control} positions={CONTROL_POS} onChange={handleControlChange} labelRadius={48} testId="control-knob" label="Control" />
       <LabeledKnob position={display} positions={DISPLAY_POS} onChange={handleDisplayChange} className={styles.displayKnob} labelRadius={56} testId="display-knob" label="Display" />
-      <LabeledKnob position={overflow} positions={OVERFLOW_POS} onChange={onOverflowChange} testId="overflow-knob" label="Overflow" />
+      <LabeledKnob position={overflow} positions={OVERFLOW_POS} onChange={handleOverflowChange} testId="overflow-knob" label="Overflow" />
       <LabeledKnob position={error} positions={ERROR_POS} onChange={handleErrorChange} testId="error-knob" label="Error" />
       <div className={cn(styles.knobLabel, styles.programmed)}>PROGRAMMED</div>
       <div className={cn(styles.knobLabel, styles.halfCycle)}>HALF CYCLE</div>

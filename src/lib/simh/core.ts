@@ -224,29 +224,25 @@ function bareStatus(rc: number): number {
   return rc & ~SCPE_FLAG_MASK;
 }
 
-export function sendCommand(
-  cmd: string,
-  options?: { streamOutput?: boolean; echo?: boolean }
-): string {
-  const emModule = getModule();
+/**
+ * Handles command echo and output capture setup.
+ */
+function beginCommandExecution(cmd: string, options?: { streamOutput?: boolean; echo?: boolean }): void {
   if (options?.echo && options?.streamOutput) {
     emitOutput(`sim> ${cmd}`);
   }
   beginCapture(Boolean(options?.streamOutput));
-  let rc = SCPE_OK;
-  try {
-    rc = emModule.ccall('simh_cmd', 'number', ['string'], [cmd]) as number;
-  } catch (e: unknown) {
-    // Emscripten throws ExitStatus when C code calls exit().
-    // Capture any output produced before the exit and return it.
-    const output = endCapture();
-    const status = (e as { status?: number }).status;
-    if (status !== undefined) {
-      return output + `\n[SIMH exited with status ${status}]\n`;
-    }
-    throw e;
-  }
-  const output = endCapture();
+}
+
+/**
+ * Processes command output and handles echo/status checking.
+ */
+function finalizeCommandExecution(
+  cmd: string,
+  output: string,
+  rc: number,
+  options?: { streamOutput?: boolean; echo?: boolean }
+): string {
   const status = bareStatus(rc);
   if (options?.echo) {
     if (!options?.streamOutput) {
@@ -262,15 +258,40 @@ export function sendCommand(
   return output;
 }
 
+/**
+ * Handles exception during command execution.
+ */
+function handleCommandException(e: unknown): string {
+  const output = endCapture();
+  const status = (e as { status?: number }).status;
+  if (status !== undefined) {
+    return output + `\n[SIMH exited with status ${status}]\n`;
+  }
+  throw e;
+}
+
+export function sendCommand(
+  cmd: string,
+  options?: { streamOutput?: boolean; echo?: boolean }
+): string {
+  const emModule = getModule();
+  beginCommandExecution(cmd, options);
+  let rc = SCPE_OK;
+  try {
+    rc = emModule.ccall('simh_cmd', 'number', ['string'], [cmd]) as number;
+  } catch (e: unknown) {
+    return handleCommandException(e);
+  }
+  const output = endCapture();
+  return finalizeCommandExecution(cmd, output, rc, options);
+}
+
 export async function sendCommandAsync(
   cmd: string,
   options?: { streamOutput?: boolean; echo?: boolean }
 ): Promise<string> {
   const emModule = getModule();
-  if (options?.echo && options?.streamOutput) {
-    emitOutput(`sim> ${cmd}`);
-  }
-  beginCapture(Boolean(options?.streamOutput));
+  beginCommandExecution(cmd, options);
   let rc = SCPE_OK;
   try {
     const result = emModule.ccall('simh_cmd', 'number', ['string'], [cmd]) as
@@ -278,27 +299,10 @@ export async function sendCommandAsync(
       | Promise<number>;
     rc = typeof result === 'number' ? result : await result;
   } catch (e: unknown) {
-    const output = endCapture();
-    const status = (e as { status?: number }).status;
-    if (status !== undefined) {
-      return output + `\n[SIMH exited with status ${status}]\n`;
-    }
-    throw e;
+    return handleCommandException(e);
   }
   const output = endCapture();
-  const status = bareStatus(rc);
-  if (options?.echo) {
-    if (!options?.streamOutput) {
-      emitOutput(`sim> ${cmd}`);
-    }
-    if (!options?.streamOutput && output.trim().length > 0) {
-      emitOutput(output);
-    }
-  }
-  if (!SIMH_OK_STATUSES.has(status)) {
-    return output;
-  }
-  return output;
+  return finalizeCommandExecution(cmd, output, rc, options);
 }
 
 /** True if the simulator CPU is currently running. */

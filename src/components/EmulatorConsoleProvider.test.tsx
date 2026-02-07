@@ -20,7 +20,7 @@ const mockEmulatorStateMocks = vi.hoisted(() => ({
   useEmulatorState: vi.fn(),
 }));
 
-vi.mock('@/lib/simh/i650/service', () => mockServiceMocks);
+vi.mock('@/lib/simh/i650', () => mockServiceMocks);
 vi.mock('./EmulatorStateProvider', () => mockEmulatorStateMocks);
 
 const render = (ui: React.ReactElement) => {

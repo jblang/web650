@@ -10,7 +10,7 @@ import {
   useRef,
   ReactNode,
 } from 'react';
-import * as i650Service from '@/lib/simh/i650/service';
+import * as i650Service from '@/lib/simh/i650';
 import { useEmulatorState } from './EmulatorStateProvider';
 
 interface EmulatorConsoleContextType {

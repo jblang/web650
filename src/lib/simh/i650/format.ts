@@ -79,6 +79,23 @@ export function normalizeAddress(value: string | number): string {
   return value.slice(-4).padStart(4, '0');
 }
 
+/**
+ * Normalizes 5-digit addresses in parsed I650 state values.
+ * AR (Address Register) is stored as a 16-bit int (5 digits) but the physical register is 4 digits.
+ *
+ * @param values - Parsed key-value pairs from EXAMINE command
+ * @returns Normalized values with 4-digit addresses
+ */
+export function normalizeAddresses(values: Record<string, string>): Record<string, string> {
+  const result = { ...values };
+  for (const [key, val] of Object.entries(result)) {
+    if (/^\d{5}$/.test(val)) {
+      result[key] = normalizeAddress(val);
+    }
+  }
+  return result;
+}
+
 /* ── I650 Word Field Extraction ───────────────────────────────── */
 
 /**
@@ -90,11 +107,12 @@ export function normalizeAddress(value: string | number): string {
  * - Positions 6-9: Instruction address (4 digits)
  * - Position 10: Sign (+ or -)
  *
- * @param word - 10-digit word with sign (e.g., "0000000000+")
+ * @param word - Value to extract from (normalized to I650 format)
  * @returns 2-digit operation code (e.g., "00")
  */
-export function extractOperationCode(word: string): string {
-  return word.slice(0, 2);
+export function extractOperationCode(word: string | number): string {
+  const normalized = normalizeWord(word);
+  return normalized.slice(0, 2);
 }
 
 /**
@@ -102,11 +120,12 @@ export function extractOperationCode(word: string): string {
  *
  * The data address occupies positions 2-5 of the 10-digit word.
  *
- * @param word - 10-digit word with sign (e.g., "6912340567+")
+ * @param word - Value to extract from (normalized to I650 format)
  * @returns 4-digit data address (e.g., "1234")
  */
-export function extractDataAddress(word: string): string {
-  return word.slice(2, 6);
+export function extractDataAddress(word: string | number): string {
+  const normalized = normalizeWord(word);
+  return normalized.slice(2, 6);
 }
 
 /**
@@ -114,9 +133,23 @@ export function extractDataAddress(word: string): string {
  *
  * The instruction address occupies positions 6-9 of the 10-digit word.
  *
- * @param word - 10-digit word with sign (e.g., "6912340567+")
+ * @param word - Value to extract from (normalized to I650 format)
  * @returns 4-digit instruction address (e.g., "0567")
  */
-export function extractInstructionAddress(word: string): string {
-  return word.slice(6, 10);
+export function extractInstructionAddress(word: string | number): string {
+  const normalized = normalizeWord(word);
+  return normalized.slice(6, 10);
+}
+
+/**
+ * Extract the sign from an I650 word.
+ *
+ * The sign occupies position 10 of the 10-digit word.
+ *
+ * @param word - Value to extract from (normalized to I650 format)
+ * @returns Sign character ('+' or '-')
+ */
+export function extractSign(word: string | number): string {
+  const normalized = normalizeWord(word);
+  return normalized.slice(10);
 }

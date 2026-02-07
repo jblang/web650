@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { extractSign } from '@/lib/simh/i650/format';
 
 export type DisplayIntensity = {
   digits: Array<{ left: number; right: number; rows: number[] }>;
@@ -76,7 +77,7 @@ function applyLitBulbs(
     digit.rows.fill(false);
   }
 
-  const sign = normalizedValue.charAt(10);
+  const sign = extractSign(normalizedValue);
   if (sign === '+') {
     mask.sign.plus = true;
     intensity.sign.plus = 1;

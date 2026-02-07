@@ -2,7 +2,7 @@ import React, { act } from 'react';
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { createRoot, Root } from 'react-dom/client';
 import { EmulatorStateProvider, useEmulatorState } from './EmulatorStateProvider';
-import type { I650EmulatorState } from '@/lib/simh/i650/service';
+import type { I650EmulatorState } from '@/lib/simh/i650';
 
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
 
@@ -59,7 +59,7 @@ const mockServiceMocks = vi.hoisted(() => ({
   }),
 }));
 
-vi.mock('@/lib/simh/i650/service', () => mockServiceMocks);
+vi.mock('@/lib/simh/i650', () => mockServiceMocks);
 
 const render = (ui: React.ReactElement) => {
   act(() => {

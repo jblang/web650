@@ -1,12 +1,14 @@
 import * as simh from '../workerClient';
 import { ZERO_ADDRESS, ZERO_DATA, ZERO_OPERATION } from './constants';
 import { getDisplayValue, isManualOperation, DisplaySwitch } from './controls';
-import { extractOperationCode, validateAddress, validateWord } from './format';
-import { postProcessI650Values } from './memory';
+import { extractOperationCode, validateAddress, validateWord, normalizeAddresses } from './format';
 import type { DisplayPosition, ControlPosition, ErrorSwitchPosition } from './controls';
 import { debugLog, errorLog } from '../debug';
 import { persistYieldSteps, readPersistedYieldSteps } from '../yield';
 
+/**
+ * I650 emulator state containing all registers, switches, and control flags.
+ */
 export type I650EmulatorState = {
   initialized: boolean;
   isRunning: boolean;
@@ -143,6 +145,11 @@ async function startStateStream(): Promise<void> {
   stateStreamInitialized = true;
 }
 
+/**
+ * Enables or disables the state stream for real-time register updates during execution.
+ *
+ * @param active - true to enable state streaming, false to disable
+ */
 export async function setStateStreamActive(active: boolean): Promise<void> {
   stateStreamActive = active;
   const activationId = ++stateStreamActivationId;
@@ -179,7 +186,7 @@ function mergeState(patch: Partial<I650EmulatorState>): void {
 
 async function examineI650(ref: string, options?: { echo?: boolean }): Promise<Record<string, string>> {
   const raw = await simh.examine(ref, options);
-  return postProcessI650Values(raw);
+  return normalizeAddresses(raw);
 }
 
 async function readMemory(address: string): Promise<string> {
@@ -202,6 +209,13 @@ async function writeMemory(address: string, value: string): Promise<void> {
   await simh.deposit(address, value);
 }
 
+/**
+ * Writes a word to I650 memory at the specified address.
+ *
+ * @param address - 4-digit memory address (0000-9999)
+ * @param value - 10-digit word with sign (I650 format)
+ * @throws {TypeError} If address or value is invalid
+ */
 export async function depositMemory(address: string, value: string): Promise<void> {
   await ensureInit();
   await writeMemory(address, value);
@@ -232,10 +246,21 @@ async function getRegisterSnapshot(): Promise<{
   };
 }
 
+/**
+ * Returns the current I650 emulator state.
+ *
+ * @returns Current emulator state including all registers and control settings
+ */
 export function getState(): I650EmulatorState {
   return state;
 }
 
+/**
+ * Subscribes to I650 state changes.
+ *
+ * @param listener - Callback function invoked with updated state
+ * @returns Unsubscribe function
+ */
 export function subscribe(listener: StateListener): () => void {
   listeners.add(listener);
   listener(state);
@@ -244,6 +269,13 @@ export function subscribe(listener: StateListener): () => void {
   };
 }
 
+/**
+ * Initializes the I650 emulator.
+ *
+ * Sets up the SIMH module, configures CPU settings, and establishes
+ * state listeners. Safe to call multiple times (subsequent calls wait
+ * for the first initialization to complete).
+ */
 export async function init(): Promise<void> {
   if (initPromise) return initPromise;
   if (initialized) return;
@@ -316,6 +348,12 @@ export async function init(): Promise<void> {
   return initPromise;
 }
 
+/**
+ * Restarts the I650 emulator.
+ *
+ * Resets the SIMH module and reconfigures CPU settings while preserving
+ * persisted yield steps configuration.
+ */
 export async function restart(): Promise<void> {
   await ensureInit();
   mergeState({ initialized: false, isRunning: false });
@@ -361,6 +399,12 @@ async function depositAndMerge(
   }
 }
 
+/**
+ * Subscribes to emulator console output.
+ *
+ * @param listener - Callback function invoked with output text
+ * @returns Unsubscribe function
+ */
 export function subscribeOutput(listener: OutputListener): () => void {
   outputListeners.add(listener);
   return () => {
@@ -368,6 +412,12 @@ export function subscribeOutput(listener: OutputListener): () => void {
   };
 }
 
+/**
+ * Refreshes register values from the emulator.
+ *
+ * Reads current values of all I650 registers and updates the state.
+ * Automatically called after operations that modify registers.
+ */
 export async function refreshRegisters(): Promise<void> {
   await ensureInit();
   const snapshot = await getRegisterSnapshot();
@@ -385,6 +435,15 @@ export async function refreshRegisters(): Promise<void> {
   });
 }
 
+/**
+ * Executes a SIMH command on the I650 emulator.
+ *
+ * @param command - SIMH command to execute (e.g., "GO", "RESET", "EXAMINE AR")
+ * @param options - Optional command options
+ * @param options.streamOutput - Whether to stream output as it's generated
+ * @param options.echo - Whether to echo the command in the output
+ * @returns Command output text
+ */
 export async function executeCommand(
   command: string,
   options?: { streamOutput?: boolean; echo?: boolean }
@@ -409,6 +468,15 @@ export async function executeCommand(
   }
 }
 
+/**
+ * Sets the number of execution steps before yielding control.
+ *
+ * Controls how frequently the emulator yields during execution.
+ * Lower values provide more responsive UI updates but slower execution.
+ * Higher values improve execution speed but reduce UI responsiveness.
+ *
+ * @param steps - Number of steps (0 for unlimited, 1-100000 for limited)
+ */
 export async function setYieldSteps(steps: number): Promise<void> {
   await ensureInit();
   if (!Number.isFinite(steps)) {
@@ -425,54 +493,118 @@ export async function setYieldSteps(steps: number): Promise<void> {
   persistYieldSteps(next);
 }
 
+/**
+ * Sets the display switch position.
+ *
+ * @param value - Display switch position (0-5)
+ */
 export function setDisplaySwitch(value: DisplayPosition): void {
   mergeState({ displaySwitch: value });
 }
 
+/**
+ * Sets the control switch position.
+ *
+ * @param value - Control switch position (ADDRESS_STOP, RUN, or MANUAL_OPERATION)
+ */
 export function setControlSwitch(value: ControlPosition): void {
   mergeState({ controlSwitch: value });
 }
 
+/**
+ * Sets the error switch position.
+ *
+ * @param value - Error switch position (STOP or SENSE)
+ */
 export function setErrorSwitch(value: ErrorSwitchPosition): void {
   mergeState({ errorSwitch: value });
 }
 
+/**
+ * Sets the address switches value (local UI state only).
+ *
+ * @param value - 4-digit address value
+ */
 export function setAddressSwitches(value: string): void {
   mergeState({ addressSwitches: value });
 }
 
+/**
+ * Sets the address register.
+ *
+ * @param value - 4-digit address (0000-9999)
+ * @throws {TypeError} If address is invalid
+ */
 export async function setAddressRegister(value: string): Promise<void> {
   validateAddress(value);
   await depositAndMerge('AR', value, { addressRegister: value });
 }
 
+/**
+ * Sets the program register.
+ *
+ * @param value - 10-digit word with sign (I650 format)
+ * @throws {TypeError} If word is invalid
+ */
 export async function setProgramRegister(value: string): Promise<void> {
   validateWord(value);
   await depositAndMerge('PR', value, { programRegister: value });
 }
 
+/**
+ * Sets the distributor register.
+ *
+ * @param value - 10-digit word with sign (I650 format)
+ * @throws {TypeError} If word is invalid
+ */
 export async function setDistributor(value: string): Promise<void> {
   validateWord(value);
   await depositAndMerge('DIST', value, { distributor: value });
 }
 
+/**
+ * Sets the console switches value.
+ *
+ * @param value - 10-digit word with sign (I650 format)
+ * @throws {TypeError} If word is invalid
+ */
 export async function setConsoleSwitches(value: string): Promise<void> {
   validateWord(value);
   await depositAndMerge('CSW', value, { consoleSwitches: value });
 }
 
+/**
+ * Sets the programmed stop switch.
+ *
+ * @param value - true for STOP, false for RUN
+ */
 export async function setProgrammedStop(value: boolean): Promise<void> {
   await depositAndMerge('CSWPS', value ? '1' : '0', { programmedStop: value });
 }
 
+/**
+ * Sets the overflow stop switch.
+ *
+ * @param value - true for STOP, false for SENSE
+ */
 export async function setOverflowStop(value: boolean): Promise<void> {
   await depositAndMerge('CSWOS', value ? '1' : '0', { overflowStop: value });
 }
 
+/**
+ * Sets the half cycle mode.
+ *
+ * @param value - true for HALF cycle, false for RUN
+ */
 export async function setHalfCycle(value: boolean): Promise<void> {
   await depositAndMerge('HALF', value ? '1' : '0', { halfCycle: value });
 }
 
+/**
+ * Resets the accumulator registers to zero.
+ *
+ * Clears the distributor, lower accumulator, upper accumulator, and overflow flag.
+ */
 export async function resetAccumulator(): Promise<void> {
   await ensureInit();
   await simh.deposit('DIST', ZERO_DATA);
@@ -487,19 +619,23 @@ export async function resetAccumulator(): Promise<void> {
   await refreshRegisters();
 }
 
+/**
+ * Resets the I650 emulator (executes RESET command).
+ */
 export async function reset(): Promise<void> {
   await ensureInit();
   await executeCommand('RESET');
 }
 
+/**
+ * Handles drum transfer operations in manual mode.
+ *
+ * Performs READ OUT STORAGE (memory to distributor) or READ IN STORAGE
+ * (console switches to memory) based on display switch position.
+ */
 export async function handleDrumTransfer(): Promise<void> {
-  debugLog('i650 handleDrumTransfer start', {
-    displaySwitch: state.displaySwitch,
-    addressRegister: state.addressRegister,
-    consoleSwitches: state.consoleSwitches,
-  });
   await ensureInit();
-  debugLog('i650 handleDrumTransfer ready', {
+  debugLog('i650 handleDrumTransfer', {
     displaySwitch: state.displaySwitch,
     addressRegister: state.addressRegister,
     consoleSwitches: state.consoleSwitches,
@@ -516,10 +652,19 @@ export async function handleDrumTransfer(): Promise<void> {
   }
 }
 
+/**
+ * Starts program execution.
+ */
 export async function startProgram(): Promise<void> {
   await executeCommand('GO', { streamOutput: true });
 }
 
+/**
+ * Starts program execution or performs drum transfer.
+ *
+ * In manual mode, performs drum transfer operation.
+ * In run mode, starts program execution from current address register.
+ */
 export async function startProgramOrTransfer(): Promise<void> {
   const manual = isManualOperation(state.controlSwitch);
   debugLog('i650 startProgramOrTransfer', {
@@ -537,12 +682,20 @@ export async function startProgramOrTransfer(): Promise<void> {
   await startProgram();
 }
 
+/**
+ * Stops program execution.
+ */
 export async function stopProgram(): Promise<void> {
   await ensureInit();
   await simh.stop();
   await refreshRegisters();
 }
 
+/**
+ * Resets program execution state.
+ *
+ * Stops execution if running and clears program register and address register.
+ */
 export async function resetProgram(): Promise<void> {
   await ensureInit();
   if (state.isRunning) {
@@ -553,6 +706,11 @@ export async function resetProgram(): Promise<void> {
   await refreshRegisters();
 }
 
+/**
+ * Resets the computer to initial state.
+ *
+ * Stops execution if running and executes RESET command.
+ */
 export async function resetComputer(): Promise<void> {
   await ensureInit();
   if (state.isRunning) {
@@ -561,6 +719,9 @@ export async function resetComputer(): Promise<void> {
   await executeCommand('RESET');
 }
 
+/**
+ * Transfers address switches value to address register (manual mode only).
+ */
 export async function transferAddress(): Promise<void> {
   if (isManualOperation(state.controlSwitch)) {
     await setAddressRegister(state.addressSwitches);

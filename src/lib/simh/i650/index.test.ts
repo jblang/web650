@@ -63,7 +63,7 @@ const defaultState: Record<string, string> = {
 
 const setupService = async () => {
   vi.resetModules();
-  const service = await import('./service');
+  const service = await import('.');
   return service;
 };
 
@@ -71,7 +71,7 @@ const flushPromises = async () => {
   await new Promise((resolve) => setTimeout(resolve, 0));
 };
 
-describe('i650 service', () => {
+describe('i650', () => {
   let runStateListener: ((running: boolean) => void) | null = null;
 
   beforeEach(() => {

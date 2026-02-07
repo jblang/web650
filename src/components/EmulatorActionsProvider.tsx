@@ -1,19 +1,26 @@
 'use client';
 
 import { createContext, useContext, useCallback, useMemo, ReactNode } from 'react';
-import * as i650Service from '@/lib/simh/i650/service';
+import * as i650Service from '@/lib/simh/i650';
 import { Programmed, HalfCycle, Overflow } from '@/lib/simh/i650/controls';
-import type { DisplayPosition, ControlPosition, ErrorSwitchPosition } from '@/lib/simh/i650/controls';
+import type {
+  DisplayPosition,
+  ControlPosition,
+  ErrorSwitchPosition,
+  ProgrammedPosition,
+  HalfCyclePosition,
+  OverflowPosition,
+} from '@/lib/simh/i650/controls';
 import { useEmulatorConsole } from './EmulatorConsoleProvider';
 
 interface EmulatorActionsContextType {
   refreshRegisters: () => Promise<void>;
   onDisplayChange: (value: DisplayPosition) => void;
   onAddressChange: (value: string) => Promise<void>;
-  onProgrammedChange: (value: number) => Promise<void>;
-  onHalfCycleChange: (value: number) => Promise<void>;
+  onProgrammedChange: (value: ProgrammedPosition) => Promise<void>;
+  onHalfCycleChange: (value: HalfCyclePosition) => Promise<void>;
   onControlChange: (value: ControlPosition) => void;
-  onOverflowChange: (value: number) => Promise<void>;
+  onOverflowChange: (value: OverflowPosition) => Promise<void>;
   onErrorChange: (value: ErrorSwitchPosition) => void;
   onEntryValueChange: (value: string) => Promise<void>;
   onTransferClick: () => Promise<void>;
@@ -52,7 +59,7 @@ export function EmulatorActionsProvider({ children }: { children: ReactNode }) {
   );
 
   const onProgrammedChange = useCallback(
-    async (value: number) => {
+    async (value: ProgrammedPosition) => {
       const stopSelected = value === Programmed.STOP;
       await i650Service.setProgrammedStop(stopSelected);
     },
@@ -60,7 +67,7 @@ export function EmulatorActionsProvider({ children }: { children: ReactNode }) {
   );
 
   const onHalfCycleChange = useCallback(
-    async (value: number) => {
+    async (value: HalfCyclePosition) => {
       const halfSelected = value === HalfCycle.HALF;
       await i650Service.setHalfCycle(halfSelected);
     },
@@ -72,7 +79,7 @@ export function EmulatorActionsProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const onOverflowChange = useCallback(
-    async (value: number) => {
+    async (value: OverflowPosition) => {
       const stopSelected = value === Overflow.STOP;
       await i650Service.setOverflowStop(stopSelected);
     },

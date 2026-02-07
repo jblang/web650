@@ -1,16 +1,16 @@
 # Code Review: IBM 650 Simulator UI
 
-Comprehensive review at commit 8df57ec. Reviewed all source files independently.
+Comprehensive review at commit 8df57ec. Updated at commit c981aa5.
 
 ## Project Overview
 
-A web-based UI for the Open SIMH IBM 650 simulator, a historic vacuum-tube computer from 1954. Built with Next.js 16.1.4, React 19.2.3, TypeScript (strict mode), and IBM Carbon Design System. The simulator runs entirely in the browser via WebAssembly, compiled from Open SIMH using Emscripten. A Web Worker (`simh.worker.ts`) hosts the WASM module, and a typed RPC layer (`workerClient.ts`) bridges the main thread. The I650-specific service layer (`src/lib/simh/i650/service.ts`) manages all emulator state via a pub/sub model, with three React context providers subscribing to it.
+A web-based UI for the Open SIMH IBM 650 simulator, a historic vacuum-tube computer from 1954. Built with Next.js 16.1.4, React 19.2.3, TypeScript (strict mode), and IBM Carbon Design System. The simulator runs entirely in the browser via WebAssembly, compiled from Open SIMH using Emscripten. A Web Worker (`simh.worker.ts`) hosts the WASM module, and a typed RPC layer (`workerClient.ts`) bridges the main thread. The I650-specific service layer (`src/lib/simh/i650/index.ts`) manages all emulator state via a pub/sub model, with three React context providers subscribing to it.
 
-**Stats:** ~57 TypeScript/TSX source files, 42 unit test files with 479 tests, 1 Playwright E2E suite (19 tests). v0.1.0 (WIP).
+**Stats:** ~55 TypeScript/TSX source files, 40 unit test files with 468 tests, 1 Playwright E2E suite (19 tests). v0.1.0 (WIP).
 
-**Test Coverage (unit tests):** 97.45% statements | 91.1% branches | 99.11% functions | 98.57% lines
+**Test Coverage (unit tests):** 97.78% statements | 91.54% branches | 99.12% functions | 98.61% lines
 
-**Current state:** All 479 unit tests pass. ESLint reports zero warnings or errors.
+**Current state:** All 468 unit tests pass. ESLint reports zero warnings or errors.
 
 ---
 
@@ -18,38 +18,20 @@ A web-based UI for the Open SIMH IBM 650 simulator, a historic vacuum-tube compu
 
 | # | Severity | Issue | Section |
 |---|----------|-------|---------|
-| 1 | **Medium** | Dead code in the synchronous I650 layer | [1](#1-dead-code-in-the-synchronous-i650-layer-medium) |
-| 2 | **Medium** | Unbounded console output buffer | [2](#2-unbounded-console-output-buffer-medium) |
-| 3 | **Low** | `sendCommand` / `sendCommandAsync` duplication | [3](#3-sendcommand--sendcommandasync-duplication-low) |
-| 4 | **Low** | `BiQuinaryNumber` wasted decay computation and className bug | [4](#4-biquinarynumber-wasted-decay-computation-and-classname-bug-low) |
-| 5 | **Low** | Run-state race window in `executeCommand` | [5](#5-run-state-race-window-in-executecommand-low) |
-| 6 | **Low** | Fire-and-forget `postInit` in service `init()` | [6](#6-fire-and-forget-postinit-in-service-init-low) |
-| 7 | **Low** | No error boundary | [7](#7-no-error-boundary-low) |
-| 8 | **Low** | Docs page hardcoded asset URL | [8](#8-docs-page-hardcoded-asset-url-low) |
-| 9 | **Low** | Styling concerns | [9](#9-styling-concerns-low) |
-| 10 | **Low** | Minor code quality issues | [10](#10-minor-code-quality-issues-low) |
+| 1 | **Medium** | Unbounded console output buffer | [1](#1-unbounded-console-output-buffer-medium) |
+| 2 | **Low** | `BiQuinaryNumber` wasted decay computation and className bug | [2](#2-biquinarynumber-wasted-decay-computation-and-classname-bug-low) |
+| 3 | **Low** | Run-state race window in `executeCommand` | [3](#3-run-state-race-window-in-executecommand-low) |
+| 4 | **Low** | Fire-and-forget `postInit` in service `init()` | [4](#4-fire-and-forget-postinit-in-service-init-low) |
+| 5 | **Low** | No error boundary | [5](#5-no-error-boundary-low) |
+| 6 | **Low** | Docs page hardcoded asset URL | [6](#6-docs-page-hardcoded-asset-url-low) |
+| 7 | **Low** | Styling concerns | [7](#7-styling-concerns-low) |
+| 8 | **Low** | Minor code quality issues | [8](#8-minor-code-quality-issues-low) |
 
 ---
 
 ## Detailed Findings
 
-### 1. Dead Code in the Synchronous I650 Layer (Medium)
-
-Three files under `src/lib/simh/i650/` provide synchronous, direct-call wrappers around `core.ts` functions:
-
-- **`registers.ts`** — 250 lines of synchronous get/set functions for every register (e.g., `getAddressRegister()`, `setProgramRegister()`). None are called by the running application. The app exclusively uses `service.ts`, which goes through `workerClient.ts` (async, worker-based). These functions bypass the worker entirely and would fail at runtime since the WASM module lives in the worker thread, not the main thread.
-
-- **`memory.ts`** — `readMemory()` and `writeMemory()` (lines 44-69) are synchronous wrappers that call `core.ts` directly. Only used by `controls.ts:performDrumTransfer()` (also dead code) and by tests.
-
-- **`controls.ts:performDrumTransfer()`** (lines 137-150) — `service.ts` has its own async `handleDrumTransfer()` implementation that goes through the worker. This synchronous version is never called.
-
-These files are fully tested (100% coverage each), but the tests exercise code paths that can never run in the actual application. The `postProcessI650Values` and `examineI650State` exports from `memory.ts` *are* used by `service.ts`, and the type/constant exports from `controls.ts` are used throughout. But the actual I/O functions are dead.
-
-**Recommendation:** Either remove the dead synchronous I/O functions, or document them as the "direct API" intended for use only in integration tests and the Node.js environment (where the WASM module runs in-process rather than in a worker).
-
----
-
-### 2. Unbounded Console Output Buffer (Medium)
+### 1. Unbounded Console Output Buffer (Medium)
 
 `EmulatorConsoleProvider.tsx` accumulates all emulator output into a single React state string:
 
@@ -68,15 +50,7 @@ Output is appended indefinitely via `enqueueOutput` and flushed every 50ms. A lo
 
 ---
 
-### 3. `sendCommand` / `sendCommandAsync` Duplication (Low)
-
-`core.ts` lines 227-302 contain two nearly identical implementations: `sendCommand` (synchronous) and `sendCommandAsync`. The only difference is that the async version `await`s the `ccall` result if it returns a Promise. The output capture, echo logic, and status checking are duplicated line-for-line.
-
-**Recommendation:** Unify into a single async implementation, or extract the shared capture/echo/status logic into a helper.
-
----
-
-### 4. `BiQuinaryNumber` Wasted Decay Computation and className Bug (Low)
+### 2. `BiQuinaryNumber` Wasted Decay Computation and className Bug (Low)
 
 **Wasted computation:** `BiQuinaryNumber.tsx` line 46 always calls `useDigitDecay(digits.join(''), tick)` even when `providedIntensity` is supplied. The computed result is discarded when external intensity exists, but the hook still runs its `requestAnimationFrame` loop and triggers state updates every frame. This doubles the animation work for `DisplaySection`, which provides pre-computed intensity for all its digit groups.
 
@@ -84,9 +58,9 @@ Output is appended indefinitely via `enqueueOutput` and flushed every 50ms. A lo
 
 ---
 
-### 5. Run-State Race Window in `executeCommand` (Low)
+### 3. Run-State Race Window in `executeCommand` (Low)
 
-`service.ts` lines 396-409:
+`index.ts` lines 396-409:
 
 ```typescript
 if (isRunCommand && !state.isRunning) {
@@ -108,15 +82,15 @@ When a `GO` command is sent, the service optimistically sets `isRunning: true`, 
 
 ---
 
-### 6. Fire-and-Forget `postInit` in Service `init()` (Low)
+### 4. Fire-and-Forget `postInit` in Service `init()` (Low)
 
-`service.ts` lines 273-307: After `simh.init()` resolves, the `postInit` function (which sets CPU memory size, yield steps, refreshes registers, starts the state stream, and registers the runstate callback) is launched with `void postInit().catch(...)`. The `init()` promise resolves immediately, before any of this setup completes.
+`index.ts` lines 273-307: After `simh.init()` resolves, the `postInit` function (which sets CPU memory size, yield steps, refreshes registers, starts the state stream, and registers the runstate callback) is launched with `void postInit().catch(...)`. The `init()` promise resolves immediately, before any of this setup completes.
 
 This means callers that `await init()` may start interacting with the service before yield steps are configured, registers are loaded, or the state stream is active. In practice this works because the UI renders before the user can interact, but it's a latent ordering issue.
 
 ---
 
-### 7. No Error Boundary (Low)
+### 5. No Error Boundary (Low)
 
 `layout.tsx` wraps the entire app in `<Providers>` (which nests 4 context providers and triggers async initialization). Any unhandled error in a provider or child component will crash the entire React tree with no recovery path and no user-visible error message.
 
@@ -124,13 +98,13 @@ Additionally, `suppressHydrationWarning` on both `<html>` and `<body>` (lines 18
 
 ---
 
-### 8. Docs Page Hardcoded Asset URL (Low)
+### 6. Docs Page Hardcoded Asset URL (Low)
 
 `docs/page.tsx` line 13: `fetch('/assets/about.md')` uses an absolute path that ignores `NEXT_PUBLIC_BASE_PATH`. When the app is deployed under a subpath (e.g., `/ibm650/`), this fetch will 404.
 
 ---
 
-### 9. Styling Concerns (Low)
+### 7. Styling Concerns (Low)
 
 | File | Issue |
 |------|-------|
@@ -144,11 +118,10 @@ Additionally, `suppressHydrationWarning` on both `<html>` and `<body>` (lines 18
 
 ---
 
-### 10. Minor Code Quality Issues (Low)
+### 8. Minor Code Quality Issues (Low)
 
 | File:Line | Issue |
 |-----------|-------|
-| `memory.ts:50` | `return undefined as unknown as string` — unnecessary double cast. The function signature already includes `undefined` in the union type; `return undefined` is sufficient. |
 | `CardDeckProvider.tsx:76` | Context value exposes raw `setCardDeck` and `setUploadedFile` state setters alongside handler functions, breaking encapsulation. |
 | `ControlSection.tsx:8-9` | "HELP" and "CHEAT" buttons are rendered but have no handler mapping in `handlerMap` (lines 24-32) — clicking them silently does nothing. |
 | `EmulatorConsole.tsx:75` | `handleKeyDown` calls `handleSend()` without `await`. Unhandled rejections from the async function will surface as uncaught promise errors. |
@@ -162,7 +135,7 @@ Additionally, `suppressHydrationWarning` on both `<html>` and `<body>` (lines 18
 
 1. **Client-side WASM architecture with Web Worker isolation.** The emulator runs in a dedicated Web Worker (`simh.worker.ts`), keeping the main thread responsive. The typed RPC layer (`workerClient.ts`) provides clean async APIs with comprehensive error handling — worker errors, message deserialization errors, and pending-request rejection on failure are all properly handled. The `ensureInit` / `initPromise` pattern prevents use-before-init errors.
 
-2. **Clean separation of concerns.** The codebase is organized into four distinct layers: (1) generic SIMH framework (`core.ts`, `control.ts`, `filesystem.ts`), (2) I650-specific domain logic (`service.ts`, `format.ts`, `controls.ts`), (3) React state management (three focused context providers), and (4) presentation components. The service layer uses a pub/sub model that decouples the emulator lifecycle from React rendering.
+2. **Clean separation of concerns.** The codebase is organized into four distinct layers: (1) generic SIMH framework (`core.ts`, `control.ts`, `filesystem.ts`), (2) I650-specific domain logic (`index.ts`, `format.ts`, `controls.ts`), (3) React state management (three focused context providers), and (4) presentation components. The service layer uses a pub/sub model that decouples the emulator lifecycle from React rendering.
 
 3. **Comprehensive and well-structured test suite.** 479 tests across 42 files achieve 97.45% statement coverage and 98.57% line coverage. The test suite includes unit tests with mocked dependencies, WASM integration tests (running the real SIMH module against the official I650 test suite in Node.js), RAF-mocking for animation hooks, and 19 Playwright E2E tests. Each handler is tested individually to prevent failure masking. Coverage thresholds are enforced in CI.
 

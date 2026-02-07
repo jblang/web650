@@ -6,7 +6,7 @@ import { useEmulatorState } from './EmulatorStateProvider';
 import { useEmulatorConsole } from './EmulatorConsoleProvider';
 import { useEmulatorActions } from './EmulatorActionsProvider';
 import { useCardDeck } from './CardDeckProvider';
-import type { I650EmulatorState } from '@/lib/simh/i650/service';
+import type { I650EmulatorState } from '@/lib/simh/i650';
 
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
 
@@ -62,7 +62,7 @@ const mockServiceMocks = vi.hoisted(() => ({
   setYieldSteps: vi.fn(),
 }));
 
-vi.mock('@/lib/simh/i650/service', () => mockServiceMocks);
+vi.mock('@/lib/simh/i650', () => mockServiceMocks);
 
 const render = (ui: React.ReactElement) => {
   act(() => {

@@ -31,6 +31,7 @@ const mockDisplayDecayMock = vi.hoisted(() => ({
 
 const mockFormatMocks = vi.hoisted(() => ({
   normalizeWord: vi.fn(),
+  extractSign: vi.fn(),
 }));
 
 vi.mock('./useDisplayDecay', () => mockDisplayDecayMock);
@@ -79,6 +80,9 @@ describe('DisplaySection', () => {
         return String(value).padStart(10, '0') + '+';
       }
       return value;
+    });
+    mockFormatMocks.extractSign.mockImplementation((value: string) => {
+      return value.charAt(10);
     });
   });
 

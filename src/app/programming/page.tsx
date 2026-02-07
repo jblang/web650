@@ -20,8 +20,14 @@ import {
   I650_SOAP_MNEMONICS_BY_OPCODE,
   ZERO_ADDRESS,
 } from '@/lib/simh/i650/constants';
-import { normalizeAddress, normalizeWord } from '@/lib/simh/i650/format';
-import { depositMemory } from '@/lib/simh/i650/service';
+import {
+  normalizeAddress,
+  normalizeWord,
+  extractOperationCode,
+  extractDataAddress,
+  extractInstructionAddress,
+} from '@/lib/simh/i650/format';
+import { depositMemory } from '@/lib/simh/i650';
 
 type OperationItem = {
   opcode: number;
@@ -183,13 +189,12 @@ export default function ProgrammingPage() {
 
           if (row.dataWord) {
             try {
-              const normalized = normalizeWord(row.dataWord);
               return {
                 ...row,
                 isData: false,
-                opCode: normalized.slice(0, 2),
-                addrData: normalized.slice(2, 6),
-                addrInstruction: normalized.slice(6, 10),
+                opCode: extractOperationCode(row.dataWord),
+                addrData: extractDataAddress(row.dataWord),
+                addrInstruction: extractInstructionAddress(row.dataWord),
               };
             } catch {
               return { ...row, isData: false };

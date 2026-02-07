@@ -3,7 +3,7 @@
 import React, { useEffect } from 'react';
 import FrontPanel from '@/components/FrontPanel';
 import { useFrontPanelControls } from '@/components/FrontPanel/useFrontPanelControls';
-import { setStateStreamActive } from '@/lib/simh/i650/service';
+import { setStateStreamActive } from '@/lib/simh/i650';
 
 export default function FrontPanelPage() {
   const panelControls = useFrontPanelControls();
