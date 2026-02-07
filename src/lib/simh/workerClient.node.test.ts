@@ -41,10 +41,6 @@ describe('workerClient in node environment', () => {
     expect(initReq.args).toEqual(['i650', '']);
 
     activeWorker.onmessage?.({ data: { id: initReq.id, ok: true, result: null } } as MessageEvent);
-    await Promise.resolve();
-    const setEchoReq = activeWorker.postedMessages[1];
-    expect(setEchoReq).toBeDefined();
-    activeWorker.onmessage?.({ data: { id: setEchoReq.id, ok: true, result: null } } as MessageEvent);
     await initPromise;
   });
 });

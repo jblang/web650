@@ -462,4 +462,284 @@ describe('core helpers and wrappers', () => {
     core.setYieldEnabled(true);
     expect(ccall).toHaveBeenCalledWith('simh_set_yield_enabled', 'void', ['number'], [1]);
   });
+
+  it('resetModule clears the module reference', async () => {
+    const core = await import('./core');
+    const fakeModule = createFakeModule();
+    core.setModule(fakeModule as unknown as Parameters<typeof core.setModule>[0]);
+
+    expect(core.getModule()).toBeDefined();
+
+    core.resetModule();
+
+    expect(() => core.getModule()).toThrow('WASM module not initialized');
+  });
+});
+
+describe('core state stream', () => {
+  beforeEach(async () => {
+    vi.resetModules();
+    const core = await import('./core');
+    core.resetModule();
+  });
+
+  it('enableStateStream calls module function with 1 for true', async () => {
+    const core = await import('./core');
+    const ccall = vi.fn();
+    core.setModule({ ccall } as unknown as Parameters<typeof core.setModule>[0]);
+
+    core.enableStateStream(true);
+
+    expect(ccall).toHaveBeenCalledWith('simh_state_stream_enable', 'void', ['number'], [1]);
+  });
+
+  it('enableStateStream calls module function with 0 for false', async () => {
+    const core = await import('./core');
+    const ccall = vi.fn();
+    core.setModule({ ccall } as unknown as Parameters<typeof core.setModule>[0]);
+
+    core.enableStateStream(false);
+
+    expect(ccall).toHaveBeenCalledWith('simh_state_stream_enable', 'void', ['number'], [0]);
+  });
+
+  it('setStateStreamStride calls module function with stride value', async () => {
+    const core = await import('./core');
+    const ccall = vi.fn();
+    core.setModule({ ccall } as unknown as Parameters<typeof core.setModule>[0]);
+
+    core.setStateStreamStride(10);
+
+    expect(ccall).toHaveBeenCalledWith('simh_state_stream_set_stride', 'void', ['number'], [10]);
+  });
+
+  it('clearStateStream calls module function', async () => {
+    const core = await import('./core');
+    const ccall = vi.fn();
+    core.setModule({ ccall } as unknown as Parameters<typeof core.setModule>[0]);
+
+    core.clearStateStream();
+
+    expect(ccall).toHaveBeenCalledWith('simh_state_stream_clear', 'void', [], []);
+  });
+
+  it('readStateStream returns empty array when HEAPU8 is unavailable', async () => {
+    const core = await import('./core');
+    const ccall = vi.fn();
+    core.setModule({ ccall, HEAPU8: undefined } as unknown as Parameters<typeof core.setModule>[0]);
+
+    const result = core.readStateStream();
+
+    expect(result).toEqual([]);
+  });
+
+  it('readStateStream returns empty array when count is 0', async () => {
+    const core = await import('./core');
+    const buffer = new ArrayBuffer(1024);
+    const heapu8 = new Uint8Array(buffer);
+    const ccall = vi.fn((name: string) => {
+      if (name === 'simh_state_stream_sample_size') return 59;
+      if (name === 'simh_state_stream_buffer_ptr') return 0;
+      if (name === 'simh_state_stream_read_to_buffer') return 0;
+      return 0;
+    });
+    core.setModule({ ccall, HEAPU8: heapu8 } as unknown as Parameters<typeof core.setModule>[0]);
+
+    const result = core.readStateStream(64);
+
+    expect(result).toEqual([]);
+  });
+
+  it('readStateStream reads samples from buffer', async () => {
+    const core = await import('./core');
+    const buffer = new ArrayBuffer(1024);
+    const heapu8 = new Uint8Array(buffer);
+
+    // Write sample data at offset 100
+    const encoder = new TextEncoder();
+    const prBytes = encoder.encode('0000000001+\0');
+    const arBytes = encoder.encode('0001\0');
+    const icBytes = encoder.encode('0002\0');
+    const accLoBytes = encoder.encode('0000000003+\0');
+    const accUpBytes = encoder.encode('0000000004+\0');
+    const distBytes = encoder.encode('0000000005+\0');
+
+    heapu8.set(prBytes, 100 + 0);   // pr at offset 0
+    heapu8.set(arBytes, 100 + 12);  // ar at offset 12
+    heapu8.set(icBytes, 100 + 17);  // ic at offset 17
+    heapu8.set(accLoBytes, 100 + 22); // accLo at offset 22
+    heapu8.set(accUpBytes, 100 + 34); // accUp at offset 34
+    heapu8.set(distBytes, 100 + 46);  // dist at offset 46
+    heapu8[100 + 58] = 1;  // ov at offset 58
+
+    const ccall = vi.fn((name: string) => {
+      if (name === 'simh_state_stream_sample_size') return 59;
+      if (name === 'simh_state_stream_buffer_ptr') return 100;
+      if (name === 'simh_state_stream_read_to_buffer') return 1;
+      return 0;
+    });
+
+    core.setModule({ ccall, HEAPU8: heapu8 } as unknown as Parameters<typeof core.setModule>[0]);
+
+    const result = core.readStateStream(64);
+
+    expect(result).toHaveLength(1);
+    expect(result[0]).toEqual({
+      pr: '0000000001+',
+      ar: '0001',
+      ic: '0002',
+      accLo: '0000000003+',
+      accUp: '0000000004+',
+      dist: '0000000005+',
+      ov: 1,
+    });
+  });
+
+  it('readStateStream throws when sample size mismatches', async () => {
+    const core = await import('./core');
+    const buffer = new ArrayBuffer(1024);
+    const heapu8 = new Uint8Array(buffer);
+    const ccall = vi.fn((name: string) => {
+      if (name === 'simh_state_stream_sample_size') return 99; // Wrong size
+      if (name === 'simh_state_stream_buffer_ptr') return 0;
+      return 0;
+    });
+    core.setModule({ ccall, HEAPU8: heapu8 } as unknown as Parameters<typeof core.setModule>[0]);
+
+    expect(() => core.readStateStream()).toThrow('State stream sample size mismatch');
+  });
+
+  it('readStateStream uses cached buffer pointer on subsequent calls', async () => {
+    const core = await import('./core');
+    const buffer = new ArrayBuffer(1024);
+    const heapu8 = new Uint8Array(buffer);
+    const ccall = vi.fn((name: string) => {
+      if (name === 'simh_state_stream_sample_size') return 59;
+      if (name === 'simh_state_stream_buffer_ptr') return 100;
+      if (name === 'simh_state_stream_read_to_buffer') return 0;
+      return 0;
+    });
+    core.setModule({ ccall, HEAPU8: heapu8 } as unknown as Parameters<typeof core.setModule>[0]);
+
+    core.readStateStream();
+    core.readStateStream();
+
+    // Should only call buffer_ptr once due to caching
+    const bufferPtrCalls = ccall.mock.calls.filter(
+      (call) => call[0] === 'simh_state_stream_buffer_ptr'
+    );
+    expect(bufferPtrCalls).toHaveLength(1);
+  });
+
+  it('readStateStreamLastSample returns null when json is empty', async () => {
+    const core = await import('./core');
+    const ccall = vi.fn(() => '');
+    core.setModule({ ccall } as unknown as Parameters<typeof core.setModule>[0]);
+
+    const result = core.readStateStreamLastSample();
+
+    expect(result).toBeNull();
+    expect(ccall).toHaveBeenCalledWith('simh_state_stream_read_last_json', 'string', [], []);
+  });
+
+  it('readStateStreamLastSample parses valid JSON', async () => {
+    const core = await import('./core');
+    const sampleData = {
+      pr: '0000000001+',
+      ar: '0001',
+      ic: '0002',
+      accLo: '0000000003+',
+      accUp: '0000000004+',
+      dist: '0000000005+',
+      ov: 1,
+    };
+    const ccall = vi.fn(() => JSON.stringify(sampleData));
+    core.setModule({ ccall } as unknown as Parameters<typeof core.setModule>[0]);
+
+    const result = core.readStateStreamLastSample();
+
+    expect(result).toEqual(sampleData);
+  });
+
+  it('readStateStreamLastSample returns null on JSON parse error', async () => {
+    const core = await import('./core');
+    const ccall = vi.fn(() => 'invalid json');
+    core.setModule({ ccall } as unknown as Parameters<typeof core.setModule>[0]);
+
+    const result = core.readStateStreamLastSample();
+
+    expect(result).toBeNull();
+  });
+
+  it('readStateStream handles multiple samples', async () => {
+    const core = await import('./core');
+    const buffer = new ArrayBuffer(2048);
+    const heapu8 = new Uint8Array(buffer);
+
+    // Write two samples
+    const encoder = new TextEncoder();
+    const sample1Offset = 100;
+    const sample2Offset = 100 + 59;
+
+    // Sample 1
+    heapu8.set(encoder.encode('0000000001+\0'), sample1Offset + 0);
+    heapu8.set(encoder.encode('0001\0'), sample1Offset + 12);
+    heapu8.set(encoder.encode('0002\0'), sample1Offset + 17);
+    heapu8.set(encoder.encode('0000000003+\0'), sample1Offset + 22);
+    heapu8.set(encoder.encode('0000000004+\0'), sample1Offset + 34);
+    heapu8.set(encoder.encode('0000000005+\0'), sample1Offset + 46);
+    heapu8[sample1Offset + 58] = 0;
+
+    // Sample 2
+    heapu8.set(encoder.encode('0000000010+\0'), sample2Offset + 0);
+    heapu8.set(encoder.encode('0010\0'), sample2Offset + 12);
+    heapu8.set(encoder.encode('0020\0'), sample2Offset + 17);
+    heapu8.set(encoder.encode('0000000030+\0'), sample2Offset + 22);
+    heapu8.set(encoder.encode('0000000040+\0'), sample2Offset + 34);
+    heapu8.set(encoder.encode('0000000050+\0'), sample2Offset + 46);
+    heapu8[sample2Offset + 58] = 1;
+
+    const ccall = vi.fn((name: string) => {
+      if (name === 'simh_state_stream_sample_size') return 59;
+      if (name === 'simh_state_stream_buffer_ptr') return 100;
+      if (name === 'simh_state_stream_read_to_buffer') return 2;
+      return 0;
+    });
+
+    core.setModule({ ccall, HEAPU8: heapu8 } as unknown as Parameters<typeof core.setModule>[0]);
+
+    const result = core.readStateStream(64);
+
+    expect(result).toHaveLength(2);
+    expect(result[0].pr).toBe('0000000001+');
+    expect(result[0].ov).toBe(0);
+    expect(result[1].pr).toBe('0000000010+');
+    expect(result[1].ov).toBe(1);
+  });
+
+  it('readStateStream gets HEAPU8 from global Module when not on main module', async () => {
+    const core = await import('./core');
+    const buffer = new ArrayBuffer(1024);
+    const heapu8 = new Uint8Array(buffer);
+
+    // Set global Module with HEAPU8
+    (globalThis as { Module?: { HEAPU8?: Uint8Array } }).Module = { HEAPU8: heapu8 };
+
+    const ccall = vi.fn((name: string) => {
+      if (name === 'simh_state_stream_sample_size') return 59;
+      if (name === 'simh_state_stream_buffer_ptr') return 0;
+      if (name === 'simh_state_stream_read_to_buffer') return 0;
+      return 0;
+    });
+
+    // Don't set HEAPU8 on the module itself
+    core.setModule({ ccall, HEAPU8: undefined } as unknown as Parameters<typeof core.setModule>[0]);
+
+    const result = core.readStateStream();
+
+    expect(result).toEqual([]);
+
+    // Cleanup
+    delete (globalThis as { Module?: unknown }).Module;
+  });
 });

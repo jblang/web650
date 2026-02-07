@@ -39,17 +39,8 @@ describe('ConfigSection', () => {
     container.remove();
   });
 
-  it('calls change handlers for knobs and address', () => {
-    const handlers = {
-      onProgrammedChange: vi.fn(),
-      onHalfCycleChange: vi.fn(),
-      onAddressChange: vi.fn(),
-      onControlChange: vi.fn(),
-      onDisplayChange: vi.fn(),
-      onOverflowChange: vi.fn(),
-      onErrorChange: vi.fn(),
-    };
-
+  it('calls onProgrammedChange when programmed knob changes', () => {
+    const onProgrammedChange = vi.fn();
     act(() => {
       root.render(
         <ConfigSection
@@ -60,23 +51,153 @@ describe('ConfigSection', () => {
           display={0}
           overflow={0}
           error={0}
-          {...handlers}
+          onProgrammedChange={onProgrammedChange}
         />
       );
     });
 
-    const knobs = container.querySelectorAll('[data-testid^="knob-"]');
-    knobs.forEach((btn) => act(() => (btn as HTMLButtonElement).click()));
+    const knob = container.querySelectorAll('[data-testid^="knob-"]')[0] as HTMLButtonElement;
+    act(() => knob.click());
+
+    expect(onProgrammedChange).toHaveBeenCalledWith(1);
+  });
+
+  it('calls onHalfCycleChange when half cycle knob changes', () => {
+    const onHalfCycleChange = vi.fn();
+    act(() => {
+      root.render(
+        <ConfigSection
+          programmed={0}
+          halfCycle={0}
+          addressSelection="0000"
+          control={0}
+          display={0}
+          overflow={0}
+          error={0}
+          onHalfCycleChange={onHalfCycleChange}
+        />
+      );
+    });
+
+    const knob = container.querySelectorAll('[data-testid^="knob-"]')[1] as HTMLButtonElement;
+    act(() => knob.click());
+
+    expect(onHalfCycleChange).toHaveBeenCalledWith(1);
+  });
+
+  it('calls onAddressChange when address selection changes', () => {
+    const onAddressChange = vi.fn();
+    act(() => {
+      root.render(
+        <ConfigSection
+          programmed={0}
+          halfCycle={0}
+          addressSelection="0000"
+          control={0}
+          display={0}
+          overflow={0}
+          error={0}
+          onAddressChange={onAddressChange}
+        />
+      );
+    });
+
     const addr = container.querySelector('[data-testid="addr"]') as HTMLButtonElement;
     act(() => addr.click());
 
-    expect(handlers.onProgrammedChange).toHaveBeenCalled();
-    expect(handlers.onHalfCycleChange).toHaveBeenCalled();
-    expect(handlers.onControlChange).toHaveBeenCalled();
-    expect(handlers.onDisplayChange).toHaveBeenCalled();
-    expect(handlers.onOverflowChange).toHaveBeenCalled();
-    expect(handlers.onErrorChange).toHaveBeenCalled();
-    expect(handlers.onAddressChange).toHaveBeenCalledWith('0001');
+    expect(onAddressChange).toHaveBeenCalledWith('0001');
+  });
+
+  it('calls onControlChange when control knob changes', () => {
+    const onControlChange = vi.fn();
+    act(() => {
+      root.render(
+        <ConfigSection
+          programmed={0}
+          halfCycle={0}
+          addressSelection="0000"
+          control={0}
+          display={0}
+          overflow={0}
+          error={0}
+          onControlChange={onControlChange}
+        />
+      );
+    });
+
+    const knob = container.querySelectorAll('[data-testid^="knob-"]')[2] as HTMLButtonElement;
+    act(() => knob.click());
+
+    expect(onControlChange).toHaveBeenCalledWith(1);
+  });
+
+  it('calls onDisplayChange when display knob changes', () => {
+    const onDisplayChange = vi.fn();
+    act(() => {
+      root.render(
+        <ConfigSection
+          programmed={0}
+          halfCycle={0}
+          addressSelection="0000"
+          control={0}
+          display={0}
+          overflow={0}
+          error={0}
+          onDisplayChange={onDisplayChange}
+        />
+      );
+    });
+
+    const knob = container.querySelectorAll('[data-testid^="knob-"]')[3] as HTMLButtonElement;
+    act(() => knob.click());
+
+    expect(onDisplayChange).toHaveBeenCalledWith(1);
+  });
+
+  it('calls onOverflowChange when overflow knob changes', () => {
+    const onOverflowChange = vi.fn();
+    act(() => {
+      root.render(
+        <ConfigSection
+          programmed={0}
+          halfCycle={0}
+          addressSelection="0000"
+          control={0}
+          display={0}
+          overflow={0}
+          error={0}
+          onOverflowChange={onOverflowChange}
+        />
+      );
+    });
+
+    const knob = container.querySelectorAll('[data-testid^="knob-"]')[4] as HTMLButtonElement;
+    act(() => knob.click());
+
+    expect(onOverflowChange).toHaveBeenCalledWith(1);
+  });
+
+  it('calls onErrorChange when error knob changes', () => {
+    const onErrorChange = vi.fn();
+    act(() => {
+      root.render(
+        <ConfigSection
+          programmed={0}
+          halfCycle={0}
+          addressSelection="0000"
+          control={0}
+          display={0}
+          overflow={0}
+          error={0}
+          onErrorChange={onErrorChange}
+        />
+      );
+    });
+
+    const knob = container.querySelectorAll('[data-testid^="knob-"]')[5] as HTMLButtonElement;
+    act(() => knob.click());
+
+    expect(onErrorChange).toHaveBeenCalledWith(1);
   });
 });
 

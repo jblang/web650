@@ -12,13 +12,11 @@ import { Send, Stop } from '@carbon/icons-react';
 import { useEmulatorConsole } from './EmulatorConsoleProvider';
 import { useEmulatorActions } from './EmulatorActionsProvider';
 import { setDebugEnabled, isDebugEnabled } from '@/lib/simh/debug';
-import { isEchoEnabled, setEchoEnabled } from '@/lib/simh/echo';
 
 export default function EmulatorConsole() {
   const [command, setCommand] = useState('');
   const [sending, setSending] = useState(false);
   const [debugEnabled, setDebugEnabledState] = useState(() => isDebugEnabled());
-  const [frontPanelEchoEnabled, setFrontPanelEchoEnabledState] = useState(() => isEchoEnabled());
   const { output, sendCommand, isRunning, yieldSteps, setYieldSteps } = useEmulatorConsole();
   const { onProgramStopClick } = useEmulatorActions();
   const textAreaRef = useRef<HTMLTextAreaElement>(null);
@@ -80,11 +78,6 @@ export default function EmulatorConsole() {
   const handleDebugToggle = (checked: boolean) => {
     setDebugEnabled(checked);
     setDebugEnabledState(checked);
-  };
-
-  const handleFrontPanelEchoToggle = (checked: boolean) => {
-    setEchoEnabled(checked);
-    setFrontPanelEchoEnabledState(checked);
   };
 
   return (
@@ -154,12 +147,6 @@ export default function EmulatorConsole() {
             labelText="Enable SIMH debug logging"
             checked={debugEnabled}
             onChange={(e) => handleDebugToggle((e.target as HTMLInputElement).checked)}
-          />
-          <Checkbox
-            id="simh-echo-front-panel"
-            labelText="Echo front panel SIMH commands"
-            checked={frontPanelEchoEnabled}
-            onChange={(e) => handleFrontPanelEchoToggle((e.target as HTMLInputElement).checked)}
           />
         </div>
       </div>

@@ -39,7 +39,6 @@ let stateStreamCallback: ((sample: StateStreamMessage['sample']) => void) | null
 let running = false;
 let initPromise: Promise<void> | null = null;
 let initModuleName: string | null = null;
-let echoEnabled = false;
 
 function ensureWorker(): Worker {
   if (worker) return worker;
@@ -142,8 +141,7 @@ export async function init(moduleName: string): Promise<void> {
   initPromise = call('init', moduleName, baseUrl);
   try {
     await initPromise;
-    await call('setEcho', echoEnabled);
-    debugLog('worker init done', { moduleName, echoEnabled });
+    debugLog('worker init done', { moduleName });
   } catch (err) {
     initPromise = null;
     throw err;
@@ -240,18 +238,6 @@ export async function readStateStream(maxSamples: number): Promise<Array<{
 }>> {
   await ensureInit();
   return call('stateStreamRead', maxSamples);
-}
-
-export function isEchoEnabled(): boolean {
-  return echoEnabled;
-}
-
-export function setEchoEnabled(enabled: boolean): void {
-  echoEnabled = enabled;
-  debugLog('worker echo set', { enabled });
-  if (worker) {
-    void call('setEcho', enabled);
-  }
 }
 
 export async function stop(): Promise<void> {

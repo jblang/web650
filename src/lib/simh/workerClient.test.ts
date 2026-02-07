@@ -73,12 +73,6 @@ describe('workerClient', () => {
     expect(initReq.method).toBe('init');
     expect(initReq.args).toEqual(['i650', window.location.origin]);
     worker.emitMessage({ id: initReq.id, ok: true, result: null });
-    await flushMicrotasks();
-
-    const setEchoReq = getLastRequest(worker);
-    expect(setEchoReq.method).toBe('setEcho');
-    expect(setEchoReq.args).toEqual([false]);
-    worker.emitMessage({ id: setEchoReq.id, ok: true, result: null });
     await initPromise;
 
     const messageCountBeforeRestart = worker.postedMessages.length;
@@ -206,32 +200,12 @@ describe('workerClient', () => {
     await expect(initPromise).rejects.toThrow('Worker error');
   });
 
-  it('pushes echo settings to worker after initialization', async () => {
-    const workerClient = await import('./workerClient');
-    const initPromise = workerClient.init('i650');
-    const worker = FakeWorker.instances[0];
-    const initReq = getLastRequest(worker);
-    worker.emitMessage({ id: initReq.id, ok: true, result: null });
-    await flushMicrotasks();
-    const setEchoInitReq = getLastRequest(worker);
-    worker.emitMessage({ id: setEchoInitReq.id, ok: true, result: null });
-    await initPromise;
-
-    workerClient.setEchoEnabled(true);
-    const setEchoReq = getLastRequest(worker);
-    expect(setEchoReq.method).toBe('setEcho');
-    expect(setEchoReq.args).toEqual([true]);
-  });
-
   it('forwards send/examine/deposit calls with options', async () => {
     const workerClient = await import('./workerClient');
     const initPromise = workerClient.init('i650');
     const worker = FakeWorker.instances[0];
     const initReq = getLastRequest(worker);
     worker.emitMessage({ id: initReq.id, ok: true, result: null });
-    await flushMicrotasks();
-    const setEchoInitReq = getLastRequest(worker);
-    worker.emitMessage({ id: setEchoInitReq.id, ok: true, result: null });
     await initPromise;
 
     const sendPromise = workerClient.sendCommand('EXAMINE STATE', { echo: true, streamOutput: true });
@@ -256,13 +230,6 @@ describe('workerClient', () => {
     await depositPromise;
   });
 
-  it('tracks local echo enabled state', async () => {
-    const workerClient = await import('./workerClient');
-    expect(workerClient.isEchoEnabled()).toBe(false);
-    workerClient.setEchoEnabled(true);
-    expect(workerClient.isEchoEnabled()).toBe(true);
-  });
-
   it('resets init promise when ensureInit sees an init failure', async () => {
     const workerClient = await import('./workerClient');
     const initPromise = workerClient.init('i650');
@@ -278,9 +245,6 @@ describe('workerClient', () => {
     const retryPromise = workerClient.init('i650');
     const retryReq = getLastRequest(worker);
     worker.emitMessage({ id: retryReq.id, ok: true, result: null });
-    await flushMicrotasks();
-    const setEchoReq = getLastRequest(worker);
-    worker.emitMessage({ id: setEchoReq.id, ok: true, result: null });
     await retryPromise;
   });
 
@@ -290,9 +254,6 @@ describe('workerClient', () => {
     const worker = FakeWorker.instances[0];
     const initReq = getLastRequest(worker);
     worker.emitMessage({ id: initReq.id, ok: true, result: null });
-    await flushMicrotasks();
-    const setEchoReq = getLastRequest(worker);
-    worker.emitMessage({ id: setEchoReq.id, ok: true, result: null });
     await initPromise;
 
     await expect(workerClient.restart('')).rejects.toThrow(
@@ -306,9 +267,6 @@ describe('workerClient', () => {
     const worker = FakeWorker.instances[0];
     const initReq = getLastRequest(worker);
     worker.emitMessage({ id: initReq.id, ok: true, result: null });
-    await flushMicrotasks();
-    const setEchoReq = getLastRequest(worker);
-    worker.emitMessage({ id: setEchoReq.id, ok: true, result: null });
     await initPromise;
 
     const messageCountBeforeRead = worker.postedMessages.length;
@@ -387,5 +345,104 @@ describe('workerClient', () => {
     expect(stopReq.method).toBe('stop');
     worker.emitMessage({ id: stopReq.id, ok: true, result: null });
     await stopPromise;
+  });
+
+  it('forwards state stream calls to the worker', async () => {
+    const workerClient = await import('./workerClient');
+    const initPromise = workerClient.init('i650');
+    const worker = FakeWorker.instances[0];
+    const initReq = getLastRequest(worker);
+    worker.emitMessage({ id: initReq.id, ok: true, result: null });
+    await initPromise;
+
+    // Test enableStateStream
+    const enablePromise = workerClient.enableStateStream(true);
+    await flushMicrotasks();
+    const enableReq = getLastRequest(worker);
+    expect(enableReq.method).toBe('stateStreamEnable');
+    expect(enableReq.args).toEqual([true]);
+    worker.emitMessage({ id: enableReq.id, ok: true, result: null });
+    await enablePromise;
+
+    // Test setStateStreamStride
+    const stridePromise = workerClient.setStateStreamStride(10);
+    await flushMicrotasks();
+    const strideReq = getLastRequest(worker);
+    expect(strideReq.method).toBe('stateStreamSetStride');
+    expect(strideReq.args).toEqual([10]);
+    worker.emitMessage({ id: strideReq.id, ok: true, result: null });
+    await stridePromise;
+
+    // Test clearStateStream
+    const clearPromise = workerClient.clearStateStream();
+    await flushMicrotasks();
+    const clearReq = getLastRequest(worker);
+    expect(clearReq.method).toBe('stateStreamClear');
+    worker.emitMessage({ id: clearReq.id, ok: true, result: null });
+    await clearPromise;
+
+    // Test readStateStream
+    const sampleData = [
+      {
+        pr: '0000000001+',
+        ar: '0001',
+        ic: '0002',
+        accLo: '0000000003+',
+        accUp: '0000000004+',
+        dist: '0000000005+',
+        ov: 1,
+      },
+    ];
+    const readPromise = workerClient.readStateStream(64);
+    await flushMicrotasks();
+    const readReq = getLastRequest(worker);
+    expect(readReq.method).toBe('stateStreamRead');
+    expect(readReq.args).toEqual([64]);
+    worker.emitMessage({ id: readReq.id, ok: true, result: sampleData });
+    await expect(readPromise).resolves.toEqual(sampleData);
+  });
+
+  it('routes state stream messages to callback', async () => {
+    const workerClient = await import('./workerClient');
+    const stateStreamListener = vi.fn();
+    workerClient.onStateStream(stateStreamListener);
+
+    const onOutputPromise = workerClient.onOutput(() => {});
+    const worker = FakeWorker.instances[0];
+    const setOutputReq = getLastRequest(worker);
+    worker.emitMessage({ id: setOutputReq.id, ok: true, result: null });
+    await onOutputPromise;
+
+    const sampleData = {
+      pr: '0000000001+',
+      ar: '0001',
+      ic: '0002',
+      accLo: '0000000003+',
+      accUp: '0000000004+',
+      dist: '0000000005+',
+      ov: 1,
+    };
+
+    worker.emitMessage({ type: 'state', sample: sampleData });
+
+    expect(stateStreamListener).toHaveBeenCalledWith(sampleData);
+  });
+
+  it('handles URL parsing errors in inferBasePathFromScripts gracefully', async () => {
+    const workerClient = await import('./workerClient');
+
+    // Create a script with invalid URL
+    const script = document.createElement('script');
+    script.src = 'invalid:url:with:colons:/_next/static/test.js';
+    document.head.appendChild(script);
+
+    // Should not throw even with malformed URL
+    const initPromise = workerClient.init('i650');
+    const worker = FakeWorker.instances[0];
+    const initReq = getLastRequest(worker);
+    worker.emitMessage({ id: initReq.id, ok: true, result: null });
+    await expect(initPromise).resolves.toBeUndefined();
+
+    script.remove();
   });
 });

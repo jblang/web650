@@ -532,4 +532,120 @@ describe('i650 service', () => {
 
     expect(debugMocks.errorLog).toHaveBeenCalledWith('i650 postInit error', expect.any(Error));
   });
+
+  it('ignores non-debug lines in output handler', async () => {
+    const service = await setupService();
+    await service.init();
+    await flushPromises();
+
+    const onOutputHandler = simhMocks.onOutput.mock.calls.at(0)?.[0];
+    const listener = vi.fn();
+    service.subscribe(listener);
+    const callsBefore = listener.mock.calls.length;
+
+    // Send output that doesn't contain 'DBG('
+    onOutputHandler?.('Some regular output line\n');
+    onOutputHandler?.('Another line without debug marker\n');
+
+    // State should not have changed (no debug patch applied)
+    expect(listener.mock.calls.length).toBe(callsBefore);
+  });
+
+  it('parses CPU DETAIL debug lines and updates accumulators', async () => {
+    const service = await setupService();
+    await service.init();
+    await flushPromises();
+
+    const onOutputHandler = simhMocks.onOutput.mock.calls.at(0)?.[0];
+    const listener = vi.fn();
+    service.subscribe(listener);
+
+    // Send CPU DETAIL debug line
+    onOutputHandler?.('DBG(CPU DETAIL) ACC: 1234567890 9876543210+, OV: 1\n');
+
+    // Wait for the debounced update (DEBUG_STREAM_THROTTLE_MS = 50ms)
+    await new Promise((resolve) => setTimeout(resolve, 100));
+    await flushPromises();
+
+    expect(listener).toHaveBeenCalledWith(
+      expect.objectContaining({
+        upperAccumulator: '1234567890+',
+        lowerAccumulator: '9876543210+',
+      })
+    );
+  });
+
+  it('parses CPU CMD Exec debug lines and updates program register', async () => {
+    const service = await setupService();
+    await service.init();
+    await flushPromises();
+
+    const onOutputHandler = simhMocks.onOutput.mock.calls.at(0)?.[0];
+
+    // Send CPU CMD Exec debug line (format: CPU CMD: Exec {addr}: {op} {name} {data_addr} {inst_addr})
+    onOutputHandler?.('DBG(CPU CMD: Exec 1000: 69 RAU 8000 1001)\n');
+
+    // Wait for the debounced update (DEBUG_STREAM_THROTTLE_MS = 50ms)
+    await new Promise((resolve) => setTimeout(resolve, 100));
+
+    expect(service.getState().programRegister).toBe('6980001001+');
+  });
+
+  it('depositMemory validates and writes to memory', async () => {
+    const service = await setupService();
+    await service.init();
+    await flushPromises();
+
+    await service.depositMemory('1234', '1111111111+');
+
+    expect(simhMocks.deposit).toHaveBeenCalledWith('1234', '1111111111+');
+  });
+
+  it('executeCommand with RUN command manages running state', async () => {
+    const service = await setupService();
+    await service.init();
+    await flushPromises();
+
+    // Initially not running
+    expect(service.getState().isRunning).toBe(false);
+
+    // Start a RUN command - this sets runRequestedUntil and mergeState({ isRunning: true })
+    simhMocks.sendCommand.mockImplementation(async () => {
+      // Simulate a delay in command execution
+      await new Promise((resolve) => setTimeout(resolve, 10));
+      return '';
+    });
+
+    const runPromise = service.executeCommand('RUN', { streamOutput: true });
+    await flushPromises();
+
+    // State should be set to running after mergeState call
+    expect(service.getState().isRunning).toBe(true);
+
+    // Complete the command
+    await runPromise;
+
+    // State should be reset to not running after command completes
+    expect(service.getState().isRunning).toBe(false);
+  });
+
+  it('setStateStreamActive initializes state stream when activated', async () => {
+    // Mock state stream functions
+    simhMocks.enableStateStream.mockResolvedValue(undefined);
+    simhMocks.setStateStreamStride.mockResolvedValue(undefined);
+    simhMocks.clearStateStream.mockResolvedValue(undefined);
+
+    const service = await setupService();
+    await service.init();
+    await flushPromises();
+
+    // Activate state stream
+    await service.setStateStreamActive(true);
+
+    // Verify that state stream was initialized
+    expect(simhMocks.clearStateStream).toHaveBeenCalled();
+    expect(simhMocks.enableStateStream).toHaveBeenCalledWith(true);
+    expect(simhMocks.setStateStreamStride).toHaveBeenCalled();
+    expect(simhMocks.onStateStream).toHaveBeenCalled();
+  });
 });

@@ -72,4 +72,27 @@ describe('simh control', () => {
     expect(coreMocks.resetModule).toHaveBeenCalledTimes(1);
     expect(coreMocks.init).toHaveBeenCalledWith('i650');
   });
+
+  it('restart works when document is undefined (Node environment)', async () => {
+    coreMocks.init.mockResolvedValue(undefined);
+    coreMocks.getModule.mockReturnValue({ ccall: vi.fn() });
+    (globalThis as Record<string, unknown>).createI650Module = vi.fn();
+
+    // Save original document
+    const originalDocument = global.document;
+
+    // Delete document to simulate Node.js environment
+    // @ts-expect-error - intentionally testing undefined document
+    delete global.document;
+
+    const control = await import('./control');
+    await control.restart('i650');
+
+    expect(coreMocks.resetModule).toHaveBeenCalledTimes(1);
+    expect(coreMocks.init).toHaveBeenCalledWith('i650');
+    expect((globalThis as Record<string, unknown>).createI650Module).toBeUndefined();
+
+    // Restore document
+    global.document = originalDocument;
+  });
 });

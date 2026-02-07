@@ -83,19 +83,12 @@ vi.mock('./EmulatorActionsProvider', () => ({
 
 const optionState = vi.hoisted(() => ({
   setDebugEnabled: vi.fn(),
-  setEchoEnabled: vi.fn(),
   debugEnabled: false,
-  echoEnabled: false,
 }));
 
 vi.mock('@/lib/simh/debug', () => ({
   setDebugEnabled: optionState.setDebugEnabled,
   isDebugEnabled: () => optionState.debugEnabled,
-}));
-
-vi.mock('@/lib/simh/echo', () => ({
-  setEchoEnabled: optionState.setEchoEnabled,
-  isEchoEnabled: () => optionState.echoEnabled,
 }));
 
 let container: HTMLDivElement;
@@ -126,12 +119,10 @@ describe('EmulatorConsole', () => {
     emulatorConsoleState.setYieldSteps.mockClear();
     actionMocks.onProgramStopClick.mockClear();
     optionState.setDebugEnabled.mockClear();
-    optionState.setEchoEnabled.mockClear();
     emulatorConsoleState.outputValue = 'hello\n';
     emulatorConsoleState.isRunningValue = false;
     emulatorConsoleState.yieldStepsValue = 1000;
     optionState.debugEnabled = false;
-    optionState.echoEnabled = false;
   });
 
   afterEach(() => {
@@ -240,14 +231,12 @@ describe('EmulatorConsole', () => {
     expect(emulatorConsoleState.setYieldSteps).toHaveBeenCalledWith(2500);
   });
 
-  it('toggles debug and front panel echo options', () => {
+  it('toggles debug option', () => {
     render(<EmulatorConsole />);
     act(() => {
       inputPropsById.get('simh-debug')?.onChange?.({ target: { value: '', checked: true } });
-      inputPropsById.get('simh-echo-front-panel')?.onChange?.({ target: { value: '', checked: true } });
     });
     expect(optionState.setDebugEnabled).toHaveBeenCalledWith(true);
-    expect(optionState.setEchoEnabled).toHaveBeenCalledWith(true);
   });
 
   it('clears send timeout when command finishes', async () => {
