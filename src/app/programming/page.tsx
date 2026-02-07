@@ -424,7 +424,10 @@ export default function ProgrammingPage() {
                                   if (isAddressField) {
                                     value = value.replace(/\D/g, '').slice(0, 4);
                                   }
-                                  updateCell(row.id, header as keyof ProgramRow, value);
+                                  // Type guard: ensure header is a valid key of ProgramRow
+                                  if (header in sourceRow) {
+                                    updateCell(row.id, header as keyof ProgramRow, value);
+                                  }
                                 }}
                                 maxLength={isAddressField ? 4 : undefined}
                                 size="sm"

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { createContext, useContext, useState, ReactNode, useCallback } from 'react';
+import React, { createContext, useContext, useState, ReactNode, useCallback, useMemo } from 'react';
 
 interface CardDeckContextType {
   cardDeck: string[];
@@ -40,9 +40,19 @@ export default function CardDeckProvider({ children }: { children: ReactNode }) 
       setUploadedFile(file);
       const reader = new FileReader();
       reader.onload = (event) => {
-        const text = event.target?.result as string;
-        const lines = text.split('\n').map((line) => line.trim()).filter(line => line.length > 0);
-        setCardDeck(lines);
+        const result = event.target?.result;
+        if (typeof result === 'string') {
+          const lines = result.split('\n').map((line) => line.trim()).filter(line => line.length > 0);
+          setCardDeck(lines);
+        } else {
+          console.error('FileReader result is not a string:', result);
+          setCardDeck([]);
+        }
+      };
+      reader.onerror = () => {
+        console.error('Failed to read file:', reader.error);
+        setUploadedFile(null);
+        setCardDeck([]);
       };
       reader.readAsText(file);
     } else {
@@ -56,14 +66,14 @@ export default function CardDeckProvider({ children }: { children: ReactNode }) 
     setUploadedFile(null);
   }, []);
 
-  const value = {
+  const value = useMemo(() => ({
     cardDeck,
     uploadedFile,
     setCardDeck,
     setUploadedFile,
     handleFileChange,
     handleClearDeck,
-  };
+  }), [cardDeck, uploadedFile, handleFileChange, handleClearDeck]);
 
   return (
     <CardDeckContext.Provider value={value}>

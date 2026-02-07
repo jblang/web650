@@ -14,7 +14,8 @@ const DisplaySection: React.FC<DisplaySectionProps> = ({ value, tick }) => {
   const normalizedValue = normalizeWord(value);
   const intensity = useDisplayDecay(normalizedValue, tick);
   // Extract 10 digits and sign (sign is at end: 0000000000+)
-  const sign = normalizedValue.charAt(10) as '+' | '-';
+  const signChar = normalizedValue.charAt(10);
+  const sign: '+' | '-' = signChar === '-' ? '-' : '+';
   const digits = normalizedValue.substring(0, 10).split('').map(Number);
 
   return (

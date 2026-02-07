@@ -3,7 +3,7 @@ import { useEmulatorState, INITIAL_OPERATING_STATE, INITIAL_CHECKING_STATE } fro
 import { useEmulatorActions } from '../EmulatorActionsProvider';
 import { OperatingState } from './OperatingStatus';
 import { CheckingState } from './CheckingStatus';
-import { Programmed, HalfCycle, Overflow } from './ConfigSection';
+import { Programmed, HalfCycle, Overflow } from '@/lib/simh/i650/controls';
 
 export const useFrontPanelControls = () => {
   const {

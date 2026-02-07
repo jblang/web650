@@ -6,12 +6,35 @@ import './docs.scss';
 
 export default function DocsPage() {
   const [content, setContent] = useState('');
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     fetch('/assets/about.md')
-      .then((res) => res.text())
-      .then(setContent);
+      .then((res) => {
+        if (!res.ok) {
+          throw new Error(`Failed to load documentation: ${res.status} ${res.statusText}`);
+        }
+        return res.text();
+      })
+      .then((text) => {
+        setContent(text);
+        setLoading(false);
+      })
+      .catch((err) => {
+        const message = err instanceof Error ? err.message : 'Failed to load documentation';
+        setError(message);
+        setLoading(false);
+      });
   }, []);
+
+  if (loading) {
+    return <div className="docs-container">Loading documentation...</div>;
+  }
+
+  if (error) {
+    return <div className="docs-container" style={{ color: '#da1e28' }}>{error}</div>;
+  }
 
   return (
     <div className="docs-container">

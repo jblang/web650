@@ -5,8 +5,7 @@ import { useFrontPanelControls } from './useFrontPanelControls';
 import { EmulatorStateProvider } from '../EmulatorStateProvider';
 import { EmulatorConsoleProvider } from '../EmulatorConsoleProvider';
 import { EmulatorActionsProvider } from '../EmulatorActionsProvider';
-import { Programmed, HalfCycle, Overflow } from './ConfigSection';
-import { Display } from '@/lib/simh/i650/controls';
+import { Programmed, HalfCycle, Overflow, Display } from '@/lib/simh/i650/controls';
 import type { I650EmulatorState } from '@/lib/simh/i650/service';
 
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
