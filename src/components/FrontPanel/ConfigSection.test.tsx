@@ -1,6 +1,7 @@
 import React, { act } from 'react';
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { createRoot } from 'react-dom/client';
+import { Programmed, HalfCycle, Control, Display, Overflow, ErrorSwitch } from '@/lib/simh/i650/controls';
 
 vi.mock('./LabeledKnob', () => ({
   __esModule: true,
@@ -27,6 +28,22 @@ import ConfigSection from './ConfigSection';
 describe('ConfigSection', () => {
   let container: HTMLDivElement;
   let root: ReturnType<typeof createRoot>;
+  const baseProps = {
+    programmed: Programmed.STOP,
+    halfCycle: HalfCycle.HALF,
+    addressSelection: '0000',
+    control: Control.ADDRESS_STOP,
+    display: Display.LOWER_ACCUM,
+    overflow: Overflow.STOP,
+    error: ErrorSwitch.STOP,
+    onProgrammedChange: vi.fn(),
+    onHalfCycleChange: vi.fn(),
+    onAddressChange: vi.fn(),
+    onControlChange: vi.fn(),
+    onDisplayChange: vi.fn(),
+    onOverflowChange: vi.fn(),
+    onErrorChange: vi.fn(),
+  };
 
   beforeEach(() => {
     container = document.createElement('div');
@@ -44,13 +61,7 @@ describe('ConfigSection', () => {
     act(() => {
       root.render(
         <ConfigSection
-          programmed={0}
-          halfCycle={0}
-          addressSelection="0000"
-          control={0}
-          display={0}
-          overflow={0}
-          error={0}
+          {...baseProps}
           onProgrammedChange={onProgrammedChange}
         />
       );
@@ -67,13 +78,7 @@ describe('ConfigSection', () => {
     act(() => {
       root.render(
         <ConfigSection
-          programmed={0}
-          halfCycle={0}
-          addressSelection="0000"
-          control={0}
-          display={0}
-          overflow={0}
-          error={0}
+          {...baseProps}
           onHalfCycleChange={onHalfCycleChange}
         />
       );
@@ -90,13 +95,7 @@ describe('ConfigSection', () => {
     act(() => {
       root.render(
         <ConfigSection
-          programmed={0}
-          halfCycle={0}
-          addressSelection="0000"
-          control={0}
-          display={0}
-          overflow={0}
-          error={0}
+          {...baseProps}
           onAddressChange={onAddressChange}
         />
       );
@@ -113,13 +112,7 @@ describe('ConfigSection', () => {
     act(() => {
       root.render(
         <ConfigSection
-          programmed={0}
-          halfCycle={0}
-          addressSelection="0000"
-          control={0}
-          display={0}
-          overflow={0}
-          error={0}
+          {...baseProps}
           onControlChange={onControlChange}
         />
       );
@@ -136,13 +129,7 @@ describe('ConfigSection', () => {
     act(() => {
       root.render(
         <ConfigSection
-          programmed={0}
-          halfCycle={0}
-          addressSelection="0000"
-          control={0}
-          display={0}
-          overflow={0}
-          error={0}
+          {...baseProps}
           onDisplayChange={onDisplayChange}
         />
       );
@@ -159,13 +146,7 @@ describe('ConfigSection', () => {
     act(() => {
       root.render(
         <ConfigSection
-          programmed={0}
-          halfCycle={0}
-          addressSelection="0000"
-          control={0}
-          display={0}
-          overflow={0}
-          error={0}
+          {...baseProps}
           onOverflowChange={onOverflowChange}
         />
       );
@@ -182,13 +163,7 @@ describe('ConfigSection', () => {
     act(() => {
       root.render(
         <ConfigSection
-          programmed={0}
-          halfCycle={0}
-          addressSelection="0000"
-          control={0}
-          display={0}
-          overflow={0}
-          error={0}
+          {...baseProps}
           onErrorChange={onErrorChange}
         />
       );

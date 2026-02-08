@@ -37,13 +37,13 @@ interface ConfigSectionProps {
   overflow: OverflowPosition;
   error: ErrorSwitchPosition;
   // Handlers
-  onProgrammedChange: (value: ProgrammedPosition) => void;
-  onHalfCycleChange: (value: HalfCyclePosition) => void;
-  onAddressChange: (value: string) => void;
-  onControlChange: (value: ControlPosition) => void;
-  onDisplayChange: (value: DisplayPosition) => void;
-  onOverflowChange: (value: OverflowPosition) => void;
-  onErrorChange: (value: ErrorSwitchPosition) => void;
+  onProgrammedChange: (value: ProgrammedPosition) => void | Promise<void>;
+  onHalfCycleChange: (value: HalfCyclePosition) => void | Promise<void>;
+  onAddressChange: (value: string) => void | Promise<void>;
+  onControlChange: (value: ControlPosition) => void | Promise<void>;
+  onDisplayChange: (value: DisplayPosition) => void | Promise<void>;
+  onOverflowChange: (value: OverflowPosition) => void | Promise<void>;
+  onErrorChange: (value: ErrorSwitchPosition) => void | Promise<void>;
 }
 
 const ConfigSection: React.FC<ConfigSectionProps> = ({

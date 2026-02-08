@@ -2,6 +2,9 @@ import React, { act } from 'react';
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { createRoot, Root } from 'react-dom/client';
 import FrontPanel, { FrontPanelProps } from './FrontPanel';
+import type { OperatingState } from './OperatingStatus';
+import type { CheckingState } from './CheckingStatus';
+import { Programmed, HalfCycle, Overflow, Control, Display, ErrorSwitch } from '@/lib/simh/i650/controls';
 
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
 
@@ -10,7 +13,7 @@ let root: Root;
 
 // Mock all child components
 vi.mock('./DisplaySection', () => ({
-  default: ({ value, tick }: Record<string, unknown>) => (
+  default: ({ value, tick }: { value: string | number; tick: number }) => (
     <div data-testid="display-section" data-value={value} data-tick={tick}>
       DisplaySection
     </div>
@@ -18,7 +21,7 @@ vi.mock('./DisplaySection', () => ({
 }));
 
 vi.mock('./EntrySection', () => ({
-  default: ({ value, onChange }: Record<string, unknown>) => (
+  default: ({ value, onChange }: { value: string; onChange: (next: string) => void | Promise<void> }) => (
     <div data-testid="entry-section" data-value={value} data-on-change={typeof onChange}>
       EntrySection
     </div>
@@ -26,7 +29,7 @@ vi.mock('./EntrySection', () => ({
 }));
 
 vi.mock('./OperationDisplay', () => ({
-  default: ({ value, tick }: Record<string, unknown>) => (
+  default: ({ value, tick }: { value: string | number; tick: number }) => (
     <div data-testid="operation-display" data-value={value} data-tick={tick}>
       OperationDisplay
     </div>
@@ -34,7 +37,7 @@ vi.mock('./OperationDisplay', () => ({
 }));
 
 vi.mock('./AddressDisplay', () => ({
-  default: ({ value, tick }: Record<string, unknown>) => (
+  default: ({ value, tick }: { value: string | number; tick: number }) => (
     <div data-testid="address-display" data-value={value} data-tick={tick}>
       AddressDisplay
     </div>
@@ -42,7 +45,7 @@ vi.mock('./AddressDisplay', () => ({
 }));
 
 vi.mock('./OperatingStatus', () => ({
-  default: ({ state }: Record<string, unknown>) => (
+  default: ({ state }: { state: OperatingState }) => (
     <div data-testid="operating-status" data-state={JSON.stringify(state)}>
       OperatingStatus
     </div>
@@ -50,7 +53,7 @@ vi.mock('./OperatingStatus', () => ({
 }));
 
 vi.mock('./CheckingStatus', () => ({
-  default: ({ state }: Record<string, unknown>) => (
+  default: ({ state }: { state: CheckingState }) => (
     <div data-testid="checking-status" data-state={JSON.stringify(state)}>
       CheckingStatus
     </div>
@@ -58,7 +61,37 @@ vi.mock('./CheckingStatus', () => ({
 }));
 
 vi.mock('./ConfigSection', () => ({
-  default: ({ programmed, halfCycle, addressSelection, control, display, overflow, error, onProgrammedChange, onHalfCycleChange, onAddressChange, onControlChange, onDisplayChange, onOverflowChange, onErrorChange }: Record<string, unknown>) => (
+  default: ({
+    programmed,
+    halfCycle,
+    addressSelection,
+    control,
+    display,
+    overflow,
+    error,
+    onProgrammedChange,
+    onHalfCycleChange,
+    onAddressChange,
+    onControlChange,
+    onDisplayChange,
+    onOverflowChange,
+    onErrorChange,
+  }: {
+    programmed: number;
+    halfCycle: number;
+    addressSelection: string;
+    control: number;
+    display: number;
+    overflow: number;
+    error: number;
+    onProgrammedChange: (value: number) => void | Promise<void>;
+    onHalfCycleChange: (value: number) => void | Promise<void>;
+    onAddressChange: (value: string) => void | Promise<void>;
+    onControlChange: (value: number) => void | Promise<void>;
+    onDisplayChange: (value: number) => void | Promise<void>;
+    onOverflowChange: (value: number) => void | Promise<void>;
+    onErrorChange: (value: number) => void | Promise<void>;
+  }) => (
     <div
       data-testid="config-section"
       data-programmed={programmed}
@@ -82,7 +115,23 @@ vi.mock('./ConfigSection', () => ({
 }));
 
 vi.mock('./ControlSection', () => ({
-  default: ({ onTransferClick, onProgramStartClick, onProgramStopClick, onProgramResetClick, onComputerResetClick, onAccumResetClick, onEmulatorResetClick }: Record<string, unknown>) => (
+  default: ({
+    onTransferClick,
+    onProgramStartClick,
+    onProgramStopClick,
+    onProgramResetClick,
+    onComputerResetClick,
+    onAccumResetClick,
+    onEmulatorResetClick,
+  }: {
+    onTransferClick?: () => void | Promise<void>;
+    onProgramStartClick?: () => void | Promise<void>;
+    onProgramStopClick?: () => void | Promise<void>;
+    onProgramResetClick?: () => void | Promise<void>;
+    onComputerResetClick?: () => void | Promise<void>;
+    onAccumResetClick?: () => void | Promise<void>;
+    onEmulatorResetClick?: () => void | Promise<void>;
+  }) => (
     <div
       data-testid="control-section"
       data-on-transfer-click={typeof onTransferClick}
@@ -132,13 +181,13 @@ describe('FrontPanel', () => {
       accumulator: false,
       errorSense: false,
     },
-    programmed: 1,
-    halfCycle: 1,
+    programmed: Programmed.RUN,
+    halfCycle: HalfCycle.RUN,
     addressSelection: '0000',
-    control: 1,
-    display: 0,
-    overflow: 0,
-    error: 0,
+    control: Control.RUN,
+    display: Display.LOWER_ACCUM,
+    overflow: Overflow.STOP,
+    error: ErrorSwitch.STOP,
     onEntryValueChange: vi.fn(),
     onProgrammedChange: vi.fn(),
     onHalfCycleChange: vi.fn(),

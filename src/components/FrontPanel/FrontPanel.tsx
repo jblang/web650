@@ -8,7 +8,14 @@ import EntrySection from './EntrySection';
 import ConfigSection from './ConfigSection';
 import ControlSection from './ControlSection';
 import styles from './FrontPanel.module.scss';
-import type { DisplayPosition, ControlPosition, ErrorSwitchPosition } from '@/lib/simh/i650/controls';
+import type {
+  DisplayPosition,
+  ControlPosition,
+  ErrorSwitchPosition,
+  ProgrammedPosition,
+  HalfCyclePosition,
+  OverflowPosition,
+} from '@/lib/simh/i650/controls';
 
 export const litBulb = '🟡';
 export const unlitBulb = '⚫';
@@ -22,32 +29,32 @@ export interface FrontPanelProps {
   stateStreamTick: number;
   operatingState: OperatingState;
   checkingState: CheckingState;
-  programmed: number;
-  halfCycle: number;
+  programmed: ProgrammedPosition;
+  halfCycle: HalfCyclePosition;
   addressSelection: string;
   control: ControlPosition;
   display: DisplayPosition;
-  overflow: number;
+  overflow: OverflowPosition;
   error: ErrorSwitchPosition;
 
   // Callbacks for user interactions
-  onEntryValueChange: (value: string) => void;
-  onProgrammedChange: (value: number) => void;
-  onHalfCycleChange: (value: number) => void;
-  onAddressChange: (value: string) => void;
+  onEntryValueChange: (value: string) => void | Promise<void>;
+  onProgrammedChange: (value: ProgrammedPosition) => void | Promise<void>;
+  onHalfCycleChange: (value: HalfCyclePosition) => void | Promise<void>;
+  onAddressChange: (value: string) => void | Promise<void>;
   onControlChange: (value: ControlPosition) => void;
   onDisplayChange: (value: DisplayPosition) => void;
-  onOverflowChange: (value: number) => void;
+  onOverflowChange: (value: OverflowPosition) => void | Promise<void>;
   onErrorChange: (value: ErrorSwitchPosition) => void;
 
   // Callbacks for control buttons
-  onTransferClick?: () => void;
-  onProgramStartClick?: () => void;
-  onProgramStopClick?: () => void;
-  onProgramResetClick?: () => void;
-  onComputerResetClick?: () => void;
-  onAccumResetClick?: () => void;
-  onEmulatorResetClick?: () => void;
+  onTransferClick?: () => void | Promise<void>;
+  onProgramStartClick?: () => void | Promise<void>;
+  onProgramStopClick?: () => void | Promise<void>;
+  onProgramResetClick?: () => void | Promise<void>;
+  onComputerResetClick?: () => void | Promise<void>;
+  onAccumResetClick?: () => void | Promise<void>;
+  onEmulatorResetClick?: () => void | Promise<void>;
 }
 
 const FrontPanel: React.FC<FrontPanelProps> = (props) => {

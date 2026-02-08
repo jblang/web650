@@ -12,7 +12,7 @@ const mockPathname = vi.hoisted(() => ({ value: '/' }));
 
 // Mock next/link
 vi.mock('next/link', () => ({
-  default: ({ href, children }: Record<string, unknown>) =><a href={href}>{children}</a>,
+  default: ({ href, children }: { href: string; children: React.ReactNode }) => <a href={href}>{children}</a>,
 }));
 
 // Mock next/navigation
@@ -22,22 +22,22 @@ vi.mock('next/navigation', () => ({
 
 // Mock Carbon components
 vi.mock('@carbon/react', () => ({
-  Header: ({ children, 'aria-label': ariaLabel }: Record<string, unknown>) =>(
+  Header: ({ children, 'aria-label': ariaLabel }: { children: React.ReactNode; 'aria-label': string }) =>(
     <header data-testid="header" aria-label={ariaLabel}>
       {children}
     </header>
   ),
-  HeaderName: ({ href, prefix, children }: Record<string, unknown>) =>(
+  HeaderName: ({ href, prefix, children }: { href: string; prefix: string; children: React.ReactNode }) =>(
     <a data-testid="header-name" href={href} data-prefix={prefix}>
       {children}
     </a>
   ),
-  HeaderNavigation: ({ children, 'aria-label': ariaLabel }: Record<string, unknown>) =>(
+  HeaderNavigation: ({ children, 'aria-label': ariaLabel }: { children: React.ReactNode; 'aria-label': string }) =>(
     <nav data-testid="header-navigation" aria-label={ariaLabel}>
       {children}
     </nav>
   ),
-  HeaderMenuItem: ({ href, isCurrentPage, children }: Record<string, unknown>) =>(
+  HeaderMenuItem: ({ href, isCurrentPage, children }: { href: string; isCurrentPage?: boolean; children: React.ReactNode }) =>(
     <a
       data-testid="header-menu-item"
       href={href}

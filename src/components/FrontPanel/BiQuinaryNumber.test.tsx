@@ -27,7 +27,7 @@ vi.mock('@/lib/simh/i650/format', () => mockFormatMocks);
 
 // Mock BiQuinaryDigit
 vi.mock('./BiQuinaryDigit', () => ({
-  default: ({ value, intensity }: Record<string, unknown>) => (
+  default: ({ value, intensity }: { value: number; intensity: unknown }) => (
     <div
       data-testid="biquinary-digit"
       data-value={value}

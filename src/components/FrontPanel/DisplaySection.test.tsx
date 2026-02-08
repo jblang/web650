@@ -39,7 +39,21 @@ vi.mock('@/lib/simh/i650/format', () => mockFormatMocks);
 
 // Mock child components to simplify testing
 vi.mock('./BiQuinaryNumber', () => ({
-  default: ({ value, tick, digitCount, intensity, testIdPrefix, className }: Record<string, unknown>) => (
+  default: ({
+    value,
+    tick,
+    digitCount,
+    intensity,
+    testIdPrefix,
+    className,
+  }: {
+    value: number[];
+    tick: number;
+    digitCount: number;
+    intensity: unknown;
+    testIdPrefix: string;
+    className?: string;
+  }) => (
     <div
       data-testid={`biquinary-${testIdPrefix}`}
       data-value={JSON.stringify(value)}
@@ -54,7 +68,7 @@ vi.mock('./BiQuinaryNumber', () => ({
 }));
 
 vi.mock('./SignDisplay', () => ({
-  default: ({ value, intensity }: Record<string, unknown>) => (
+  default: ({ value, intensity }: { value: string; intensity: unknown }) => (
     <div data-testid="sign-display" data-value={value} data-intensity={JSON.stringify(intensity)}>
       Sign: {value}
     </div>
