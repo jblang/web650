@@ -10,7 +10,9 @@ export default function DocsPage() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    fetch('/assets/about.md')
+    const basePath = process.env.NEXT_PUBLIC_BASE_PATH ?? '';
+    const aboutUrl = `${basePath}/about.md`;
+    fetch(aboutUrl)
       .then((res) => {
         if (!res.ok) {
           throw new Error(`Failed to load documentation: ${res.status} ${res.statusText}`);
