@@ -2,6 +2,7 @@
   $font-path: '../../../../@ibm/plex'
 );
 @use '@carbon/type';
+@use '@carbon/themes' as *;
 html,
 body {
   height: 100%;
@@ -43,4 +44,16 @@ body {
 
 .cds--list-box {
   overflow: visible !important;
+}
+
+.emulator-console__go.cds--btn {
+  background-color: $support-success;
+  border-color: $support-success;
+}
+
+.emulator-console__go.cds--btn:hover,
+.emulator-console__go.cds--btn:active,
+.emulator-console__go.cds--btn:focus {
+  background-color: $support-success;
+  border-color: $support-success;
 }

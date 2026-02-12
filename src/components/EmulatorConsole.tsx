@@ -8,7 +8,7 @@ import {
   Stack,
   Checkbox,
 } from '@carbon/react';
-import { Send, Stop } from '@carbon/icons-react';
+import { Send, Stop, Play } from '@carbon/icons-react';
 import { useEmulatorConsole } from './EmulatorConsoleProvider';
 import { useEmulatorActions } from './EmulatorActionsProvider';
 import { setDebugEnabled, isDebugEnabled } from '@/lib/simh/debug';
@@ -68,6 +68,18 @@ export default function EmulatorConsole() {
     }
   };
 
+  const handleGo = async () => {
+    if (sending) return;
+
+    setSending(true);
+    try {
+      await sendCommand('go');
+    } finally {
+      setSending(false);
+      setCommand('');
+    }
+  };
+
   const handleKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter') {
       e.preventDefault();
@@ -105,25 +117,37 @@ export default function EmulatorConsole() {
             ref={commandInputRef}
           />
         </div>
-        {busy ? (
-          <Button
-            kind="danger"
-            renderIcon={Stop}
-            onClick={onProgramStopClick}
-            size="lg"
-          >
-            Stop
-          </Button>
-        ) : (
+        <div style={{ display: 'flex', gap: '0.5rem' }}>
           <Button
             renderIcon={Send}
             onClick={handleSend}
-            disabled={!command.trim() || sending}
+            disabled={busy || !command.trim() || sending}
             size="lg"
           >
             Send
           </Button>
-        )}
+          {busy ? (
+            <Button
+              kind="danger"
+              renderIcon={Stop}
+              onClick={onProgramStopClick}
+              size="lg"
+            >
+              Stop
+            </Button>
+          ) : (
+            <Button
+              onClick={handleGo}
+              disabled={sending}
+              size="lg"
+              kind="primary"
+              className="emulator-console__go"
+              renderIcon={Play}
+            >
+              Go
+            </Button>
+          )}
+        </div>
       </div>
       <div style={{ borderTop: '1px solid #e0e0e0', paddingTop: '1rem' }}>
         <div style={{ marginBottom: '0.5rem', fontWeight: 600 }}>Advanced options</div>
