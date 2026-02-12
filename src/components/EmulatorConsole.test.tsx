@@ -51,6 +51,7 @@ vi.mock('@carbon/react', () => ({
 vi.mock('@carbon/icons-react', () => ({
   Send: () => null,
   Stop: () => null,
+  Play: () => null,
 }));
 
 const emulatorConsoleState = vi.hoisted(() => ({
@@ -107,6 +108,11 @@ const typeCommand = (value: string) => {
   });
 };
 
+const getButtonByText = (text: string) =>
+  Array.from(container.querySelectorAll('button')).find((button) =>
+    button.textContent?.includes(text)
+  ) as HTMLButtonElement | undefined;
+
 describe('EmulatorConsole', () => {
   beforeEach(() => {
     container = document.createElement('div');
@@ -153,7 +159,7 @@ describe('EmulatorConsole', () => {
     render(<EmulatorConsole />);
     typeCommand('  SHOW DEV  ');
 
-    const sendButton = container.querySelector('button') as HTMLButtonElement;
+    const sendButton = getButtonByText('Send') as HTMLButtonElement;
     await act(async () => {
       sendButton.click();
     });
@@ -187,7 +193,7 @@ describe('EmulatorConsole', () => {
 
   it('ignores empty commands', async () => {
     render(<EmulatorConsole />);
-    const sendButton = container.querySelector('button') as HTMLButtonElement;
+    const sendButton = getButtonByText('Send') as HTMLButtonElement;
 
     await act(async () => {
       sendButton.click();
@@ -212,8 +218,8 @@ describe('EmulatorConsole', () => {
     emulatorConsoleState.isRunningValue = true;
     render(<EmulatorConsole />);
 
-    const stopButton = container.querySelector('button') as HTMLButtonElement;
-    expect(stopButton.textContent).toContain('Stop');
+    const stopButton = getButtonByText('Stop') as HTMLButtonElement;
+    expect(stopButton).toBeDefined();
     await act(async () => {
       stopButton.click();
     });
@@ -257,7 +263,7 @@ describe('EmulatorConsole', () => {
 
     render(<EmulatorConsole />);
     typeCommand('LONG');
-    const sendButton = container.querySelector('button') as HTMLButtonElement;
+    const sendButton = getButtonByText('Send') as HTMLButtonElement;
     await act(async () => {
       sendButton.click();
     });
@@ -293,7 +299,7 @@ describe('EmulatorConsole', () => {
 
     render(<EmulatorConsole />);
     typeCommand('LONG RUN');
-    const sendButton = container.querySelector('button') as HTMLButtonElement;
+    const sendButton = getButtonByText('Send') as HTMLButtonElement;
 
     await act(async () => {
       sendButton.click();
@@ -309,7 +315,7 @@ describe('EmulatorConsole', () => {
     await act(async () => {
       await Promise.resolve();
     });
-    const updatedSendButton = container.querySelector('button') as HTMLButtonElement;
+    const updatedSendButton = getButtonByText('Send') as HTMLButtonElement;
     expect(updatedSendButton.disabled).toBe(false);
     expect(setTimeoutSpy).toHaveBeenCalledWith(expect.any(Function), 15000);
     expect(clearTimeoutSpy).toHaveBeenCalled();
