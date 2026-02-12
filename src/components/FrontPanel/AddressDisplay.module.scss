@@ -11,12 +11,12 @@
   display: contents;
 }
 
-.content :global(.title) {
+.title {
   grid-column: span 4;
   @include section-heading-base;
   @include spaced-text(2.4em);
 }
 
-.content :global(.cell) {
+.cell {
   @include centered-cell;
 }

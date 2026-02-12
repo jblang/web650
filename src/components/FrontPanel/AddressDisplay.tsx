@@ -5,21 +5,21 @@ import styles from './AddressDisplay.module.scss';
 
 interface AddressDisplayProps {
   value: string | number;
-  tick: number;
 }
 
-const AddressDisplay: React.FC<AddressDisplayProps> = ({ value, tick }) => {
+const AddressDisplay: React.FC<AddressDisplayProps> = ({ value }) => {
   const displayValue = normalizeAddress(value);
 
   return (
     <div className={styles.addressDisplay} data-testid="address-display" data-address-value={displayValue}>
       <BiQuinaryNumber
         value={displayValue}
-        tick={tick}
         digitCount={4}
         title="ADDRESS"
         testIdPrefix="addr"
         className={styles.content}
+        titleClassName={styles.title}
+        cellClassName={styles.cell}
       />
     </div>
   );

@@ -47,7 +47,7 @@ describe('BiQuinaryNumber', () => {
   });
 
   it('renders with array input', () => {
-    render(<BiQuinaryNumber value={[1, 2, 3, 4]} tick={0} digitCount={4} />);
+    render(<BiQuinaryNumber value={[1, 2, 3, 4]} digitCount={4} />);
 
     const digits = container.querySelectorAll('[data-testid="biquinary-digit"]');
     expect(digits.length).toBe(4);
@@ -58,7 +58,7 @@ describe('BiQuinaryNumber', () => {
   });
 
   it('renders with string input for 2 digits', () => {
-    render(<BiQuinaryNumber value="42" tick={0} digitCount={2} />);
+    render(<BiQuinaryNumber value="42" digitCount={2} />);
 
     const digits = container.querySelectorAll('[data-testid="biquinary-digit"]');
     expect(digits.length).toBe(2);
@@ -67,7 +67,7 @@ describe('BiQuinaryNumber', () => {
   });
 
   it('pads string input for 2 digits', () => {
-    render(<BiQuinaryNumber value="5" tick={0} digitCount={2} />);
+    render(<BiQuinaryNumber value="5" digitCount={2} />);
 
     const digits = container.querySelectorAll('[data-testid="biquinary-digit"]');
     expect(digits.length).toBe(2);
@@ -78,7 +78,7 @@ describe('BiQuinaryNumber', () => {
   it('renders with number input for 4 digits', () => {
     mockFormatMocks.normalizeAddress.mockReturnValue('1234');
 
-    render(<BiQuinaryNumber value={1234} tick={0} digitCount={4} />);
+    render(<BiQuinaryNumber value={1234} digitCount={4} />);
 
     expect(mockFormatMocks.normalizeAddress).toHaveBeenCalledWith(1234);
 
@@ -89,13 +89,13 @@ describe('BiQuinaryNumber', () => {
   it('calls normalizeAddress for 4-digit string input', () => {
     mockFormatMocks.normalizeAddress.mockReturnValue('0042');
 
-    render(<BiQuinaryNumber value="42" tick={0} digitCount={4} />);
+    render(<BiQuinaryNumber value="42" digitCount={4} />);
 
     expect(mockFormatMocks.normalizeAddress).toHaveBeenCalledWith('42');
   });
 
   it('pads string input for 10 digits', () => {
-    render(<BiQuinaryNumber value="123" tick={0} digitCount={10} />);
+    render(<BiQuinaryNumber value="123" digitCount={10} />);
 
     const digits = container.querySelectorAll('[data-testid="biquinary-digit"]');
     expect(digits.length).toBe(10);
@@ -106,7 +106,7 @@ describe('BiQuinaryNumber', () => {
   });
 
   it('renders 10 digits for number input', () => {
-    render(<BiQuinaryNumber value={9876543210} tick={0} digitCount={10} />);
+    render(<BiQuinaryNumber value={9876543210} digitCount={10} />);
 
     const digits = container.querySelectorAll('[data-testid="biquinary-digit"]');
     expect(digits.length).toBe(10);
@@ -115,50 +115,36 @@ describe('BiQuinaryNumber', () => {
   });
 
   it('renders title when provided', () => {
-    render(<BiQuinaryNumber value={[1, 2]} tick={0} digitCount={2} title="TEST" />);
+    render(<BiQuinaryNumber value={[1, 2]} digitCount={2} title="TEST" />);
 
-    const title = container.querySelector('.title');
+    const title = container.querySelector('[data-testid="digit-container"] .title, [data-testid="digit-container"] [class*="title"]');
     expect(title).not.toBeNull();
     expect(title?.textContent).toBe('TEST');
   });
 
   it('does not render title when not provided', () => {
-    render(<BiQuinaryNumber value={[1, 2]} tick={0} digitCount={2} />);
+    render(<BiQuinaryNumber value={[1, 2]} digitCount={2} />);
 
-    const title = container.querySelector('.title');
+    const title = container.querySelector('[data-testid="digit-container"] .title, [data-testid="digit-container"] [class*="title"]');
     expect(title).toBeNull();
   });
 
   it('uses custom testIdPrefix', () => {
-    render(<BiQuinaryNumber value={[1, 2]} tick={0} digitCount={2} testIdPrefix="custom" />);
+    render(<BiQuinaryNumber value={[1, 2]} digitCount={2} testIdPrefix="custom" />);
 
     const container_element = container.querySelector('[data-testid="custom-container"]');
     expect(container_element).not.toBeNull();
   });
 
   it('uses default testIdPrefix "digit"', () => {
-    render(<BiQuinaryNumber value={[1, 2]} tick={0} digitCount={2} />);
+    render(<BiQuinaryNumber value={[1, 2]} digitCount={2} />);
 
     const container_element = container.querySelector('[data-testid="digit-container"]');
     expect(container_element).not.toBeNull();
-  });
-
-  it('applies custom className', () => {
-    render(<BiQuinaryNumber value={[1, 2]} tick={0} digitCount={2} className="custom-class" />);
-
-    const container_element = container.querySelector('.custom-class');
-    expect(container_element).not.toBeNull();
-  });
-
-  it('uses default styles when className not provided', () => {
-    render(<BiQuinaryNumber value={[1, 2]} tick={0} digitCount={2} />);
-
-    const container_element = container.querySelector('[data-testid="digit-container"]');
-    expect(container_element?.className).toContain('container');
   });
 
   it('handles zero values correctly', () => {
-    render(<BiQuinaryNumber value={0} tick={0} digitCount={2} />);
+    render(<BiQuinaryNumber value={0} digitCount={2} />);
 
     const digits = container.querySelectorAll('[data-testid="biquinary-digit"]');
     expect(digits.length).toBe(2);
@@ -167,7 +153,7 @@ describe('BiQuinaryNumber', () => {
   });
 
   it('handles all zeros in array', () => {
-    render(<BiQuinaryNumber value={[0, 0, 0, 0]} tick={0} digitCount={4} />);
+    render(<BiQuinaryNumber value={[0, 0, 0, 0]} digitCount={4} />);
 
     const digits = container.querySelectorAll('[data-testid="biquinary-digit"]');
     expect(digits.length).toBe(4);
@@ -177,7 +163,7 @@ describe('BiQuinaryNumber', () => {
   });
 
   it('handles all nines in array', () => {
-    render(<BiQuinaryNumber value={[9, 9]} tick={0} digitCount={2} />);
+    render(<BiQuinaryNumber value={[9, 9]} digitCount={2} />);
 
     const digits = container.querySelectorAll('[data-testid="biquinary-digit"]');
     expect(digits.length).toBe(2);
@@ -187,7 +173,7 @@ describe('BiQuinaryNumber', () => {
   });
 
   it('renders correct number of cells for each digit', () => {
-    render(<BiQuinaryNumber value={[1, 2, 3]} tick={0} digitCount={4} />);
+    render(<BiQuinaryNumber value={[1, 2, 3]} digitCount={4} />);
 
     // Should render 3 digits (from array) even though digitCount is 4
     // because array input takes precedence

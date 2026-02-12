@@ -149,7 +149,7 @@ export function extractInstructionAddress(word: string | number): string {
  * @param word - Value to extract from (normalized to I650 format)
  * @returns Sign character ('+' or '-')
  */
-export function extractSign(word: string | number): string {
+export function extractSign(word: string | number): '+' | '-' {
   const normalized = normalizeWord(word);
-  return normalized.slice(10);
+  return normalized.slice(10) === '-' ? '-' : '+';
 }

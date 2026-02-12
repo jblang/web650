@@ -1,15 +1,17 @@
 import React from 'react';
+import cn from 'classnames';
 import BiQuinaryDigit from './BiQuinaryDigit';
 import { normalizeAddress } from '../../lib/simh/i650/format';
 import styles from './BiQuinaryNumber.module.scss';
 
 interface BiQuinaryNumberProps {
   value: string | number | number[];
-  tick: number;
   digitCount: 2 | 4 | 10;
   title?: string;
   testIdPrefix?: string;
   className?: string;
+  titleClassName?: string;
+  cellClassName?: string;
 }
 
 /**
@@ -22,6 +24,8 @@ const BiQuinaryNumber: React.FC<BiQuinaryNumberProps> = ({
   title,
   testIdPrefix = 'digit',
   className,
+  titleClassName,
+  cellClassName,
 }) => {
   // Handle array input (for DisplaySection digit slices)
   const digits = Array.isArray(value)
@@ -39,9 +43,9 @@ const BiQuinaryNumber: React.FC<BiQuinaryNumberProps> = ({
 
   return (
     <div className={className || styles.container} data-testid={`${testIdPrefix}-container`}>
-      {title && <div className={title ? 'title' : styles.title}>{title}</div>}
+      {title && <div className={titleClassName || styles.title}>{title}</div>}
       {digits.map((digit, i) => (
-        <div key={i} className={className ? 'cell' : styles.cell}>
+        <div key={i} className={cn(styles.cell, cellClassName)}>
           <BiQuinaryDigit value={digit} />
         </div>
       ))}

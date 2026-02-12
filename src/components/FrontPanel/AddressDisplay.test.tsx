@@ -18,14 +18,12 @@ vi.mock('@/lib/simh/i650/format', () => mockFormatMocks);
 vi.mock('./BiQuinaryNumber', () => ({
   default: ({
     value,
-    tick,
     digitCount,
     title,
     testIdPrefix,
     className,
   }: {
     value: string | number;
-    tick: number;
     digitCount: number;
     title?: string;
     testIdPrefix?: string;
@@ -34,7 +32,6 @@ vi.mock('./BiQuinaryNumber', () => ({
     <div
       data-testid="biquinary-number"
       data-value={value}
-      data-tick={tick}
       data-digit-count={digitCount}
       data-title={title}
       data-test-id-prefix={testIdPrefix}
@@ -71,7 +68,7 @@ describe('AddressDisplay', () => {
   it('renders with data-testid', () => {
     mockFormatMocks.normalizeAddress.mockReturnValue('1234');
 
-    render(<AddressDisplay value="1234" tick={0} />);
+    render(<AddressDisplay value="1234" />);
 
     const display = container.querySelector('[data-testid="address-display"]');
     expect(display).not.toBeNull();
@@ -80,7 +77,7 @@ describe('AddressDisplay', () => {
   it('calls normalizeAddress with string value', () => {
     mockFormatMocks.normalizeAddress.mockReturnValue('0042');
 
-    render(<AddressDisplay value="42" tick={0} />);
+    render(<AddressDisplay value="42" />);
 
     expect(mockFormatMocks.normalizeAddress).toHaveBeenCalledWith('42');
   });
@@ -88,7 +85,7 @@ describe('AddressDisplay', () => {
   it('calls normalizeAddress with number value', () => {
     mockFormatMocks.normalizeAddress.mockReturnValue('1234');
 
-    render(<AddressDisplay value={1234} tick={0} />);
+    render(<AddressDisplay value={1234} />);
 
     expect(mockFormatMocks.normalizeAddress).toHaveBeenCalledWith(1234);
   });
@@ -96,25 +93,16 @@ describe('AddressDisplay', () => {
   it('passes normalized value to BiQuinaryNumber', () => {
     mockFormatMocks.normalizeAddress.mockReturnValue('0099');
 
-    render(<AddressDisplay value={99} tick={0} />);
+    render(<AddressDisplay value={99} />);
 
     const biquinary = container.querySelector('[data-testid="biquinary-number"]');
     expect(biquinary?.getAttribute('data-value')).toBe('0099');
   });
 
-  it('passes tick prop to BiQuinaryNumber', () => {
-    mockFormatMocks.normalizeAddress.mockReturnValue('1234');
-
-    render(<AddressDisplay value="1234" tick={42} />);
-
-    const biquinary = container.querySelector('[data-testid="biquinary-number"]');
-    expect(biquinary?.getAttribute('data-tick')).toBe('42');
-  });
-
   it('passes digitCount 4 to BiQuinaryNumber', () => {
     mockFormatMocks.normalizeAddress.mockReturnValue('1234');
 
-    render(<AddressDisplay value="1234" tick={0} />);
+    render(<AddressDisplay value="1234" />);
 
     const biquinary = container.querySelector('[data-testid="biquinary-number"]');
     expect(biquinary?.getAttribute('data-digit-count')).toBe('4');
@@ -123,7 +111,7 @@ describe('AddressDisplay', () => {
   it('passes title "ADDRESS" to BiQuinaryNumber', () => {
     mockFormatMocks.normalizeAddress.mockReturnValue('1234');
 
-    render(<AddressDisplay value="1234" tick={0} />);
+    render(<AddressDisplay value="1234" />);
 
     const biquinary = container.querySelector('[data-testid="biquinary-number"]');
     expect(biquinary?.getAttribute('data-title')).toBe('ADDRESS');
@@ -132,7 +120,7 @@ describe('AddressDisplay', () => {
   it('passes testIdPrefix "addr" to BiQuinaryNumber', () => {
     mockFormatMocks.normalizeAddress.mockReturnValue('1234');
 
-    render(<AddressDisplay value="1234" tick={0} />);
+    render(<AddressDisplay value="1234" />);
 
     const biquinary = container.querySelector('[data-testid="biquinary-number"]');
     expect(biquinary?.getAttribute('data-test-id-prefix')).toBe('addr');
@@ -141,7 +129,7 @@ describe('AddressDisplay', () => {
   it('sets data-address-value attribute with normalized value', () => {
     mockFormatMocks.normalizeAddress.mockReturnValue('0042');
 
-    render(<AddressDisplay value={42} tick={0} />);
+    render(<AddressDisplay value={42} />);
 
     const display = container.querySelector('[data-testid="address-display"]');
     expect(display?.getAttribute('data-address-value')).toBe('0042');
@@ -150,7 +138,7 @@ describe('AddressDisplay', () => {
   it('handles zero value', () => {
     mockFormatMocks.normalizeAddress.mockReturnValue('0000');
 
-    render(<AddressDisplay value={0} tick={0} />);
+    render(<AddressDisplay value={0} />);
 
     expect(mockFormatMocks.normalizeAddress).toHaveBeenCalledWith(0);
 
@@ -161,7 +149,7 @@ describe('AddressDisplay', () => {
   it('handles maximum 4-digit value', () => {
     mockFormatMocks.normalizeAddress.mockReturnValue('9999');
 
-    render(<AddressDisplay value={9999} tick={0} />);
+    render(<AddressDisplay value={9999} />);
 
     const display = container.querySelector('[data-testid="address-display"]');
     expect(display?.getAttribute('data-address-value')).toBe('9999');
@@ -170,33 +158,19 @@ describe('AddressDisplay', () => {
   it('updates when value changes', () => {
     mockFormatMocks.normalizeAddress.mockReturnValue('0001');
 
-    render(<AddressDisplay value={1} tick={0} />);
+    render(<AddressDisplay value={1} />);
 
     let display = container.querySelector('[data-testid="address-display"]');
     expect(display?.getAttribute('data-address-value')).toBe('0001');
 
     // Update value
     mockFormatMocks.normalizeAddress.mockReturnValue('0002');
-    render(<AddressDisplay value={2} tick={0} />);
+    render(<AddressDisplay value={2} />);
 
     display = container.querySelector('[data-testid="address-display"]');
     expect(display?.getAttribute('data-address-value')).toBe('0002');
   });
 
-  it('updates when tick changes', () => {
-    mockFormatMocks.normalizeAddress.mockReturnValue('1234');
-
-    render(<AddressDisplay value="1234" tick={0} />);
-
-    let biquinary = container.querySelector('[data-testid="biquinary-number"]');
-    expect(biquinary?.getAttribute('data-tick')).toBe('0');
-
-    // Update tick
-    render(<AddressDisplay value="1234" tick={5} />);
-
-    biquinary = container.querySelector('[data-testid="biquinary-number"]');
-    expect(biquinary?.getAttribute('data-tick')).toBe('5');
-  });
 });
 
 /* @vitest-environment jsdom */

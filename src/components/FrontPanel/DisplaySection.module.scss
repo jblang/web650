@@ -29,28 +29,18 @@
   gap: 4px; // Match parent grid gap
 }
 
-.digitGroup1, .digitGroup2, .digitGroup3 {
+.opCodeGroup,
+.dataAddressGroup,
+.instructionAddressGroup {
   display: contents;
 }
 
-.digitGroup1 :global(.cell) {
-  @include centered-cell;
-}
-
-.digitGroup2 :global(.cell) {
-  @include centered-cell;
-}
-
-.digitGroup3 :global(.cell) {
+.digitCell {
   @include centered-cell;
 }
 
 .signGroup {
   @include panel-section;
   grid-column: 11;
-  @include centered-cell;
-}
-
-.cell {
   @include centered-cell;
 }

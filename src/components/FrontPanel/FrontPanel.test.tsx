@@ -13,8 +13,8 @@ let root: Root;
 
 // Mock all child components
 vi.mock('./DisplaySection', () => ({
-  default: ({ value, tick }: { value: string | number; tick: number }) => (
-    <div data-testid="display-section" data-value={value} data-tick={tick}>
+  default: ({ value }: { value: string | number }) => (
+    <div data-testid="display-section" data-value={value}>
       DisplaySection
     </div>
   ),
@@ -29,16 +29,16 @@ vi.mock('./EntrySection', () => ({
 }));
 
 vi.mock('./OperationDisplay', () => ({
-  default: ({ value, tick }: { value: string | number; tick: number }) => (
-    <div data-testid="operation-display" data-value={value} data-tick={tick}>
+  default: ({ value }: { value: string | number }) => (
+    <div data-testid="operation-display" data-value={value}>
       OperationDisplay
     </div>
   ),
 }));
 
 vi.mock('./AddressDisplay', () => ({
-  default: ({ value, tick }: { value: string | number; tick: number }) => (
-    <div data-testid="address-display" data-value={value} data-tick={tick}>
+  default: ({ value }: { value: string | number }) => (
+    <div data-testid="address-display" data-value={value}>
       AddressDisplay
     </div>
   ),
@@ -159,7 +159,6 @@ describe('FrontPanel', () => {
     entryValue: '0000000000+',
     addressDisplay: '1234',
     operation: '69',
-    stateStreamTick: 42,
     operatingState: {
       dataAddress: false,
       program: true,
@@ -229,12 +228,11 @@ describe('FrontPanel', () => {
     expect(container.querySelector('[data-testid="control-section"]')).not.toBeNull();
   });
 
-  it('passes displayValue and stateStreamTick to DisplaySection', () => {
+  it('passes displayValue to DisplaySection', () => {
     render(<FrontPanel {...mockProps} />);
 
     const displaySection = container.querySelector('[data-testid="display-section"]');
     expect(displaySection?.getAttribute('data-value')).toBe('1234567890+');
-    expect(displaySection?.getAttribute('data-tick')).toBe('42');
   });
 
   it('passes entryValue and onEntryValueChange to EntrySection', () => {
@@ -245,20 +243,18 @@ describe('FrontPanel', () => {
     expect(entrySection?.getAttribute('data-on-change')).toBe('function');
   });
 
-  it('passes operation and stateStreamTick to OperationDisplay', () => {
+  it('passes operation to OperationDisplay', () => {
     render(<FrontPanel {...mockProps} />);
 
     const operationDisplay = container.querySelector('[data-testid="operation-display"]');
     expect(operationDisplay?.getAttribute('data-value')).toBe('69');
-    expect(operationDisplay?.getAttribute('data-tick')).toBe('42');
   });
 
-  it('passes addressDisplay and stateStreamTick to AddressDisplay', () => {
+  it('passes addressDisplay to AddressDisplay', () => {
     render(<FrontPanel {...mockProps} />);
 
     const addressDisplay = container.querySelector('[data-testid="address-display"]');
     expect(addressDisplay?.getAttribute('data-value')).toBe('1234');
-    expect(addressDisplay?.getAttribute('data-tick')).toBe('42');
   });
 
   it('passes operatingState to OperatingStatus', () => {

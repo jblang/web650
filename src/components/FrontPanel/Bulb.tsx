@@ -2,8 +2,10 @@
 
 import React from 'react';
 import cn from 'classnames';
-import { litBulb, unlitBulb } from './FrontPanel';
 import styles from './Bulb.module.scss';
+
+const litBulb = '🟡';
+const unlitBulb = '⚫';
 
 interface BulbProps {
   lit: boolean;

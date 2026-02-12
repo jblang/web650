@@ -122,7 +122,6 @@ describe('useFrontPanelControls', () => {
       entryValue: expect.any(String),
       addressDisplay: expect.any(String),
       operation: expect.any(String),
-      stateStreamTick: expect.any(Number),
       operatingState: expect.any(Object),
       checkingState: expect.any(Object),
       programmed: expect.any(Number),

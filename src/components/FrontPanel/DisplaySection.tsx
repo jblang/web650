@@ -1,25 +1,34 @@
 import React from 'react';
 import BiQuinaryNumber from './BiQuinaryNumber';
 import SignDisplay from './SignDisplay';
-import { normalizeWord, extractSign } from '../../lib/simh/i650/format';
+import {
+  normalizeWord,
+  extractSign,
+  extractOperationCode,
+  extractDataAddress,
+  extractInstructionAddress,
+} from '../../lib/simh/i650/format';
 import styles from './DisplaySection.module.scss';
 
 interface DisplaySectionProps {
   value: string | number;
-  tick: number;
 }
 
-const DisplaySection: React.FC<DisplaySectionProps> = ({ value, tick }) => {
-  const normalizedValue = normalizeWord(value);
-  // Extract 10 digits and sign (sign is at end: 0000000000+)
-  const signChar = extractSign(normalizedValue);
-  const sign: '+' | '-' = signChar === '-' ? '-' : '+';
-  const digits = normalizedValue.substring(0, 10).split('').map(Number);
+const DisplaySection: React.FC<DisplaySectionProps> = ({ value }) => {
+  // Extract fields and sign (sign is at end: 0000000000+)
+  const sign = extractSign(value);
+  const opCode = extractOperationCode(value);
+  const dataAddress = extractDataAddress(value);
+  const instructionAddress = extractInstructionAddress(value);
 
   return (
     <>
       {/* Labels row */}
-      <div className={styles.labelBar} data-testid="display-section" data-display-value={normalizedValue}>
+      <div
+        className={styles.labelBar}
+        data-testid="display-section"
+        data-display-value={normalizeWord(value)}
+      >
         <div className={styles.labelDisplay}>DISPLAY</div>
         <div className={styles.labelSign}>SIGN</div>
       </div>
@@ -27,27 +36,27 @@ const DisplaySection: React.FC<DisplaySectionProps> = ({ value, tick }) => {
       {/* Digits row - digits render directly on parent grid */}
       <div className={styles.digitsRow}>
         <BiQuinaryNumber
-          value={digits.slice(0, 2)}
-          tick={tick}
+          value={opCode}
           digitCount={2}
           testIdPrefix="display"
-          className={styles.digitGroup1}
+          className={styles.opCodeGroup}
+          cellClassName={styles.digitCell}
         />
 
         <BiQuinaryNumber
-          value={digits.slice(2, 6)}
-          tick={tick}
+          value={dataAddress}
           digitCount={4}
           testIdPrefix="display"
-          className={styles.digitGroup2}
+          className={styles.dataAddressGroup}
+          cellClassName={styles.digitCell}
         />
 
         <BiQuinaryNumber
-          value={digits.slice(6, 10)}
-          tick={tick}
+          value={instructionAddress}
           digitCount={4}
           testIdPrefix="display"
-          className={styles.digitGroup3}
+          className={styles.instructionAddressGroup}
+          cellClassName={styles.digitCell}
         />
       </div>
 

@@ -17,8 +17,6 @@ import type {
   OverflowPosition,
 } from '@/lib/simh/i650/controls';
 
-export const litBulb = '🟡';
-export const unlitBulb = '⚫';
 
 export interface FrontPanelProps {
   // Values for displays and lights
@@ -26,7 +24,6 @@ export interface FrontPanelProps {
   entryValue: string;
   addressDisplay: string;
   operation: string;
-  stateStreamTick: number;
   operatingState: OperatingState;
   checkingState: CheckingState;
   programmed: ProgrammedPosition;
@@ -60,15 +57,15 @@ export interface FrontPanelProps {
 const FrontPanel: React.FC<FrontPanelProps> = (props) => {
   return (
     <div className={styles.container}>
-      <DisplaySection value={props.displayValue} tick={props.stateStreamTick} />
+      <DisplaySection value={props.displayValue} />
 
       <EntrySection
         value={props.entryValue}
         onChange={props.onEntryValueChange}
       />
 
-      <OperationDisplay value={props.operation} tick={props.stateStreamTick} />
-      <AddressDisplay value={props.addressDisplay} tick={props.stateStreamTick} />
+      <OperationDisplay value={props.operation} />
+      <AddressDisplay value={props.addressDisplay} />
       <OperatingStatus state={props.operatingState} />
       <CheckingStatus state={props.checkingState} />
 
