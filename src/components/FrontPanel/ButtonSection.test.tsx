@@ -1,8 +1,8 @@
 import React, { act } from 'react';
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { createRoot, Root } from 'react-dom/client';
-import ControlSection from './ControlSection';
-import controlStyles from './ControlSection.module.scss';
+import ButtonSection from './ButtonSection';
+import controlStyles from './ButtonSection.module.scss';
 
 let container: HTMLDivElement;
 let root: Root;
@@ -45,7 +45,7 @@ describe('FrontPanel controls', () => {
       onEmulatorResetClick: vi.fn(),
     };
 
-    render(<ControlSection {...handlers} />);
+    render(<ButtonSection {...handlers} />);
 
     const clickByLabel = (label: string) => {
       const btn = Array.from(container.querySelectorAll('button')).find((b) => b.textContent === label);
@@ -70,7 +70,7 @@ describe('FrontPanel controls', () => {
   });
 
   it('shows pressed state while holding a control button', () => {
-    render(<ControlSection />);
+    render(<ButtonSection />);
 
     const button = Array.from(container.querySelectorAll('button')).find((b) => b.textContent === 'TRANSFER');
     if (!button) throw new Error('button not found');
@@ -92,8 +92,8 @@ describe('FrontPanel controls', () => {
     expect(button.classList.contains(controlStyles.pressed)).toBe(false);
   });
 
-  it('ControlSection buttons have type="button"', () => {
-    render(<ControlSection />);
+  it('ButtonSection buttons have type="button"', () => {
+    render(<ButtonSection />);
     const buttons = container.querySelectorAll('button');
     buttons.forEach((btn) => {
       expect(btn.getAttribute('type')).toBe('button');

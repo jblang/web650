@@ -27,11 +27,11 @@ vi.mock('./AddressSelection', () => ({
   ),
 }));
 
-import ConfigSection from './ConfigSection';
+import ControlSection from './ControlSection';
 
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
 
-describe('ConfigSection', () => {
+describe('ControlSection', () => {
   let container: HTMLDivElement;
   let root: ReturnType<typeof createRoot>;
   const baseProps = {
@@ -67,7 +67,7 @@ describe('ConfigSection', () => {
     const onProgrammedChange = vi.fn();
     act(() => {
       root.render(
-        <ConfigSection
+        <ControlSection
           {...baseProps}
           onProgrammedChange={onProgrammedChange}
         />
@@ -84,7 +84,7 @@ describe('ConfigSection', () => {
     const onHalfCycleChange = vi.fn();
     act(() => {
       root.render(
-        <ConfigSection
+        <ControlSection
           {...baseProps}
           onHalfCycleChange={onHalfCycleChange}
         />
@@ -101,7 +101,7 @@ describe('ConfigSection', () => {
     const onAddressChange = vi.fn();
     act(() => {
       root.render(
-        <ConfigSection
+        <ControlSection
           {...baseProps}
           onAddressChange={onAddressChange}
         />
@@ -118,7 +118,7 @@ describe('ConfigSection', () => {
     const onControlChange = vi.fn();
     act(() => {
       root.render(
-        <ConfigSection
+        <ControlSection
           {...baseProps}
           onControlChange={onControlChange}
         />
@@ -135,7 +135,7 @@ describe('ConfigSection', () => {
     const onDisplayChange = vi.fn();
     act(() => {
       root.render(
-        <ConfigSection
+        <ControlSection
           {...baseProps}
           onDisplayChange={onDisplayChange}
         />
@@ -152,7 +152,7 @@ describe('ConfigSection', () => {
     const onOverflowChange = vi.fn();
     act(() => {
       root.render(
-        <ConfigSection
+        <ControlSection
           {...baseProps}
           onOverflowChange={onOverflowChange}
         />
@@ -169,7 +169,7 @@ describe('ConfigSection', () => {
     const onErrorChange = vi.fn();
     act(() => {
       root.render(
-        <ConfigSection
+        <ControlSection
           {...baseProps}
           onErrorChange={onErrorChange}
         />
@@ -186,7 +186,7 @@ describe('ConfigSection', () => {
     const onProgrammedChange = vi.fn();
     act(() => {
       root.render(
-        <ConfigSection
+        <ControlSection
           {...baseProps}
           onProgrammedChange={onProgrammedChange}
         />
@@ -203,7 +203,7 @@ describe('ConfigSection', () => {
     const onHalfCycleChange = vi.fn();
     act(() => {
       root.render(
-        <ConfigSection
+        <ControlSection
           {...baseProps}
           onHalfCycleChange={onHalfCycleChange}
         />
@@ -220,7 +220,7 @@ describe('ConfigSection', () => {
     const onControlChange = vi.fn();
     act(() => {
       root.render(
-        <ConfigSection
+        <ControlSection
           {...baseProps}
           onControlChange={onControlChange}
         />
@@ -237,7 +237,7 @@ describe('ConfigSection', () => {
     const onDisplayChange = vi.fn();
     act(() => {
       root.render(
-        <ConfigSection
+        <ControlSection
           {...baseProps}
           onDisplayChange={onDisplayChange}
         />
@@ -254,7 +254,7 @@ describe('ConfigSection', () => {
     const onOverflowChange = vi.fn();
     act(() => {
       root.render(
-        <ConfigSection
+        <ControlSection
           {...baseProps}
           onOverflowChange={onOverflowChange}
         />
@@ -271,7 +271,7 @@ describe('ConfigSection', () => {
     const onErrorChange = vi.fn();
     act(() => {
       root.render(
-        <ConfigSection
+        <ControlSection
           {...baseProps}
           onErrorChange={onErrorChange}
         />

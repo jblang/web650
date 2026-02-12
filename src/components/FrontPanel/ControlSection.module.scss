@@ -1,71 +1,50 @@
 @use 'common' as *;
 
-.buttonsRow {
+.finalKnobsRow {
   grid-column: 1 / 12;
-  display: flex;
-  justify-content: space-between;
-  padding: 2px 0;
-  background-color: transparent;
+  display: grid;
+  grid-template-columns: subgrid;
+  grid-template-rows: auto auto;
+  background-color: $panel-bg;
+  padding: 12px;
+  gap: 12px;
+  align-items: end;
 }
 
-.buttonGroup {
-  display: flex;
-  gap: 0;
-  background: linear-gradient(to bottom, #888888 0%, #b0b0b0 20%, #d0d0d0 40%, #eeeeee 50%, #d0d0d0 60%, #b0b0b0 80%, #888888 100%);
-  border-radius: 0;
-  padding: 4px;
-
-  &.red {
-    background: linear-gradient(to bottom, #888888 0%, #b0b0b0 20%, #d0d0d0 40%, #eeeeee 50%, #d0d0d0 60%, #b0b0b0 80%, #888888 100%);
-  }
-}
-
-.button {
-  width: 80px;
-  height: 64px;
-  background: linear-gradient(to bottom, #1a1a1a 0%, #2a2a2a 20%, #353535 40%, #404040 50%, #353535 60%, #2a2a2a 80%, #1a1a1a 100%);
-  border-top: none;
-  border-bottom: none;
-  border-left: 1px solid #1a1a1a;
-  border-right: 1px solid #3a3a3a;
-  border-radius: 0;
-  cursor: pointer;
+.knobLabel {
   @include section-heading-base('heading-compact-01');
   font-size: $font-size-control;
-  padding: 4px;
-  text-shadow: 0 1px 2px rgba(0,0,0,0.8);
 
-  &.red {
-    background: linear-gradient(to bottom, #aa2222 0%, #cc3333 20%, #dd4444 40%, #ee5555 50%, #dd4444 60%, #cc3333 80%, #aa2222 100%);
-    border-left: 1px solid #aa2222;
-    border-right: 1px solid #ff5555;
-    color: #ffffff;
+  &.programmed {
+    grid-column: 1 / 2;
   }
 
-  &:focus-visible {
-    outline: 2px solid #0f62fe;
-    outline-offset: -2px;
-    z-index: 1;
+  &.halfCycle {
+    grid-column: 2 / 3;
   }
 
-  &.pressed {
-    border-top: 2px solid #0a0a0a;
-    border-left: 2px solid #0a0a0a;
-    border-bottom: 1px solid #3a3a3a;
-    border-right: 1px solid #3a3a3a;
-    color: #c0c0c0;
-    padding: 6px 4px 2px 4px;
-    text-shadow: none;
-    box-shadow: inset 0 2px 4px rgba(0,0,0,0.6), inset 0 0 8px rgba(0,0,0,0.3);
-
-    &.red {
-      background: linear-gradient(to bottom, #aa2222 0%, #cc3333 20%, #dd4444 40%, #ee5555 50%, #dd4444 60%, #cc3333 80%, #aa2222 100%);
-      border-top: 2px solid #661111;
-      border-left: 2px solid #661111;
-      border-bottom: 1px solid #cc4444;
-      border-right: 1px solid #cc4444;
-      color: #f0d0d0;
-      box-shadow: inset 0 2px 4px rgba(0,0,0,0.5), inset 0 0 8px rgba(0,0,0,0.3);
-    }
+  &.addressSelection {
+    grid-column: 3 / 7;
+    letter-spacing: 0.6em;
   }
+
+  &.control {
+    grid-column: 7 / 8;
+  }
+
+  &.display {
+    grid-column: 8 / 10;
+  }
+
+  &.overflow {
+    grid-column: 10 / 11;
+  }
+
+  &.error {
+    grid-column: 11 / 12;
+  }
+}
+
+.displayKnob {
+  grid-column: span 2;
 }

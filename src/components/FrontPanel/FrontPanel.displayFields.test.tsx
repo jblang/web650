@@ -29,12 +29,12 @@ vi.mock('./CheckingStatus', () => ({
   default: () => <div data-testid="checking-status" />,
 }));
 
-vi.mock('./ConfigSection', () => ({
-  default: () => <div data-testid="config-section" />,
-}));
-
 vi.mock('./ControlSection', () => ({
   default: () => <div data-testid="control-section" />,
+}));
+
+vi.mock('./ButtonSection', () => ({
+  default: () => <div data-testid="button-section" />,
 }));
 
 vi.mock('./BiQuinaryNumber', () => ({

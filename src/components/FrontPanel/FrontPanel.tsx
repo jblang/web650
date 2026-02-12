@@ -5,8 +5,8 @@ import DisplaySection from './DisplaySection';
 import OperationDisplay from './OperationDisplay';
 import AddressDisplay from './AddressDisplay';
 import EntrySection from './EntrySection';
-import ConfigSection from './ConfigSection';
 import ControlSection from './ControlSection';
+import ButtonSection from './ButtonSection';
 import styles from './FrontPanel.module.scss';
 import type {
   DisplayPosition,
@@ -69,7 +69,7 @@ const FrontPanel: React.FC<FrontPanelProps> = (props) => {
       <OperatingStatus state={props.operatingState} />
       <CheckingStatus state={props.checkingState} />
 
-      <ConfigSection
+      <ControlSection
         programmed={props.programmed}
         halfCycle={props.halfCycle}
         addressSelection={props.addressSelection}
@@ -86,7 +86,7 @@ const FrontPanel: React.FC<FrontPanelProps> = (props) => {
         onErrorChange={props.onErrorChange}
       />
 
-      <ControlSection
+      <ButtonSection
         onTransferClick={props.onTransferClick}
         onProgramStartClick={props.onProgramStartClick}
         onProgramStopClick={props.onProgramStopClick}

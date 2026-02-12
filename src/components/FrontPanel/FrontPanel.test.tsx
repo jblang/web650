@@ -60,7 +60,7 @@ vi.mock('./CheckingStatus', () => ({
   ),
 }));
 
-vi.mock('./ConfigSection', () => ({
+vi.mock('./ControlSection', () => ({
   default: ({
     programmed,
     halfCycle,
@@ -93,7 +93,7 @@ vi.mock('./ConfigSection', () => ({
     onErrorChange: (value: number) => void | Promise<void>;
   }) => (
     <div
-      data-testid="config-section"
+      data-testid="control-section"
       data-programmed={programmed}
       data-half-cycle={halfCycle}
       data-address-selection={addressSelection}
@@ -109,12 +109,12 @@ vi.mock('./ConfigSection', () => ({
       data-on-overflow-change={typeof onOverflowChange}
       data-on-error-change={typeof onErrorChange}
     >
-      ConfigSection
+      ControlSection
     </div>
   ),
 }));
 
-vi.mock('./ControlSection', () => ({
+vi.mock('./ButtonSection', () => ({
   default: ({
     onTransferClick,
     onProgramStartClick,
@@ -133,7 +133,7 @@ vi.mock('./ControlSection', () => ({
     onEmulatorResetClick?: () => void | Promise<void>;
   }) => (
     <div
-      data-testid="control-section"
+      data-testid="button-section"
       data-on-transfer-click={typeof onTransferClick}
       data-on-program-start-click={typeof onProgramStartClick}
       data-on-program-stop-click={typeof onProgramStopClick}
@@ -142,7 +142,7 @@ vi.mock('./ControlSection', () => ({
       data-on-accum-reset-click={typeof onAccumResetClick}
       data-on-emulator-reset-click={typeof onEmulatorResetClick}
     >
-      ControlSection
+      ButtonSection
     </div>
   ),
 }));
@@ -224,8 +224,8 @@ describe('FrontPanel', () => {
     expect(container.querySelector('[data-testid="address-display"]')).not.toBeNull();
     expect(container.querySelector('[data-testid="operating-status"]')).not.toBeNull();
     expect(container.querySelector('[data-testid="checking-status"]')).not.toBeNull();
-    expect(container.querySelector('[data-testid="config-section"]')).not.toBeNull();
     expect(container.querySelector('[data-testid="control-section"]')).not.toBeNull();
+    expect(container.querySelector('[data-testid="button-section"]')).not.toBeNull();
   });
 
   it('passes displayValue to DisplaySection', () => {
@@ -275,43 +275,43 @@ describe('FrontPanel', () => {
     expect(state.controlUnit).toBe(false);
   });
 
-  it('passes all config values to ConfigSection', () => {
-    render(<FrontPanel {...mockProps} />);
-
-    const configSection = container.querySelector('[data-testid="config-section"]');
-    expect(configSection?.getAttribute('data-programmed')).toBe('1');
-    expect(configSection?.getAttribute('data-half-cycle')).toBe('1');
-    expect(configSection?.getAttribute('data-address-selection')).toBe('0000');
-    expect(configSection?.getAttribute('data-control')).toBe('1');
-    expect(configSection?.getAttribute('data-display')).toBe('0');
-    expect(configSection?.getAttribute('data-overflow')).toBe('0');
-    expect(configSection?.getAttribute('data-error')).toBe('0');
-  });
-
-  it('passes all config handlers to ConfigSection', () => {
-    render(<FrontPanel {...mockProps} />);
-
-    const configSection = container.querySelector('[data-testid="config-section"]');
-    expect(configSection?.getAttribute('data-on-programmed-change')).toBe('function');
-    expect(configSection?.getAttribute('data-on-half-cycle-change')).toBe('function');
-    expect(configSection?.getAttribute('data-on-address-change')).toBe('function');
-    expect(configSection?.getAttribute('data-on-control-change')).toBe('function');
-    expect(configSection?.getAttribute('data-on-display-change')).toBe('function');
-    expect(configSection?.getAttribute('data-on-overflow-change')).toBe('function');
-    expect(configSection?.getAttribute('data-on-error-change')).toBe('function');
-  });
-
-  it('passes all button handlers to ControlSection', () => {
+  it('passes all config values to ControlSection', () => {
     render(<FrontPanel {...mockProps} />);
 
     const controlSection = container.querySelector('[data-testid="control-section"]');
-    expect(controlSection?.getAttribute('data-on-transfer-click')).toBe('function');
-    expect(controlSection?.getAttribute('data-on-program-start-click')).toBe('function');
-    expect(controlSection?.getAttribute('data-on-program-stop-click')).toBe('function');
-    expect(controlSection?.getAttribute('data-on-program-reset-click')).toBe('function');
-    expect(controlSection?.getAttribute('data-on-computer-reset-click')).toBe('function');
-    expect(controlSection?.getAttribute('data-on-accum-reset-click')).toBe('function');
-    expect(controlSection?.getAttribute('data-on-emulator-reset-click')).toBe('function');
+    expect(controlSection?.getAttribute('data-programmed')).toBe('1');
+    expect(controlSection?.getAttribute('data-half-cycle')).toBe('1');
+    expect(controlSection?.getAttribute('data-address-selection')).toBe('0000');
+    expect(controlSection?.getAttribute('data-control')).toBe('1');
+    expect(controlSection?.getAttribute('data-display')).toBe('0');
+    expect(controlSection?.getAttribute('data-overflow')).toBe('0');
+    expect(controlSection?.getAttribute('data-error')).toBe('0');
+  });
+
+  it('passes all config handlers to ControlSection', () => {
+    render(<FrontPanel {...mockProps} />);
+
+    const controlSection = container.querySelector('[data-testid="control-section"]');
+    expect(controlSection?.getAttribute('data-on-programmed-change')).toBe('function');
+    expect(controlSection?.getAttribute('data-on-half-cycle-change')).toBe('function');
+    expect(controlSection?.getAttribute('data-on-address-change')).toBe('function');
+    expect(controlSection?.getAttribute('data-on-control-change')).toBe('function');
+    expect(controlSection?.getAttribute('data-on-display-change')).toBe('function');
+    expect(controlSection?.getAttribute('data-on-overflow-change')).toBe('function');
+    expect(controlSection?.getAttribute('data-on-error-change')).toBe('function');
+  });
+
+  it('passes all button handlers to ButtonSection', () => {
+    render(<FrontPanel {...mockProps} />);
+
+    const buttonSection = container.querySelector('[data-testid="button-section"]');
+    expect(buttonSection?.getAttribute('data-on-transfer-click')).toBe('function');
+    expect(buttonSection?.getAttribute('data-on-program-start-click')).toBe('function');
+    expect(buttonSection?.getAttribute('data-on-program-stop-click')).toBe('function');
+    expect(buttonSection?.getAttribute('data-on-program-reset-click')).toBe('function');
+    expect(buttonSection?.getAttribute('data-on-computer-reset-click')).toBe('function');
+    expect(buttonSection?.getAttribute('data-on-accum-reset-click')).toBe('function');
+    expect(buttonSection?.getAttribute('data-on-emulator-reset-click')).toBe('function');
   });
 
   it('handles optional control button handlers', () => {
@@ -328,8 +328,8 @@ describe('FrontPanel', () => {
 
     render(<FrontPanel {...propsWithoutButtons} />);
 
-    const controlSection = container.querySelector('[data-testid="control-section"]');
-    expect(controlSection?.getAttribute('data-on-transfer-click')).toBe('undefined');
+    const buttonSection = container.querySelector('[data-testid="button-section"]');
+    expect(buttonSection?.getAttribute('data-on-transfer-click')).toBe('undefined');
   });
 });
 
