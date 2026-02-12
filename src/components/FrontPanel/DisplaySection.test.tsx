@@ -2,39 +2,17 @@ import React, { act } from 'react';
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { createRoot, Root } from 'react-dom/client';
 import DisplaySection from './DisplaySection';
-import type { DisplayIntensity } from './useDisplayDecay';
 
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
 
 let container: HTMLDivElement;
 let root: Root;
 
-const mockDisplayIntensity: DisplayIntensity = {
-  digits: [
-    { left: 1, right: 0, rows: [1, 0, 0, 0, 0] },
-    { left: 1, right: 0, rows: [0, 1, 0, 0, 0] },
-    { left: 1, right: 0, rows: [0, 0, 1, 0, 0] },
-    { left: 1, right: 0, rows: [0, 0, 0, 1, 0] },
-    { left: 0, right: 1, rows: [0, 0, 0, 0, 1] },
-    { left: 0, right: 1, rows: [1, 0, 0, 0, 0] },
-    { left: 0, right: 1, rows: [0, 1, 0, 0, 0] },
-    { left: 0, right: 1, rows: [0, 0, 1, 0, 0] },
-    { left: 0, right: 1, rows: [0, 0, 0, 1, 0] },
-    { left: 1, right: 0, rows: [0, 0, 0, 0, 1] },
-  ],
-  sign: { plus: 1, minus: 0 },
-};
-
-const mockDisplayDecayMock = vi.hoisted(() => ({
-  useDisplayDecay: vi.fn(),
-}));
-
 const mockFormatMocks = vi.hoisted(() => ({
   normalizeWord: vi.fn(),
   extractSign: vi.fn(),
 }));
 
-vi.mock('./useDisplayDecay', () => mockDisplayDecayMock);
 vi.mock('@/lib/simh/i650/format', () => mockFormatMocks);
 
 // Mock child components to simplify testing
@@ -43,14 +21,12 @@ vi.mock('./BiQuinaryNumber', () => ({
     value,
     tick,
     digitCount,
-    intensity,
     testIdPrefix,
     className,
   }: {
     value: number[];
     tick: number;
     digitCount: number;
-    intensity: unknown;
     testIdPrefix: string;
     className?: string;
   }) => (
@@ -59,7 +35,6 @@ vi.mock('./BiQuinaryNumber', () => ({
       data-value={JSON.stringify(value)}
       data-tick={tick}
       data-digit-count={digitCount}
-      data-intensity={JSON.stringify(intensity)}
       className={className}
     >
       BiQuinary: {value.join(',')}
@@ -68,8 +43,8 @@ vi.mock('./BiQuinaryNumber', () => ({
 }));
 
 vi.mock('./SignDisplay', () => ({
-  default: ({ value, intensity }: { value: string; intensity: unknown }) => (
-    <div data-testid="sign-display" data-value={value} data-intensity={JSON.stringify(intensity)}>
+  default: ({ value }: { value: string }) => (
+    <div data-testid="sign-display" data-value={value}>
       Sign: {value}
     </div>
   ),
@@ -88,7 +63,6 @@ describe('DisplaySection', () => {
     root = createRoot(container);
     vi.clearAllMocks();
 
-    mockDisplayDecayMock.useDisplayDecay.mockReturnValue(mockDisplayIntensity);
     mockFormatMocks.normalizeWord.mockImplementation((value: string | number) => {
       if (typeof value === 'number') {
         return String(value).padStart(10, '0') + '+';
@@ -117,14 +91,6 @@ describe('DisplaySection', () => {
     expect(mockFormatMocks.normalizeWord).toHaveBeenCalledWith(123);
   });
 
-  it('calls useDisplayDecay with normalized value and tick', () => {
-    mockFormatMocks.normalizeWord.mockReturnValue('9876543210+');
-
-    render(<DisplaySection value="9876543210+" tick={5} />);
-
-    expect(mockDisplayDecayMock.useDisplayDecay).toHaveBeenCalledWith('9876543210+', 5);
-  });
-
   it('renders with data-display-value attribute', () => {
     mockFormatMocks.normalizeWord.mockReturnValue('1234567890+');
 
@@ -142,18 +108,6 @@ describe('DisplaySection', () => {
 
     const signDisplay = container.querySelector('[data-testid="sign-display"]');
     expect(signDisplay?.getAttribute('data-value')).toBe('-');
-  });
-
-  it('passes sign intensity to SignDisplay', () => {
-    mockFormatMocks.normalizeWord.mockReturnValue('1234567890+');
-    const customIntensity = { ...mockDisplayIntensity, sign: { plus: 0.5, minus: 0.1 } };
-    mockDisplayDecayMock.useDisplayDecay.mockReturnValue(customIntensity);
-
-    render(<DisplaySection value="1234567890+" tick={0} />);
-
-    const signDisplay = container.querySelector('[data-testid="sign-display"]');
-    const intensity = JSON.parse(signDisplay?.getAttribute('data-intensity') || '{}');
-    expect(intensity).toEqual({ plus: 0.5, minus: 0.1 });
   });
 
   it('slices digits 0-2 for first BiQuinaryNumber', () => {
@@ -190,26 +144,6 @@ describe('DisplaySection', () => {
     const value = JSON.parse(thirdGroup.getAttribute('data-value') || '[]');
     expect(value).toEqual([7, 8, 9, 0]);
     expect(thirdGroup.getAttribute('data-digit-count')).toBe('4');
-  });
-
-  it('passes correct intensity slices to BiQuinaryNumbers', () => {
-    mockFormatMocks.normalizeWord.mockReturnValue('1234567890+');
-
-    render(<DisplaySection value="1234567890+" tick={0} />);
-
-    const biquinaries = container.querySelectorAll('[data-testid="biquinary-display"]');
-
-    // First group: intensity[0:2]
-    const firstIntensity = JSON.parse(biquinaries[0].getAttribute('data-intensity') || '[]');
-    expect(firstIntensity).toEqual(mockDisplayIntensity.digits.slice(0, 2));
-
-    // Second group: intensity[2:6]
-    const secondIntensity = JSON.parse(biquinaries[1].getAttribute('data-intensity') || '[]');
-    expect(secondIntensity).toEqual(mockDisplayIntensity.digits.slice(2, 6));
-
-    // Third group: intensity[6:10]
-    const thirdIntensity = JSON.parse(biquinaries[2].getAttribute('data-intensity') || '[]');
-    expect(thirdIntensity).toEqual(mockDisplayIntensity.digits.slice(6, 10));
   });
 
   it('passes tick prop to all BiQuinaryNumbers', () => {

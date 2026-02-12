@@ -4,10 +4,9 @@ import styles from './BiQuinaryDigit.module.scss';
 
 interface BiQuinaryDigitProps {
   value: number; // A single digit from 0-9
-  intensity?: { left: number; right: number; rows: number[] };
 }
 
-const BiQuinaryDigit: React.FC<BiQuinaryDigitProps> = ({ value, intensity }) => {
+const BiQuinaryDigit: React.FC<BiQuinaryDigitProps> = ({ value }) => {
   const isLeftColumnActive = value >= 0 && value <= 4;
   const isRightColumnActive = value >= 5 && value <= 9;
   const activeRow = value % 5;
@@ -17,11 +16,11 @@ const BiQuinaryDigit: React.FC<BiQuinaryDigitProps> = ({ value, intensity }) => 
     <div className={styles.container} role="img" aria-label={`Digit: ${value}`}>
       {/* Bi (0-4 vs 5-9) indicator row */}
       <div className={styles.bulb}>
-        <Bulb lit={isLeftColumnActive} intensity={intensity?.left} />
+        <Bulb lit={isLeftColumnActive} />
       </div>
       <div></div>
       <div className={styles.bulb}>
-        <Bulb lit={isRightColumnActive} intensity={intensity?.right} />
+        <Bulb lit={isRightColumnActive} />
       </div>
 
       {/* Quinary (0-4) rows */}
@@ -29,7 +28,7 @@ const BiQuinaryDigit: React.FC<BiQuinaryDigitProps> = ({ value, intensity }) => 
         <React.Fragment key={rowIndex}>
           <div className={styles.number}>{rowIndex}</div>
           <div className={styles.bulb}>
-            <Bulb lit={activeRow === rowIndex} intensity={intensity?.rows[rowIndex]} />
+            <Bulb lit={activeRow === rowIndex} />
           </div>
           <div className={styles.number}>{rowIndex + 5}</div>
         </React.Fragment>

@@ -55,18 +55,6 @@ describe('Bulb', () => {
     const bulb = container.querySelector('[role="img"]');
     expect(bulb?.getAttribute('aria-label')).toBe('PROGRAM: unlit');
   });
-
-  it('uses intensity to determine state text', () => {
-    render(<Bulb lit={false} intensity={0.5} label="TEST" />);
-    const bulb = container.querySelector('[role="img"]');
-    expect(bulb?.getAttribute('aria-label')).toBe('TEST: lit');
-  });
-
-  it('treats zero intensity as unlit', () => {
-    render(<Bulb lit={true} intensity={0} label="TEST" />);
-    const bulb = container.querySelector('[role="img"]');
-    expect(bulb?.getAttribute('aria-label')).toBe('TEST: unlit');
-  });
 });
 
 /* @vitest-environment jsdom */

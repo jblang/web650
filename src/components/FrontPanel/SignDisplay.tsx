@@ -5,12 +5,9 @@ import cn from 'classnames';
 
 interface SignDisplayProps {
   value: '+' | '-';
-  intensity?: { plus: number; minus: number };
 }
 
-const SignDisplay: React.FC<SignDisplayProps> = ({ value, intensity }) => {
-  const plus = intensity?.plus;
-  const minus = intensity?.minus;
+const SignDisplay: React.FC<SignDisplayProps> = ({ value }) => {
   const rows = [0, 1, 2, 3, 4];
 
   return (
@@ -30,7 +27,6 @@ const SignDisplay: React.FC<SignDisplayProps> = ({ value, intensity }) => {
             <div className={cn(styles.bulb, { [styles.hidden]: !showRow })}>
               <Bulb
                 lit={isPlus ? value === '+' : isMinus ? value === '-' : false}
-                intensity={isPlus ? plus : isMinus ? minus : undefined}
               />
             </div>
             <div className={cn(styles.sign, { [styles.hidden]: !showRow })}>
