@@ -1,14 +1,13 @@
-import React, { useId } from 'react';
+import React from 'react';
 
 interface KnobProps {
   rotation: number;
+  size?: number;
 }
 
-export const Knob: React.FC<KnobProps> = ({ rotation }) => {
-  const id = useId();
-
+export const Knob: React.FC<KnobProps> = ({ rotation, size = 48 }) => {
   return (
-    <svg width="48" height="48" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
+    <svg width={size} height={size} viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
       <defs />
 
       <circle cx="24" cy="24" r="21" fill="#0f0f0f" />

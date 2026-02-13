@@ -46,5 +46,6 @@
 }
 
 .displayKnob {
-  grid-column: span 2;
+  grid-column: 8 / 10;
+  justify-self: center;
 }

@@ -93,8 +93,8 @@ const ControlSection: React.FC<ControlSectionProps> = ({
       <LabeledKnob position={programmed} positions={STOP_RUN_POS} onChange={handleProgrammedChange} testId="programmed-knob" label="Programmed" />
       <LabeledKnob position={halfCycle} positions={HALF_RUN_POS} onChange={handleHalfCycleChange} testId="half-cycle-knob" label="Half cycle" />
       <AddressSelection value={addressSelection} onChange={onAddressChange} />
-      <LabeledKnob position={control} positions={CONTROL_POS} onChange={handleControlChange} labelRadius={48} testId="control-knob" label="Control" />
-      <LabeledKnob position={display} positions={DISPLAY_POS} onChange={handleDisplayChange} className={styles.displayKnob} labelRadius={56} testId="display-knob" label="Display" />
+      <LabeledKnob position={control} positions={CONTROL_POS} onChange={handleControlChange} matchTwoPositionWidth testId="control-knob" label="Control" />
+      <LabeledKnob position={display} positions={DISPLAY_POS} onChange={handleDisplayChange} className={styles.displayKnob} testId="display-knob" label="Display" />
       <LabeledKnob position={overflow} positions={OVERFLOW_POS} onChange={handleOverflowChange} testId="overflow-knob" label="Overflow" />
       <LabeledKnob position={error} positions={ERROR_POS} onChange={handleErrorChange} testId="error-knob" label="Error" />
       <div className={cn(styles.knobLabel, styles.programmed)}>PROGRAMMED</div>

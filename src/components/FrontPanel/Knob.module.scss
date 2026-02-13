@@ -5,6 +5,7 @@
   display: inline-flex;
   flex-direction: column;
   align-items: center;
+  justify-self: center;
   gap: 4px;
   min-width: $knob-min-width;
 
@@ -37,7 +38,6 @@
 
 /* DecimalKnob specific styles */
 .decimalKnobContainer {
-  height: 74.8px;
   justify-content: flex-end;
   min-width: $knob-min-width;
 }
@@ -49,7 +49,6 @@
 .decimalKnobWrapper {
   width: 48px;
   height: 48px;
-  transform: scale(1.1);
 }
 
 .decimalDisplay {
@@ -130,7 +129,7 @@
   height: 48px;
   bottom: 0;
   left: 50%;
-  transform: translateX(calc(-50% - 4px)) scale(1.1);
+  transform: translateX(calc(-50% - 4px));
 }
 
 .labeledKnobTickmark {

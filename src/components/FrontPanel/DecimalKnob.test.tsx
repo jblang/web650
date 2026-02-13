@@ -243,6 +243,19 @@ describe('DecimalKnob', () => {
       Element.prototype.getBoundingClientRect = originalGetBounding;
     }
   });
+
+  it('scales wrapper dimensions when scaleFactor is provided', () => {
+    render(<DecimalKnob value={3} onChange={() => {}} scaleFactor={2} />);
+    const wrapper = container.querySelector('[class*="decimalKnobWrapper"]');
+    expect(wrapper?.getAttribute('style')).toContain('width: 96px');
+    expect(wrapper?.getAttribute('style')).toContain('height: 96px');
+  });
+
+  it('uses default scale when scaleFactor is invalid', () => {
+    render(<DecimalKnob value={3} onChange={() => {}} scaleFactor={0} />);
+    const knob = container.querySelector('[role="spinbutton"]');
+    expect(knob?.getAttribute('style')).toContain('height: 102px');
+  });
 });
 
 /* @vitest-environment jsdom */

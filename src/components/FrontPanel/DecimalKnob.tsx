@@ -7,10 +7,15 @@ interface DecimalKnobProps {
   style?: React.CSSProperties;
   value: number; // 0-9
   onChange?: (value: number) => void;
+  scaleFactor?: number;
   testId?: string;
 }
 
-const DecimalKnob: React.FC<DecimalKnobProps> = ({ value, onChange, style, testId }) => {
+const DEFAULT_SCALE = 1.5;
+const BASE_KNOB_SIZE = 48;
+const BASE_CONTAINER_HEIGHT = 68;
+
+const DecimalKnob: React.FC<DecimalKnobProps> = ({ value, onChange, style, scaleFactor = DEFAULT_SCALE, testId }) => {
   const [showPopup, setShowPopup] = useState(false);
   const [popupOffset, setPopupOffset] = useState(0);
   const wrapperRef = useRef<HTMLDivElement>(null);
@@ -19,6 +24,9 @@ const DecimalKnob: React.FC<DecimalKnobProps> = ({ value, onChange, style, testI
   // Each digit is 36 degrees apart (360 / 10)
   // Position 0 is at top, rotating clockwise
   const rotation = value * 36;
+  const scale = scaleFactor > 0 ? scaleFactor : DEFAULT_SCALE;
+  const scaledKnobSize = BASE_KNOB_SIZE * scale;
+  const scaledContainerHeight = BASE_CONTAINER_HEIGHT * scale;
 
   const handleLeftClick = () => {
     onChange?.((value + 9) % 10);
@@ -92,7 +100,7 @@ const DecimalKnob: React.FC<DecimalKnobProps> = ({ value, onChange, style, testI
   return (
     <div
       className={cn(styles.knobContainer, styles.decimalKnobContainer)}
-      style={style}
+      style={{ height: `${scaledContainerHeight}px`, ...style }}
       data-testid={testId}
       role="spinbutton"
       aria-valuenow={value}
@@ -124,8 +132,11 @@ const DecimalKnob: React.FC<DecimalKnobProps> = ({ value, onChange, style, testI
           </div>
         )}
       </div>
-      <div className={cn(styles.knobWrapper, styles.decimalKnobWrapper)}>
-        <Knob rotation={rotation} />
+      <div
+        className={cn(styles.knobWrapper, styles.decimalKnobWrapper)}
+        style={{ width: `${scaledKnobSize}px`, height: `${scaledKnobSize}px` }}
+      >
+        <Knob rotation={rotation} size={scaledKnobSize} />
         <div
           className={cn(styles.knobHalf, styles.knobHalfLeft, styles.decimalDecCursor)}
           onClick={handleLeftClick}

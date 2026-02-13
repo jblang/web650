@@ -14,11 +14,80 @@ interface LabeledKnobProps {
   onChange?: (position: number) => void;
   className?: string;
   labelRadius?: number;
+  matchTwoPositionWidth?: boolean;
+  scaleFactor?: number;
   testId?: string;
   label?: string;
 }
 
-const LabeledKnob: React.FC<LabeledKnobProps> = ({ position, positions, onChange, className, labelRadius, testId, label }) => {
+const LAYOUT = {
+  defaultScale: 1.5,
+  baseContainerWidth: 82.34,
+  baseContainerHeight: 68,
+  baseKnobSize: 48,
+  baseLabelRadius: 40,
+  baseLabelMinWidth: 20,
+  baseLabelMaxWidth: 60,
+  baseLabelCharWidth: 7,
+  baseContainerHorizontalPadding: 6,
+  contentAwareWidthMinPositions: 4,
+  labelRadiusMultiplier: {
+    two: 1.05,
+    three: 1.08,
+    many: 1.2,
+  },
+  twoPositionLabel: {
+    verticalGapFromKnob: 4,
+    decimalDisplayHeight: 22,
+    yNudge: 0,
+  },
+  tick: {
+    baseRadius: 29,
+    radiusScale: 0.85,
+    sizeScale: 0.75,
+    baseWidth: 2,
+    baseHeight: 6,
+  },
+  knobCenter: {
+    xOffset: 0,
+    yOffsetAtDefaultScale: 0,
+  },
+} as const;
+
+const estimateLabelWidth = (label: string): number => {
+  const estimatedWidth = label.length * LAYOUT.baseLabelCharWidth;
+  return Math.min(LAYOUT.baseLabelMaxWidth, Math.max(LAYOUT.baseLabelMinWidth, estimatedWidth));
+};
+
+const getAutoLabelRadiusMultiplier = (positionCount: number): number => {
+  if (positionCount <= 2) return LAYOUT.labelRadiusMultiplier.two;
+  if (positionCount === 3) return LAYOUT.labelRadiusMultiplier.three;
+  return LAYOUT.labelRadiusMultiplier.many;
+};
+
+const getTwoPositionReferenceWidth = (scale: number): number => {
+  const scaledKnobSize = LAYOUT.baseKnobSize * scale;
+  const referenceRadius = LAYOUT.baseLabelRadius * LAYOUT.labelRadiusMultiplier.two * scale;
+  const referenceCosMagnitude = 0.5; // abs(cos((±30 - 90)deg))
+  const referenceLabelHalfWidth = estimateLabelWidth('STOP') / 2;
+  const extent = Math.max(
+    scaledKnobSize / 2,
+    (referenceRadius * referenceCosMagnitude) + referenceLabelHalfWidth,
+  );
+  return (extent * 2) + (LAYOUT.baseContainerHorizontalPadding * 2);
+};
+
+const LabeledKnob: React.FC<LabeledKnobProps> = ({
+  position,
+  positions,
+  onChange,
+  className,
+  labelRadius,
+  matchTwoPositionWidth = false,
+  scaleFactor = LAYOUT.defaultScale,
+  testId,
+  label,
+}) => {
   const rotation = positions[position]?.angle ?? 0;
 
   const handleLeftClick = () => {
@@ -52,20 +121,48 @@ const LabeledKnob: React.FC<LabeledKnobProps> = ({ position, positions, onChange
     }
   };
 
-  const scale = 1.1;
-  const baseKnobContainerWidth = 82.34;
-  const baseKnobContainerHeight = 68;
-  const baseTickOffset = 2;
-
-  const scaledContainerWidth = baseKnobContainerWidth * scale;
-  const scaledContainerHeight = baseKnobContainerHeight * scale;
-  const baseKnobHeight = 48; // Base height of the knob SVG
-  const scaledKnobHeight = baseKnobHeight * scale; // Scaled height of the knob SVG
-
-  const currentRadius = (labelRadius ?? 40) * scale;
-  const tickRadius = 29 * scale;
-  const centerX = scaledContainerWidth / 2;
-  const knobCenterY = scaledContainerHeight - (scaledKnobHeight / 2) + 5;
+  const scale = scaleFactor > 0 ? scaleFactor : LAYOUT.defaultScale;
+  const scaledKnobSize = LAYOUT.baseKnobSize * scale;
+  const hasExplicitLabelRadius = labelRadius !== undefined;
+  const autoLabelRadiusMultiplier = hasExplicitLabelRadius ? 1 : getAutoLabelRadiusMultiplier(positions.length);
+  const currentRadius = (labelRadius ?? LAYOUT.baseLabelRadius) * autoLabelRadiusMultiplier * scale;
+  const useTwoPositionAlignedCenterline = !hasExplicitLabelRadius && positions.length <= 2;
+  const tickRadius = LAYOUT.tick.baseRadius * LAYOUT.tick.radiusScale * scale;
+  const tickWidth = LAYOUT.tick.baseWidth * scale * LAYOUT.tick.sizeScale;
+  const positionGeometry = positions.map((p) => {
+    const angleRad = (p.angle - 90) * (Math.PI / 180);
+    return {
+      ...p,
+      angleRad,
+      cos: Math.cos(angleRad),
+      sin: Math.sin(angleRad),
+    };
+  });
+  const maxHorizontalExtent = Math.max(
+    scaledKnobSize / 2,
+    ...positionGeometry.map((p) => Math.abs((currentRadius * p.cos)) + (estimateLabelWidth(p.label) / 2)),
+    ...positionGeometry.map((p) => Math.abs((tickRadius * p.cos)) + (tickWidth / 2)),
+  );
+  const baseContainerWidth = LAYOUT.baseContainerWidth * scale;
+  const contentAwareContainerWidth = (maxHorizontalExtent * 2) + (LAYOUT.baseContainerHorizontalPadding * 2);
+  const twoPositionReferenceWidth = getTwoPositionReferenceWidth(scale);
+  const scaledContainerWidth = matchTwoPositionWidth
+    ? twoPositionReferenceWidth
+    : positions.length >= LAYOUT.contentAwareWidthMinPositions
+    ? Math.max(baseContainerWidth, contentAwareContainerWidth)
+    : positions.length <= 2
+      ? Math.min(baseContainerWidth, contentAwareContainerWidth)
+      : baseContainerWidth;
+  const scaledContainerHeight = LAYOUT.baseContainerHeight * scale;
+  const twoPositionLabelCenterY = scaledContainerHeight
+    - scaledKnobSize
+    - LAYOUT.twoPositionLabel.verticalGapFromKnob
+    - (LAYOUT.twoPositionLabel.decimalDisplayHeight / 2)
+    + (LAYOUT.twoPositionLabel.yNudge * (scale / LAYOUT.defaultScale));
+  const knobTranslateX = LAYOUT.knobCenter.xOffset * scale;
+  const knobCenterX = (scaledContainerWidth / 2) + knobTranslateX;
+  const knobCenterY = scaledContainerHeight - (scaledKnobSize / 2)
+    + ((LAYOUT.knobCenter.yOffsetAtDefaultScale / LAYOUT.defaultScale) * scale);
   const showTickmarks = positions.length > 2;
 
   return (
@@ -82,12 +179,19 @@ const LabeledKnob: React.FC<LabeledKnobProps> = ({ position, positions, onChange
       aria-label={label ?? testId ?? 'Selector'}
       tabIndex={0}
       onKeyDown={handleKeyDown}
+      style={{ width: `${scaledContainerWidth}px`, minWidth: `${scaledContainerWidth}px`, height: `${scaledContainerHeight}px` }}
     >
-      <div className={styles.labeledKnobInnerContainer} style={{ width: `${scaledContainerWidth}px`, height: `${scaledContainerHeight}px` }}>
-        {positions.map((p, i) => {
-          const angleRad = (p.angle - 90) * (Math.PI / 180);
-          const x = Math.round(centerX + currentRadius * Math.cos(angleRad));
-          const y = Math.round(knobCenterY + currentRadius * Math.sin(angleRad));
+      <div
+        className={styles.labeledKnobInnerContainer}
+        style={{ width: `${scaledContainerWidth}px`, minWidth: `${scaledContainerWidth}px`, height: `${scaledContainerHeight}px` }}
+      >
+        {positionGeometry.map((p, i) => {
+          const x = Math.round(knobCenterX + currentRadius * p.cos);
+          const y = Math.round(
+            useTwoPositionAlignedCenterline
+              ? twoPositionLabelCenterY
+              : knobCenterY + currentRadius * p.sin,
+          );
 
           return (
             <span
@@ -100,10 +204,9 @@ const LabeledKnob: React.FC<LabeledKnobProps> = ({ position, positions, onChange
             </span>
           );
         })}
-        {showTickmarks && positions.map((p, i) => {
-          const angleRad = (p.angle - 90) * (Math.PI / 180);
-          const x = centerX + tickRadius * Math.cos(angleRad);
-          const y = knobCenterY + tickRadius * Math.sin(angleRad) - (baseTickOffset * scale);
+        {showTickmarks && positionGeometry.map((p, i) => {
+          const x = knobCenterX + tickRadius * p.cos;
+          const y = knobCenterY + tickRadius * p.sin;
 
           return (
             <div
@@ -112,13 +215,23 @@ const LabeledKnob: React.FC<LabeledKnobProps> = ({ position, positions, onChange
               style={{
                 top: `${y.toFixed(2)}px`,
                 left: `${x.toFixed(2)}px`,
+                width: `${tickWidth}px`,
+                height: `${LAYOUT.tick.baseHeight * scale * LAYOUT.tick.sizeScale}px`,
+                borderRadius: `${scale * LAYOUT.tick.sizeScale}px`,
                 transform: `translate(-50%, -50%) rotate(${p.angle}deg)`,
               }}
             />
           );
         })}
-        <div className={cn(styles.knobWrapper, styles.labeledKnobWrapper)}>
-          <Knob rotation={rotation} />
+        <div
+          className={cn(styles.knobWrapper, styles.labeledKnobWrapper)}
+          style={{
+            width: `${scaledKnobSize}px`,
+            height: `${scaledKnobSize}px`,
+            transform: `translateX(calc(-50% + ${knobTranslateX.toFixed(2)}px))`,
+          }}
+        >
+          <Knob rotation={rotation} size={scaledKnobSize} />
           <div
             className={cn(styles.knobHalf, styles.knobHalfLeft, styles.labeledCcwCursor)}
             onClick={handleLeftClick}

@@ -43,6 +43,11 @@ const sixPositions = [
   { label: 'POS6', angle: 90 },
 ];
 
+const getPixelStyleValue = (style: string | null, name: string): number => {
+  const value = style?.match(new RegExp(`${name}:\\s*([-\\d.]+)px`))?.[1];
+  return value ? Number.parseFloat(value) : Number.NaN;
+};
+
 describe('LabeledKnob', () => {
   beforeEach(() => {
     container = document.createElement('div');
@@ -359,6 +364,55 @@ describe('LabeledKnob', () => {
 
     const knob = container.querySelector('[data-testid="knob"]');
     expect(knob?.getAttribute('data-rotation')).toBe('0');
+  });
+
+  it('scales container dimensions when scaleFactor is provided', () => {
+    render(<LabeledKnob position={0} positions={twoPositions} scaleFactor={2} />);
+
+    const innerContainer = container.querySelector('[class*="labeledKnobInnerContainer"]');
+    const style = innerContainer?.getAttribute('style') ?? '';
+    const width = getPixelStyleValue(style, 'width');
+    const height = getPixelStyleValue(style, 'height');
+    expect(width).toBeCloseTo(124, 3);
+    expect(height).toBeCloseTo(136, 3);
+  });
+
+  it('scales knob wrapper transform when scaleFactor is provided', () => {
+    render(<LabeledKnob position={0} positions={twoPositions} scaleFactor={2} />);
+
+    const wrapper = container.querySelector('[class*="labeledKnobWrapper"]');
+    expect(wrapper?.getAttribute('style')).toContain('width: 96px');
+    expect(wrapper?.getAttribute('style')).toContain('height: 96px');
+    expect(wrapper?.getAttribute('style')).toContain('translateX(calc(-50% + 0.00px))');
+  });
+
+  it('repositions labels proportionally as scaleFactor changes', () => {
+    const singlePosition = [{ label: 'TOP', angle: 0 }];
+    render(<LabeledKnob position={0} positions={singlePosition} scaleFactor={1} />);
+    const baseStyle = container.querySelector('span')?.getAttribute('style') ?? '';
+    const baseLeft = getPixelStyleValue(baseStyle, 'left');
+    const baseTop = getPixelStyleValue(baseStyle, 'top');
+
+    render(<LabeledKnob position={0} positions={singlePosition} scaleFactor={2} />);
+    const scaledStyle = container.querySelector('span')?.getAttribute('style') ?? '';
+    const scaledLeft = getPixelStyleValue(scaledStyle, 'left');
+    const scaledTop = getPixelStyleValue(scaledStyle, 'top');
+
+    expect(baseLeft).toBeGreaterThan(0);
+    expect(Number.isFinite(baseTop)).toBe(true);
+    expect(scaledLeft / baseLeft).toBeGreaterThan(1.5);
+    expect(Math.abs(scaledTop)).toBeGreaterThanOrEqual(Math.abs(baseTop));
+  });
+
+  it('falls back to default scale when scaleFactor is invalid', () => {
+    render(<LabeledKnob position={0} positions={twoPositions} scaleFactor={0} />);
+
+    const innerContainer = container.querySelector('[class*="labeledKnobInnerContainer"]');
+    const style = innerContainer?.getAttribute('style') ?? '';
+    const width = getPixelStyleValue(style, 'width');
+    const height = getPixelStyleValue(style, 'height');
+    expect(width).toBeCloseTo(103, 3);
+    expect(height).toBeCloseTo(102, 3);
   });
 });
 
