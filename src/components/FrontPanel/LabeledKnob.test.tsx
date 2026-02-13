@@ -276,6 +276,22 @@ describe('LabeledKnob', () => {
     expect(tickmarks[2].getAttribute('style')).toContain('rotate(45deg)');
   });
 
+  it('matches tickmark width and length to groove dimensions at different scales', () => {
+    render(<LabeledKnob position={0} positions={threePositions} scaleFactor={1} />);
+
+    let tickmarks = container.querySelectorAll('[class*="labeledKnobTickmark"]');
+    let style = tickmarks[0]?.getAttribute('style') ?? '';
+    expect(getPixelStyleValue(style, 'width')).toBeCloseTo(1.47, 3);
+    expect(getPixelStyleValue(style, 'height')).toBeCloseTo(5.5, 3);
+
+    render(<LabeledKnob position={0} positions={threePositions} scaleFactor={2} />);
+
+    tickmarks = container.querySelectorAll('[class*="labeledKnobTickmark"]');
+    style = tickmarks[0]?.getAttribute('style') ?? '';
+    expect(getPixelStyleValue(style, 'width')).toBeCloseTo(2.94, 3);
+    expect(getPixelStyleValue(style, 'height')).toBeCloseTo(11, 3);
+  });
+
   it('sets accessibility role to slider', () => {
     render(<LabeledKnob position={0} positions={twoPositions} />);
 

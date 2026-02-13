@@ -45,8 +45,11 @@ const LAYOUT = {
     baseRadius: 29,
     radiusScale: 0.85,
     sizeScale: 0.75,
-    baseWidth: 2,
-    baseHeight: 6,
+  },
+  gripGroove: {
+    baseWidth: 1.47,
+    baseHeight: 5.5,
+    viewBoxSize: 48,
   },
   knobCenter: {
     xOffset: 0,
@@ -123,12 +126,17 @@ const LabeledKnob: React.FC<LabeledKnobProps> = ({
 
   const scale = scaleFactor > 0 ? scaleFactor : LAYOUT.defaultScale;
   const scaledKnobSize = LAYOUT.baseKnobSize * scale;
+  const showTickmarks = positions.length > 2;
   const hasExplicitLabelRadius = labelRadius !== undefined;
   const autoLabelRadiusMultiplier = hasExplicitLabelRadius ? 1 : getAutoLabelRadiusMultiplier(positions.length);
   const currentRadius = (labelRadius ?? LAYOUT.baseLabelRadius) * autoLabelRadiusMultiplier * scale;
   const useTwoPositionAlignedCenterline = !hasExplicitLabelRadius && positions.length <= 2;
   const tickRadius = LAYOUT.tick.baseRadius * LAYOUT.tick.radiusScale * scale;
-  const tickWidth = LAYOUT.tick.baseWidth * scale * LAYOUT.tick.sizeScale;
+  const tickWidth = scaledKnobSize * (LAYOUT.gripGroove.baseWidth / LAYOUT.gripGroove.viewBoxSize);
+  const tickHeight = scaledKnobSize * (LAYOUT.gripGroove.baseHeight / LAYOUT.gripGroove.viewBoxSize);
+  const effectiveLabelRadius = showTickmarks
+    ? Math.max(0, currentRadius - (tickHeight / 2))
+    : currentRadius;
   const positionGeometry = positions.map((p) => {
     const angleRad = (p.angle - 90) * (Math.PI / 180);
     return {
@@ -140,7 +148,7 @@ const LabeledKnob: React.FC<LabeledKnobProps> = ({
   });
   const maxHorizontalExtent = Math.max(
     scaledKnobSize / 2,
-    ...positionGeometry.map((p) => Math.abs((currentRadius * p.cos)) + (estimateLabelWidth(p.label) / 2)),
+    ...positionGeometry.map((p) => Math.abs((effectiveLabelRadius * p.cos)) + (estimateLabelWidth(p.label) / 2)),
     ...positionGeometry.map((p) => Math.abs((tickRadius * p.cos)) + (tickWidth / 2)),
   );
   const baseContainerWidth = LAYOUT.baseContainerWidth * scale;
@@ -163,7 +171,6 @@ const LabeledKnob: React.FC<LabeledKnobProps> = ({
   const knobCenterX = (scaledContainerWidth / 2) + knobTranslateX;
   const knobCenterY = scaledContainerHeight - (scaledKnobSize / 2)
     + ((LAYOUT.knobCenter.yOffsetAtDefaultScale / LAYOUT.defaultScale) * scale);
-  const showTickmarks = positions.length > 2;
 
   return (
     <div
@@ -186,11 +193,11 @@ const LabeledKnob: React.FC<LabeledKnobProps> = ({
         style={{ width: `${scaledContainerWidth}px`, minWidth: `${scaledContainerWidth}px`, height: `${scaledContainerHeight}px` }}
       >
         {positionGeometry.map((p, i) => {
-          const x = Math.round(knobCenterX + currentRadius * p.cos);
+          const x = Math.round(knobCenterX + effectiveLabelRadius * p.cos);
           const y = Math.round(
             useTwoPositionAlignedCenterline
               ? twoPositionLabelCenterY
-              : knobCenterY + currentRadius * p.sin,
+              : knobCenterY + effectiveLabelRadius * p.sin,
           );
 
           return (
@@ -216,7 +223,7 @@ const LabeledKnob: React.FC<LabeledKnobProps> = ({
                 top: `${y.toFixed(2)}px`,
                 left: `${x.toFixed(2)}px`,
                 width: `${tickWidth}px`,
-                height: `${LAYOUT.tick.baseHeight * scale * LAYOUT.tick.sizeScale}px`,
+                height: `${tickHeight}px`,
                 borderRadius: `${scale * LAYOUT.tick.sizeScale}px`,
                 transform: `translate(-50%, -50%) rotate(${p.angle}deg)`,
               }}
