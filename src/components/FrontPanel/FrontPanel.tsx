@@ -56,45 +56,49 @@ export interface FrontPanelProps {
 
 const FrontPanel: React.FC<FrontPanelProps> = (props) => {
   return (
-    <div className={styles.container}>
-      <DisplaySection value={props.displayValue} />
+    <div className={styles.scrollContainer}>
+      <div className={styles.contentWidth}>
+        <div className={styles.container}>
+          <DisplaySection value={props.displayValue} />
 
-      <EntrySection
-        value={props.entryValue}
-        onChange={props.onEntryValueChange}
-      />
+          <EntrySection
+            value={props.entryValue}
+            onChange={props.onEntryValueChange}
+          />
 
-      <OperationDisplay value={props.operation} />
-      <AddressDisplay value={props.addressDisplay} />
-      <OperatingStatus state={props.operatingState} />
-      <CheckingStatus state={props.checkingState} />
+          <OperationDisplay value={props.operation} />
+          <AddressDisplay value={props.addressDisplay} />
+          <OperatingStatus state={props.operatingState} />
+          <CheckingStatus state={props.checkingState} />
 
-      <ControlSection
-        programmed={props.programmed}
-        halfCycle={props.halfCycle}
-        addressSelection={props.addressSelection}
-        control={props.control}
-        display={props.display}
-        overflow={props.overflow}
-        error={props.error}
-        onProgrammedChange={props.onProgrammedChange}
-        onHalfCycleChange={props.onHalfCycleChange}
-        onAddressChange={props.onAddressChange}
-        onControlChange={props.onControlChange}
-        onDisplayChange={props.onDisplayChange}
-        onOverflowChange={props.onOverflowChange}
-        onErrorChange={props.onErrorChange}
-      />
+          <ControlSection
+            programmed={props.programmed}
+            halfCycle={props.halfCycle}
+            addressSelection={props.addressSelection}
+            control={props.control}
+            display={props.display}
+            overflow={props.overflow}
+            error={props.error}
+            onProgrammedChange={props.onProgrammedChange}
+            onHalfCycleChange={props.onHalfCycleChange}
+            onAddressChange={props.onAddressChange}
+            onControlChange={props.onControlChange}
+            onDisplayChange={props.onDisplayChange}
+            onOverflowChange={props.onOverflowChange}
+            onErrorChange={props.onErrorChange}
+          />
 
-      <ButtonSection
-        onTransferClick={props.onTransferClick}
-        onProgramStartClick={props.onProgramStartClick}
-        onProgramStopClick={props.onProgramStopClick}
-        onProgramResetClick={props.onProgramResetClick}
-        onComputerResetClick={props.onComputerResetClick}
-        onAccumResetClick={props.onAccumResetClick}
-        onEmulatorResetClick={props.onEmulatorResetClick}
-      />
+          <ButtonSection
+            onTransferClick={props.onTransferClick}
+            onProgramStartClick={props.onProgramStartClick}
+            onProgramStopClick={props.onProgramStopClick}
+            onProgramResetClick={props.onProgramResetClick}
+            onComputerResetClick={props.onComputerResetClick}
+            onAccumResetClick={props.onAccumResetClick}
+            onEmulatorResetClick={props.onEmulatorResetClick}
+          />
+        </div>
+      </div>
     </div>
   );
 };

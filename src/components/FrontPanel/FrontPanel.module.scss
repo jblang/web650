@@ -1,3 +1,15 @@
+.scrollContainer {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: auto;
+  overflow-y: hidden;
+}
+
+.contentWidth {
+  width: max-content;
+  margin: 0 auto;
+}
+
 .container {
   display: inline-grid;
   grid-template-columns: repeat(10, auto) auto;
