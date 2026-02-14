@@ -35,7 +35,7 @@ const HelpTarget: React.FC<HelpTargetProps> = ({
         aria-label={`Show help for ${title}`}
       />
       <ToggletipContent>
-        <p className={styles.helpTipTitle}>{title}</p>
+        <p className={styles.helpTipTitle}><strong>{title}</strong></p>
         {descriptionParagraphs.map((paragraph, index) => (
           <p key={index} className={styles.helpTipBody}>{paragraph}</p>
         ))}

@@ -140,6 +140,7 @@ const ControlSection: React.FC<ControlSectionProps> = ({
           enabled={helpEnabled}
           title={PROGRAMMED_SWITCH_HELP.title}
           description={PROGRAMMED_SWITCH_HELP.description}
+          align="top"
         />
       </div>
       <div className={styles.halfCycleCell}>
@@ -148,6 +149,7 @@ const ControlSection: React.FC<ControlSectionProps> = ({
           enabled={helpEnabled}
           title={HALF_CYCLE_SWITCH_HELP.title}
           description={HALF_CYCLE_SWITCH_HELP.description}
+          align="top"
         />
       </div>
       <div className={styles.addressSelectionCell}>
@@ -156,6 +158,7 @@ const ControlSection: React.FC<ControlSectionProps> = ({
           enabled={helpEnabled}
           title={ADDRESS_SELECTION_SWITCHES_HELP.title}
           description={ADDRESS_SELECTION_SWITCHES_HELP.description}
+          align="top"
         />
       </div>
       <div className={styles.controlCell}>
@@ -164,6 +167,7 @@ const ControlSection: React.FC<ControlSectionProps> = ({
           enabled={helpEnabled}
           title={CONTROL_SWITCH_HELP.title}
           description={CONTROL_SWITCH_HELP.description}
+          align="top"
         />
       </div>
       <div className={styles.displayCell}>
@@ -172,6 +176,7 @@ const ControlSection: React.FC<ControlSectionProps> = ({
           enabled={helpEnabled}
           title={DISPLAY_SWITCH_HELP.title}
           description={DISPLAY_SWITCH_HELP.description}
+          align="top"
         />
       </div>
       <div className={styles.overflowCell}>
@@ -180,6 +185,7 @@ const ControlSection: React.FC<ControlSectionProps> = ({
           enabled={helpEnabled}
           title={OVERFLOW_SWITCH_HELP.title}
           description={OVERFLOW_SWITCH_HELP.description}
+          align="top"
         />
       </div>
       <div className={styles.errorCell}>
@@ -188,6 +194,7 @@ const ControlSection: React.FC<ControlSectionProps> = ({
           enabled={helpEnabled}
           title={ERROR_SWITCH_HELP.title}
           description={ERROR_SWITCH_HELP.description}
+          align="top"
         />
       </div>
       <div className={cn(styles.knobLabel, styles.programmed)}>
