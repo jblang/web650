@@ -13,10 +13,6 @@ const links = [
   { href: '/front-panel', text: 'Front Panel' },
   { href: '/programming', text: 'Programming' },
   { href: '/reader', text: 'Reader' },
-  { href: '/punch', text: 'Punch' },
-  { href: '/printer', text: 'Printer' },
-  { href: '/tape', text: 'Tape' },
-  { href: '/ramac', text: 'Disk' },
   { href: '/emulator', text: 'Emulator' },
   { href: '/docs', text: 'Documentation' },
 ];

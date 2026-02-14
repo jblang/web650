@@ -93,11 +93,11 @@ describe('Header', () => {
     expect(navigation?.getAttribute('aria-label')).toBe('Navigation');
   });
 
-  it('renders all 9 navigation links', () => {
+  it('renders all 5 navigation links', () => {
     render(<AppHeader />);
 
     const menuItems = container.querySelectorAll('[data-testid="header-menu-item"]');
-    expect(menuItems.length).toBe(9);
+    expect(menuItems.length).toBe(5);
   });
 
   it('renders Front Panel link', () => {
@@ -128,46 +128,6 @@ describe('Header', () => {
     );
     expect(link).not.toBeNull();
     expect(link?.textContent).toBe('Reader');
-  });
-
-  it('renders Punch link', () => {
-    render(<AppHeader />);
-
-    const link = Array.from(container.querySelectorAll('[data-testid="header-menu-item"]')).find(
-      (el) => el.getAttribute('href') === '/punch'
-    );
-    expect(link).not.toBeNull();
-    expect(link?.textContent).toBe('Punch');
-  });
-
-  it('renders Printer link', () => {
-    render(<AppHeader />);
-
-    const link = Array.from(container.querySelectorAll('[data-testid="header-menu-item"]')).find(
-      (el) => el.getAttribute('href') === '/printer'
-    );
-    expect(link).not.toBeNull();
-    expect(link?.textContent).toBe('Printer');
-  });
-
-  it('renders Tape link', () => {
-    render(<AppHeader />);
-
-    const link = Array.from(container.querySelectorAll('[data-testid="header-menu-item"]')).find(
-      (el) => el.getAttribute('href') === '/tape'
-    );
-    expect(link).not.toBeNull();
-    expect(link?.textContent).toBe('Tape');
-  });
-
-  it('renders Disk link', () => {
-    render(<AppHeader />);
-
-    const link = Array.from(container.querySelectorAll('[data-testid="header-menu-item"]')).find(
-      (el) => el.getAttribute('href') === '/ramac'
-    );
-    expect(link).not.toBeNull();
-    expect(link?.textContent).toBe('Disk');
   });
 
   it('renders Emulator link', () => {
