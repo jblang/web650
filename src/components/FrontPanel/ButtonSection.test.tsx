@@ -61,7 +61,7 @@ describe('FrontPanel controls', () => {
     clickByLabel('ACCUM RESET');
     clickByLabel('HELP');
     clickByLabel('CHEAT');
-    clickByLabel('EMULATOR RESET');
+    clickByLabel('MASTER RESET');
     clickByLabel('TRANSFER');
 
     expect(handlers.onProgramStartClick).toHaveBeenCalledTimes(1);

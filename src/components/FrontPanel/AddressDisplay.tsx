@@ -26,7 +26,7 @@ const AddressDisplay: React.FC<AddressDisplayProps> = ({ value, helpEnabled = fa
       <HelpTarget
         enabled={helpEnabled}
         title="ADDRESS LIGHTS"
-        description="Shows the address register. DATA ADDRESS and INST ADDRESS status lights indicate whether the next half-cycle is data or instruction."
+        description="Shows the address register. DATA ADDRESS and INSTRUCTION ADDRESS status lights indicate whether the next half-cycle is data or instruction."
       />
     </div>
   );

@@ -28,7 +28,7 @@ const OPERATING_CONFIG: Array<Array<{ label: string; key: keyof OperatingState }
     { label: "MAGNETIC TAPE", key: "magneticTape" },
   ],
   [
-    { label: "INST ADDRESS", key: "instAddress" },
+    { label: "INSTRUCTION ADDRESS", key: "instAddress" },
     { label: "ACCUMULATOR", key: "accumulator" },
     { label: "OVERFLOW", key: "overflow" },
   ],

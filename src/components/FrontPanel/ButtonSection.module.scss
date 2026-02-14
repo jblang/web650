@@ -4,24 +4,68 @@
   grid-column: 1 / 12;
   display: flex;
   justify-content: space-between;
-  padding: 2px 0;
-  background-color: transparent;
+  padding: 4px 1px 0;
+  background: transparent;
 }
 
 .buttonGroup {
   display: flex;
   gap: 0;
-  background: linear-gradient(to bottom, #888888 0%, #b0b0b0 20%, #d0d0d0 40%, #eeeeee 50%, #d0d0d0 60%, #b0b0b0 80%, #888888 100%);
+  background: linear-gradient(
+    to bottom,
+    #8f8f8f 0%,
+    #a8a8a8 20%,
+    #bebebe 40%,
+    #cdcdcd 50%,
+    #bebebe 60%,
+    #a8a8a8 80%,
+    #8f8f8f 100%
+  );
+  border: 0;
+  box-shadow:
+    0 0 0 1px rgba(0, 0, 0, 0.35),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.08),
+    0 1px 1px rgba(0, 0, 0, 0.25);
   border-radius: 0;
-  padding: 4px;
+  padding: 2px;
 
   &.red {
-    background: linear-gradient(to bottom, #888888 0%, #b0b0b0 20%, #d0d0d0 40%, #eeeeee 50%, #d0d0d0 60%, #b0b0b0 80%, #888888 100%);
+    background: linear-gradient(
+      to bottom,
+      #8f8f8f 0%,
+      #a8a8a8 20%,
+      #bebebe 40%,
+      #cdcdcd 50%,
+      #bebebe 60%,
+      #a8a8a8 80%,
+      #8f8f8f 100%
+    );
   }
 }
 
 .buttonWrapper {
   position: relative;
+  display: flex;
+}
+
+.buttonWrapper + .buttonWrapper::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: -2px;
+  width: 2px;
+  background: linear-gradient(
+    to bottom,
+    #8f8f8f 0%,
+    #a8a8a8 20%,
+    #bebebe 40%,
+    #cdcdcd 50%,
+    #bebebe 60%,
+    #a8a8a8 80%,
+    #8f8f8f 100%
+  );
+  z-index: 1;
 }
 
 .button {

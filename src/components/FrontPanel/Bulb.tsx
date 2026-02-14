@@ -25,32 +25,32 @@ const BulbGlyph: React.FC<{ lit: boolean }> = ({ lit }) => {
       xmlns="http://www.w3.org/2000/svg"
     >
       <defs>
-        <radialGradient id={fillGradientId} cx="12" cy="2" r="17" gradientUnits="userSpaceOnUse">
+        <radialGradient id={fillGradientId} cx="12" cy="2" r="19" gradientUnits="userSpaceOnUse">
           {lit ? (
             <>
-              <stop offset="0%" stopColor="#f6eeaa" />
-              <stop offset="56%" stopColor="#f0c936" />
+              <stop offset="0%" stopColor="#efe391" />
+              <stop offset="68%" stopColor="#e8be2a" />
               <stop offset="100%" stopColor="#d89d00" />
             </>
           ) : (
             <>
               <stop offset="0%" stopColor="#434343" />
-              <stop offset="58%" stopColor="#1b1b1b" />
+              <stop offset="70%" stopColor="#1b1b1b" />
               <stop offset="100%" stopColor="#070707" />
             </>
           )}
         </radialGradient>
-        <radialGradient id={surfaceLightId} cx="12" cy="2" r="16.5" gradientUnits="userSpaceOnUse">
+        <radialGradient id={surfaceLightId} cx="12" cy="2" r="18" gradientUnits="userSpaceOnUse">
           {lit ? (
             <>
-              <stop offset="0%" stopColor="#ffffff" stopOpacity="0.2" />
-              <stop offset="42%" stopColor="#ffffff" stopOpacity="0.08" />
+              <stop offset="0%" stopColor="#ffffff" stopOpacity="0.12" />
+              <stop offset="60%" stopColor="#ffffff" stopOpacity="0.05" />
               <stop offset="100%" stopColor="#ffffff" stopOpacity="0" />
             </>
           ) : (
             <>
-              <stop offset="0%" stopColor="#ffffff" stopOpacity="0.16" />
-              <stop offset="42%" stopColor="#ffffff" stopOpacity="0.07" />
+              <stop offset="0%" stopColor="#ffffff" stopOpacity="0.14" />
+              <stop offset="60%" stopColor="#ffffff" stopOpacity="0.06" />
               <stop offset="100%" stopColor="#ffffff" stopOpacity="0" />
             </>
           )}

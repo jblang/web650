@@ -56,7 +56,7 @@ describe('OperatingStatus', () => {
     const expectedLabels = [
       'DATA ADDRESS', 'PROGRAM', 'INPUT-OUTPUT',
       'INQUIRY', 'RAMAC', 'MAGNETIC TAPE',
-      'INST ADDRESS', 'ACCUMULATOR', 'OVERFLOW',
+      'INSTRUCTION ADDRESS', 'ACCUMULATOR', 'OVERFLOW',
     ];
     for (const label of expectedLabels) {
       const bulb = container.querySelector(`[aria-label="${label}: unlit"]`);

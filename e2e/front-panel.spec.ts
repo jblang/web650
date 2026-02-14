@@ -63,7 +63,7 @@ test('loads the front panel and allows navigation from the header', async ({ pag
 
   await expect(page).toHaveURL(/\/front-panel\/?$/);
   await expect(page.getByRole('banner', { name: 'SIMH i650' })).toBeVisible();
-  await expect(page.getByRole('button', { name: 'EMULATOR RESET' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'MASTER RESET' })).toBeVisible();
 
   await page.getByRole('link', { name: 'Documentation' }).click();
   await expect(page).toHaveURL(/\/docs\/?$/);
@@ -304,7 +304,7 @@ test('emulator reset clears console output and keeps console usable', async ({ p
   await expect(output).toHaveValue(/ACCLO:\s*0000000123\+/);
 
   await page.getByRole('link', { name: 'Front Panel' }).click();
-  await clickPanelButtonDom(page, 'EMULATOR RESET');
+  await clickPanelButtonDom(page, 'MASTER RESET');
   await page.getByRole('link', { name: 'Emulator' }).click();
   await expect(output).toHaveValue('');
   await sendConsoleCommand(page, 'examine state');

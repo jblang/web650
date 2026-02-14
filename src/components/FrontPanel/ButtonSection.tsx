@@ -8,7 +8,7 @@ import { Toggletip, ToggletipButton, ToggletipContent } from '@carbon/react';
 const BUTTON_GROUPS = [
   ["TRANSFER", "PROGRAM START", "PROGRAM STOP"],
   ["PROGRAM RESET", "COMPUTER RESET", "ACCUM RESET"],
-  ["HELP", "CHEAT", "EMULATOR RESET"],
+  ["HELP", "CHEAT", "MASTER RESET"],
 ];
 
 const BUTTON_HELP_TEXT: Record<string, string> = {
@@ -20,7 +20,7 @@ const BUTTON_HELP_TEXT: Record<string, string> = {
   "ACCUM RESET": "Resets distributor and full accumulator to zeros (destroying those contents). Clears overflow, accumulator and distributor validity, clocking, and most storage-selection error circuits, but does not change the program register, operation register, or address register.",
   "HELP": "Toggles help mode. In help mode, click any control to see its function.",
   "CHEAT": "Displays an additional front-panel section with text boxes to allow easy reading and modification of registers and memory locations.",
-  "EMULATOR RESET": "Resets emulator state to startup condition. Unlike the similarly situated MASTER POWER switch on a real 650, pressing this button does not require a visit from an IBM customer engineer to get your 650 operational again. Still, it will cause you to lose any unsaved data in the emulator, so don't press it unless you really mean it.",
+  "MASTER RESET": "Resets emulator state to startup condition. Unlike the similarly situated MASTER POWER switch on a real 650, pressing this button does not require a visit from an IBM customer engineer to get your 650 operational again. Still, it will cause you to lose any unsaved data in the emulator, so don't press it unless you really mean it.",
 };
 
 // Prop interface for button callbacks
@@ -60,7 +60,7 @@ const handlerMap: Record<string, ButtonClickHandlerKey> = {
   "ACCUM RESET": "onAccumResetClick",
   "HELP": "onHelpClick",
   "CHEAT": "onCheatClick",
-  "EMULATOR RESET": "onEmulatorResetClick",
+  "MASTER RESET": "onEmulatorResetClick",
 };
 
 const ButtonSection: React.FC<ButtonSectionProps> = (props) => {
@@ -72,7 +72,7 @@ const ButtonSection: React.FC<ButtonSectionProps> = (props) => {
       {BUTTON_GROUPS.map((group, groupIndex) => (
         <div key={groupIndex} className={cn(styles.buttonGroup, { [styles.red]: groupIndex === 2 })}>
           {group.map((label, buttonIndex) => {
-            const isRedButton = label === "EMULATOR RESET";
+            const isRedButton = label === "MASTER RESET";
             const isHelpButton = label === "HELP";
             const isCheatButton = label === "CHEAT";
             const handler = props[handlerMap[label]];

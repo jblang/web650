@@ -15,7 +15,7 @@
   grid-column: span 3;
   @include section-heading-base;
   @include spaced-text(1.2em);
-  color: $panel-text-dark;
+  color: $panel-bg;
 }
 
 .operatingTitleWrap {
@@ -44,7 +44,7 @@
 
 .ledLabel {
   @include section-heading-base;
-  color: $panel-text-dark;
+  color: $panel-bg;
   font-size: $font-size-status-label;
   white-space: nowrap;
 }
@@ -54,5 +54,5 @@
   display: grid;
   grid-template-columns: subgrid;
   gap: 12px;
-  padding-top: 12px;
+  align-self: center;
 }
