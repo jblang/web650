@@ -1,4 +1,13 @@
 .bulb {
-  display: inline-block;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  vertical-align: middle;
   line-height: 1;
+}
+
+.bulbSvg {
+  display: block;
+  width: 1.32em;
+  height: 1.32em;
 }
