@@ -1,5 +1,5 @@
 import React from 'react';
-import { Toggletip, ToggletipButton, ToggletipContent } from '@carbon/react';
+import { Toggletip, ToggletipButton, ToggletipContent, type PopoverAlignment } from '@carbon/react';
 import styles from './FrontPanel.module.scss';
 import cn from 'classnames';
 
@@ -8,9 +8,16 @@ interface HelpTargetProps {
   title: string;
   description: string;
   className?: string;
+  align?: PopoverAlignment;
 }
 
-const HelpTarget: React.FC<HelpTargetProps> = ({ enabled, title, description, className }) => {
+const HelpTarget: React.FC<HelpTargetProps> = ({
+  enabled,
+  title,
+  description,
+  className,
+  align = 'bottom',
+}) => {
   if (!enabled) {
     return null;
   }
@@ -21,7 +28,7 @@ const HelpTarget: React.FC<HelpTargetProps> = ({ enabled, title, description, cl
     .filter((paragraph) => paragraph.length > 0);
 
   return (
-    <Toggletip align="bottom" autoAlign className={cn(styles.helpPopover, className)}>
+    <Toggletip align={align} autoAlign className={cn(styles.helpPopover, className)}>
       <ToggletipButton
         className={styles.helpHotspot}
         label={`Show help for ${title}`}

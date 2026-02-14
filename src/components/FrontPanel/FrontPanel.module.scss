@@ -1,3 +1,5 @@
+@use './cursors' as cursors;
+
 .scrollContainer {
   width: 100%;
   max-width: 100%;
@@ -80,7 +82,7 @@
   margin: 0;
   border: 0;
   background: transparent;
-  cursor: help;
+  cursor: cursors.$help-cursor;
 }
 
 .helpTipTitle {

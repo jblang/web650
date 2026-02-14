@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import styles from './ButtonSection.module.scss';
 import cn from 'classnames';
 import HelpTarget from './HelpTarget';
-import { Toggletip, ToggletipButton, ToggletipContent } from '@carbon/react';
 
 // Button labels (2 groups of 3, 1 group of 3)
 const BUTTON_GROUPS = [
@@ -100,24 +99,12 @@ const ButtonSection: React.FC<ButtonSectionProps> = (props) => {
                   enabled={Boolean(props.helpEnabled) && !isHelpButton}
                   title={label}
                   description={BUTTON_HELP_TEXT[label]}
+                  align="top"
                 />
                 {isHelpButton && props.helpEnabled && props.showHelpIntroTip && (
-                  <Toggletip
-                    align="left"
-                    autoAlign
-                    defaultOpen
-                    className={styles.helpIntroPopover}
-                  >
-                    <ToggletipButton
-                      className={styles.helpIntroAnchor}
-                      label="Help mode instructions"
-                      aria-label="Help mode instructions"
-                    />
-                    <ToggletipContent>
-                      <p className={styles.helpIntroTitle}>HELP MODE</p>
-                      <p className={styles.helpIntroBody}>Help mode is on. Click anywhere you see a ? cursor to view contextual help. Click HELP again to exit help mode.</p>
-                    </ToggletipContent>
-                  </Toggletip>
+                  <div className={styles.helpIntroPopover} role="note" aria-label="Help mode instructions">
+                    <p className={styles.helpIntroBody}>Help mode is on. Click anywhere you see a ? cursor to view context help. Click HELP again to exit help mode.</p>
+                  </div>
                 )}
               </div>
             );
