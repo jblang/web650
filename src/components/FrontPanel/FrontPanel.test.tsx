@@ -20,6 +20,36 @@ vi.mock('./DisplaySection', () => ({
   ),
 }));
 
+vi.mock('./CheatSheetSection', () => ({
+  default: ({
+    consoleSwitches,
+    addressRegister,
+    programRegister,
+    upperAccumulator,
+    lowerAccumulator,
+    distributor,
+  }: {
+    consoleSwitches: string;
+    addressRegister: string;
+    programRegister: string;
+    upperAccumulator: string;
+    lowerAccumulator: string;
+    distributor: string;
+  }) => (
+    <div
+      data-testid="cheat-sheet-section"
+      data-console-switches={consoleSwitches}
+      data-address-register={addressRegister}
+      data-program-register={programRegister}
+      data-upper-accumulator={upperAccumulator}
+      data-lower-accumulator={lowerAccumulator}
+      data-distributor={distributor}
+    >
+      CheatSheetSection
+    </div>
+  ),
+}));
+
 vi.mock('./EntrySection', () => ({
   default: ({ value, onChange }: { value: string; onChange: (next: string) => void | Promise<void> }) => (
     <div data-testid="entry-section" data-value={value} data-on-change={typeof onChange}>
@@ -123,6 +153,8 @@ vi.mock('./ButtonSection', () => ({
     onComputerResetClick,
     onAccumResetClick,
     onEmulatorResetClick,
+    onCheatClick,
+    cheatEnabled,
   }: {
     onTransferClick?: () => void | Promise<void>;
     onProgramStartClick?: () => void | Promise<void>;
@@ -131,6 +163,8 @@ vi.mock('./ButtonSection', () => ({
     onComputerResetClick?: () => void | Promise<void>;
     onAccumResetClick?: () => void | Promise<void>;
     onEmulatorResetClick?: () => void | Promise<void>;
+    onCheatClick?: () => void | Promise<void>;
+    cheatEnabled?: boolean;
   }) => (
     <div
       data-testid="button-section"
@@ -141,8 +175,17 @@ vi.mock('./ButtonSection', () => ({
       data-on-computer-reset-click={typeof onComputerResetClick}
       data-on-accum-reset-click={typeof onAccumResetClick}
       data-on-emulator-reset-click={typeof onEmulatorResetClick}
+      data-on-cheat-click={typeof onCheatClick}
+      data-cheat-enabled={String(Boolean(cheatEnabled))}
     >
       ButtonSection
+      <button
+        data-testid="cheat-toggle"
+        type="button"
+        onClick={() => void onCheatClick?.()}
+      >
+        CHEAT
+      </button>
     </div>
   ),
 }));
@@ -159,6 +202,10 @@ describe('FrontPanel', () => {
     entryValue: '0000000000+',
     addressDisplay: '1234',
     operation: '69',
+    programRegister: '6980001001+',
+    upperAccumulator: '1111111111+',
+    lowerAccumulator: '2222222222+',
+    distributor: '3333333333+',
     operatingState: {
       dataAddress: false,
       program: true,
@@ -312,6 +359,49 @@ describe('FrontPanel', () => {
     expect(buttonSection?.getAttribute('data-on-computer-reset-click')).toBe('function');
     expect(buttonSection?.getAttribute('data-on-accum-reset-click')).toBe('function');
     expect(buttonSection?.getAttribute('data-on-emulator-reset-click')).toBe('function');
+    expect(buttonSection?.getAttribute('data-on-cheat-click')).toBe('function');
+  });
+
+  it('toggles cheat sheet display when CHEAT is clicked', () => {
+    render(<FrontPanel {...mockProps} />);
+    expect(container.querySelector('[data-testid="cheat-sheet-section"]')).toBeNull();
+
+    const buttonSection = container.querySelector('[data-testid="button-section"]');
+    expect(buttonSection?.getAttribute('data-cheat-enabled')).toBe('false');
+
+    const toggleButton = container.querySelector('[data-testid="cheat-toggle"]');
+    if (!toggleButton) throw new Error('toggle button not found');
+
+    act(() => {
+      toggleButton.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+    });
+
+    const cheatSection = container.querySelector('[data-testid="cheat-sheet-section"]');
+    expect(cheatSection).not.toBeNull();
+    expect(cheatSection?.getAttribute('data-address-register')).toBe('1234');
+    expect(cheatSection?.getAttribute('data-console-switches')).toBe('0000000000+');
+    expect(cheatSection?.getAttribute('data-program-register')).toBe('6980001001+');
+    expect(cheatSection?.getAttribute('data-upper-accumulator')).toBe('1111111111+');
+    expect(cheatSection?.getAttribute('data-lower-accumulator')).toBe('2222222222+');
+    expect(cheatSection?.getAttribute('data-distributor')).toBe('3333333333+');
+
+    expect(container.querySelector('[data-testid="button-section"]')?.getAttribute('data-cheat-enabled')).toBe('true');
+    const panelChildren = Array.from(container.querySelectorAll('[data-testid]'));
+    const cheatIndex = panelChildren.findIndex((node) => node.getAttribute('data-testid') === 'cheat-sheet-section');
+    const buttonIndex = panelChildren.findIndex((node) => node.getAttribute('data-testid') === 'button-section');
+    expect(cheatIndex).toBeGreaterThan(-1);
+    expect(buttonIndex).toBeGreaterThan(-1);
+    expect(cheatIndex).toBeLessThan(buttonIndex);
+
+    const toggleButtonAfterOpen = container.querySelector('[data-testid="cheat-toggle"]');
+    if (!toggleButtonAfterOpen) throw new Error('toggle button not found after open');
+
+    act(() => {
+      toggleButtonAfterOpen.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+    });
+
+    expect(container.querySelector('[data-testid="cheat-sheet-section"]')).toBeNull();
+    expect(container.querySelector('[data-testid="button-section"]')?.getAttribute('data-cheat-enabled')).toBe('false');
   });
 
   it('handles optional control button handlers', () => {

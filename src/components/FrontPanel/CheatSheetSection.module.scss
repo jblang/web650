@@ -1,0 +1,49 @@
+.cheatTheme {
+  grid-column: 1 / span 11;
+  inline-size: 0;
+  min-inline-size: 100%;
+  max-inline-size: 100%;
+  overflow: hidden;
+}
+
+.cheatSection {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  padding: 1rem;
+  background-color: var(--cds-background);
+  min-width: 0;
+  width: 100%;
+}
+
+.formLayout {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr)) max-content;
+  gap: 1rem;
+  align-items: end;
+  min-width: 0;
+  width: 100%;
+}
+
+.textInput {
+  min-width: 0;
+
+  :global(.cds--label) {
+    white-space: normal;
+  }
+
+  :global(.cds--text-input-wrapper),
+  :global(.cds--text-input__field-wrapper),
+  :global(.cds--text-input) {
+    min-width: 0;
+  }
+}
+
+.actionsCell {
+  display: flex;
+  align-items: flex-end;
+  flex-wrap: nowrap;
+  gap: 0.75rem;
+  justify-self: end;
+  justify-content: flex-end;
+}

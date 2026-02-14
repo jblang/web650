@@ -33,7 +33,9 @@ interface ButtonSectionProps {
   onAccumResetClick?: () => void;
   onEmulatorResetClick?: () => void;
   onHelpClick?: () => void;
+  onCheatClick?: () => void;
   helpEnabled?: boolean;
+  cheatEnabled?: boolean;
   showHelpIntroTip?: boolean;
 }
 
@@ -45,6 +47,7 @@ type ButtonClickHandlerKey =
   | 'onComputerResetClick'
   | 'onAccumResetClick'
   | 'onHelpClick'
+  | 'onCheatClick'
   | 'onEmulatorResetClick';
 
 // Mapping from label to prop handler key
@@ -56,6 +59,7 @@ const handlerMap: Record<string, ButtonClickHandlerKey> = {
   "COMPUTER RESET": "onComputerResetClick",
   "ACCUM RESET": "onAccumResetClick",
   "HELP": "onHelpClick",
+  "CHEAT": "onCheatClick",
   "EMULATOR RESET": "onEmulatorResetClick",
 };
 
@@ -70,6 +74,7 @@ const ButtonSection: React.FC<ButtonSectionProps> = (props) => {
           {group.map((label, buttonIndex) => {
             const isRedButton = label === "EMULATOR RESET";
             const isHelpButton = label === "HELP";
+            const isCheatButton = label === "CHEAT";
             const handler = props[handlerMap[label]];
             const isPressed = pressedButton === label;
             return (
@@ -79,7 +84,8 @@ const ButtonSection: React.FC<ButtonSectionProps> = (props) => {
                   className={cn(styles.button, {
                     [styles.red]: isRedButton,
                     [styles.pressed]: isPressed,
-                    [styles.active]: isHelpButton && props.helpEnabled,
+                    [styles.active]:
+                      (isHelpButton && props.helpEnabled) || (isCheatButton && props.cheatEnabled),
                     [styles.helpToggle]: isHelpButton,
                   })}
                   title={isHelpButton ? helpToggleTitle : undefined}

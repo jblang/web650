@@ -43,6 +43,7 @@ describe('FrontPanel controls', () => {
       onComputerResetClick: vi.fn(),
       onAccumResetClick: vi.fn(),
       onHelpClick: vi.fn(),
+      onCheatClick: vi.fn(),
       onEmulatorResetClick: vi.fn(),
     };
 
@@ -59,6 +60,7 @@ describe('FrontPanel controls', () => {
     clickByLabel('COMPUTER RESET');
     clickByLabel('ACCUM RESET');
     clickByLabel('HELP');
+    clickByLabel('CHEAT');
     clickByLabel('EMULATOR RESET');
     clickByLabel('TRANSFER');
 
@@ -68,6 +70,7 @@ describe('FrontPanel controls', () => {
     expect(handlers.onComputerResetClick).toHaveBeenCalledTimes(1);
     expect(handlers.onAccumResetClick).toHaveBeenCalledTimes(1);
     expect(handlers.onHelpClick).toHaveBeenCalledTimes(1);
+    expect(handlers.onCheatClick).toHaveBeenCalledTimes(1);
     expect(handlers.onEmulatorResetClick).toHaveBeenCalledTimes(1);
     expect(handlers.onTransferClick).toHaveBeenCalledTimes(1);
   });
@@ -89,6 +92,15 @@ describe('FrontPanel controls', () => {
     render(<ButtonSection helpEnabled />);
     const helpOff = Array.from(container.querySelectorAll('button')).find((b) => b.textContent === 'HELP');
     expect(helpOff?.getAttribute('title')).toBe('Toggle help mode off');
+  });
+
+  it('shows active styling when cheat mode is enabled', () => {
+    render(<ButtonSection cheatEnabled />);
+
+    const button = Array.from(container.querySelectorAll('button')).find((b) => b.textContent === 'CHEAT');
+    if (!button) throw new Error('button not found');
+
+    expect(button.classList.contains(controlStyles.active)).toBe(true);
   });
 
   it('shows pressed state while holding a control button', () => {

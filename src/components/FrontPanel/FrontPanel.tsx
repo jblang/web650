@@ -7,6 +7,7 @@ import AddressDisplay from './AddressDisplay';
 import EntrySection from './EntrySection';
 import ControlSection from './ControlSection';
 import ButtonSection from './ButtonSection';
+import CheatSheetSection from './CheatSheetSection';
 import styles from './FrontPanel.module.scss';
 import cn from 'classnames';
 import type {
@@ -25,6 +26,10 @@ export interface FrontPanelProps {
   entryValue: string;
   addressDisplay: string;
   operation: string;
+  programRegister: string;
+  upperAccumulator: string;
+  lowerAccumulator: string;
+  distributor: string;
   operatingState: OperatingState;
   checkingState: CheckingState;
   programmed: ProgrammedPosition;
@@ -57,6 +62,7 @@ export interface FrontPanelProps {
 
 const FrontPanel: React.FC<FrontPanelProps> = (props) => {
   const [helpEnabled, setHelpEnabled] = useState(false);
+  const [cheatEnabled, setCheatEnabled] = useState(false);
   const [showHelpIntroTip, setShowHelpIntroTip] = useState(false);
 
   const handleHelpToggle = () => {
@@ -70,6 +76,10 @@ const FrontPanel: React.FC<FrontPanelProps> = (props) => {
       }
       return nextEnabled;
     });
+  };
+
+  const handleCheatToggle = () => {
+    setCheatEnabled((enabled) => !enabled);
   };
 
   return (
@@ -107,6 +117,17 @@ const FrontPanel: React.FC<FrontPanelProps> = (props) => {
             helpEnabled={helpEnabled}
           />
 
+          {cheatEnabled && (
+            <CheatSheetSection
+              consoleSwitches={props.entryValue}
+              addressRegister={props.addressDisplay}
+              programRegister={props.programRegister}
+              upperAccumulator={props.upperAccumulator}
+              lowerAccumulator={props.lowerAccumulator}
+              distributor={props.distributor}
+            />
+          )}
+
           <ButtonSection
             onTransferClick={props.onTransferClick}
             onProgramStartClick={props.onProgramStartClick}
@@ -116,7 +137,9 @@ const FrontPanel: React.FC<FrontPanelProps> = (props) => {
             onAccumResetClick={props.onAccumResetClick}
             onEmulatorResetClick={props.onEmulatorResetClick}
             onHelpClick={handleHelpToggle}
+            onCheatClick={handleCheatToggle}
             helpEnabled={helpEnabled}
+            cheatEnabled={cheatEnabled}
             showHelpIntroTip={showHelpIntroTip}
           />
         </div>

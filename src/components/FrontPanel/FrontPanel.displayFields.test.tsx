@@ -84,6 +84,10 @@ describe('FrontPanel display fields', () => {
         entryValue="0000000000+"
         addressDisplay="1234"
         operation="69"
+        programRegister="6980001001+"
+        upperAccumulator="1111111111+"
+        lowerAccumulator="2222222222+"
+        distributor="3333333333+"
         operatingState={{
           dataAddress: false,
           program: true,

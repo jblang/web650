@@ -221,6 +221,18 @@ export async function depositMemory(address: string, value: string): Promise<voi
   await writeMemory(address, value);
 }
 
+/**
+ * Reads a word from I650 memory at the specified address.
+ *
+ * @param address - 4-digit memory address (0000-9999)
+ * @returns 10-digit word with sign (I650 format)
+ * @throws {TypeError} If address is invalid
+ */
+export async function examineMemory(address: string): Promise<string> {
+  await ensureInit();
+  return readMemory(address);
+}
+
 async function getRegisterSnapshot(): Promise<{
   addressRegister: string;
   programRegister: string;
@@ -560,6 +572,28 @@ export async function setProgramRegister(value: string): Promise<void> {
 export async function setDistributor(value: string): Promise<void> {
   validateWord(value);
   await depositAndMerge('DIST', value, { distributor: value });
+}
+
+/**
+ * Sets the lower accumulator register.
+ *
+ * @param value - 10-digit word with sign (I650 format)
+ * @throws {TypeError} If word is invalid
+ */
+export async function setLowerAccumulator(value: string): Promise<void> {
+  validateWord(value);
+  await depositAndMerge('ACCLO', value, { lowerAccumulator: value });
+}
+
+/**
+ * Sets the upper accumulator register.
+ *
+ * @param value - 10-digit word with sign (I650 format)
+ * @throws {TypeError} If word is invalid
+ */
+export async function setUpperAccumulator(value: string): Promise<void> {
+  validateWord(value);
+  await depositAndMerge('ACCUP', value, { upperAccumulator: value });
 }
 
 /**
