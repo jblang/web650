@@ -175,6 +175,28 @@ describe('DecimalKnob', () => {
     expect(onChange).toHaveBeenCalledWith(7);
   });
 
+  it('advances to next knob on number key press', () => {
+    const onNavigateNext = vi.fn();
+    render(<DecimalKnob value={3} onChange={() => {}} onNavigateNext={onNavigateNext} />);
+    const knob = container.querySelector('[role="spinbutton"]')!;
+    act(() => {
+      knob.dispatchEvent(new KeyboardEvent('keydown', { key: '7', bubbles: true }));
+    });
+    expect(onNavigateNext).toHaveBeenCalledTimes(1);
+  });
+
+  it('navigates to previous knob on Backspace without changing value', () => {
+    const onChange = vi.fn();
+    const onNavigatePrevious = vi.fn();
+    render(<DecimalKnob value={3} onChange={onChange} onNavigatePrevious={onNavigatePrevious} />);
+    const knob = container.querySelector('[role="spinbutton"]')!;
+    act(() => {
+      knob.dispatchEvent(new KeyboardEvent('keydown', { key: 'Backspace', bubbles: true }));
+    });
+    expect(onNavigatePrevious).toHaveBeenCalledTimes(1);
+    expect(onChange).not.toHaveBeenCalled();
+  });
+
   it('wraps from 9 to 0 on ArrowRight key', () => {
     const onChange = vi.fn();
     render(<DecimalKnob value={9} onChange={onChange} />);
@@ -205,6 +227,21 @@ describe('DecimalKnob', () => {
     const knob = container.querySelector('[role="spinbutton"]')!;
     act(() => {
       knob.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+    });
+    const closedCount = getDigitNodes().length;
+    expect(closedCount).toBeLessThan(openCount);
+  });
+
+  it('closes popup on number key press', () => {
+    render(<DecimalKnob value={5} onChange={() => {}} />);
+    const display = container.querySelector('[title="CHOOSE"]');
+    act(() => display?.dispatchEvent(new MouseEvent('click', { bubbles: true })));
+    const openCount = getDigitNodes().length;
+    expect(openCount).toBeGreaterThan(1);
+
+    const knob = container.querySelector('[role="spinbutton"]')!;
+    act(() => {
+      knob.dispatchEvent(new KeyboardEvent('keydown', { key: '7', bubbles: true }));
     });
     const closedCount = getDigitNodes().length;
     expect(closedCount).toBeLessThan(openCount);

@@ -7,6 +7,9 @@ interface DecimalKnobProps {
   style?: React.CSSProperties;
   value: number; // 0-9
   onChange?: (value: number) => void;
+  onNavigateNext?: () => void;
+  onNavigatePrevious?: () => void;
+  knobRef?: React.Ref<HTMLDivElement>;
   scaleFactor?: number;
   testId?: string;
 }
@@ -15,7 +18,16 @@ const DEFAULT_SCALE = 1.5;
 const BASE_KNOB_SIZE = 48;
 const BASE_CONTAINER_HEIGHT = 68;
 
-const DecimalKnob: React.FC<DecimalKnobProps> = ({ value, onChange, style, scaleFactor = DEFAULT_SCALE, testId }) => {
+const DecimalKnob: React.FC<DecimalKnobProps> = ({
+  value,
+  onChange,
+  onNavigateNext,
+  onNavigatePrevious,
+  knobRef,
+  style,
+  scaleFactor = DEFAULT_SCALE,
+  testId,
+}) => {
   const [showPopup, setShowPopup] = useState(false);
   const [popupOffset, setPopupOffset] = useState(0);
   const wrapperRef = useRef<HTMLDivElement>(null);
@@ -56,10 +68,16 @@ const DecimalKnob: React.FC<DecimalKnobProps> = ({ value, onChange, style, scale
       case 'Escape':
         setShowPopup(false);
         break;
+      case 'Backspace':
+        e.preventDefault();
+        onNavigatePrevious?.();
+        break;
       default:
         if (/^[0-9]$/.test(e.key)) {
           e.preventDefault();
           onChange?.(parseInt(e.key, 10));
+          setShowPopup(false);
+          onNavigateNext?.();
         }
         break;
     }
@@ -99,6 +117,7 @@ const DecimalKnob: React.FC<DecimalKnobProps> = ({ value, onChange, style, scale
 
   return (
     <div
+      ref={knobRef}
       className={cn(styles.knobContainer, styles.decimalKnobContainer)}
       style={{ height: `${scaledContainerHeight}px`, ...style }}
       data-testid={testId}

@@ -500,6 +500,7 @@ test('keyboard navigation works on decimal knobs', async ({ page }) => {
   await page.goto('/front-panel');
 
   const digit0 = page.getByTestId('entry-digit-0');
+  const digit1 = page.getByTestId('entry-digit-1');
   await digit0.focus();
 
   // Initial value should be 0
@@ -516,10 +517,15 @@ test('keyboard navigation works on decimal knobs', async ({ page }) => {
   // Digit key directly sets value
   await page.keyboard.press('5');
   await expect(digit0).toHaveAttribute('aria-valuenow', '5');
+  await expect(digit1).toBeFocused();
+
+  // Refocus first knob for wrap-around checks.
+  await digit0.focus();
 
   // Wraps around: ArrowDown from 0 goes to 9
   await page.keyboard.press('0');
   await expect(digit0).toHaveAttribute('aria-valuenow', '0');
+  await digit0.focus();
   await page.keyboard.press('ArrowDown');
   await expect(digit0).toHaveAttribute('aria-valuenow', '9');
 });
