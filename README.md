@@ -6,7 +6,102 @@ This project provides a web-based user interface for [Open SIMH](https://opensim
 
 ![Punched Card](punched_card.png)
 
-## Getting Started
+## About the IBM 650
+
+The [IBM 650](https://en.wikipedia.org/wiki/IBM_650) (wikipedia.org) is an early digital computer released by IBM in 1954. It was one of the first mass-produced computers in the world (at a time when just under 2000 was considered mass-produced).
+
+Further reading:
+
+- [The IBM 650](https://www.ibm.com/history/650) (ibm.com)
+- [650 Manual of Operation](https://bitsavers.org/pdf/ibm/650/22-6060-2_650_OperMan.pdf) by IBM, 1955 (bitsavers.org)
+- [Programming the Magnetic Drum Computer and Data-Processing Machine](https://bitsavers.org/pdf/ibm/650/Andree_Programming_the_IBM_650_Magnetic_Drum_Computer_and_Data-Processing_Machine_1958.pdf) by Richard V. Andree (bitsavers.org)
+- [Other IBM 650 Documentation](https://bitsavers.org/pdf/ibm/650/) (bitsavers.org)
+- [IBM's Early Computers](https://mitpress.mit.edu/9780262523936/ibms-early-computers/) by Bashe, Pugh, Palmer and Johnson (mitpress.mit.edu)
+
+## Live Web Version
+
+Try the live web version at https://jblang.github.io/web650!  It's deployed directly from the main branch of this repo.
+
+## Some Things to Try
+
+> ### [ACHTUNG!](https://en.wikipedia.org/wiki/Blinkenlights)
+> ALLES TURISTEN UND NONTEKNISCHEN LOOKENSPEEPERS!<br>
+> DAS KOMPUTERMASCHINE IST NICHT FÜR DER<br>
+> GEFINGERPOKEN UND MITTENGRABEN! ODERWISE IST EASY<br>
+> TO SCHNAPPEN DER SPRINGENWERK, BLOWENFUSEN UND<br>
+> POPPENCORKEN MIT SPITZENSPARKEN.<br>
+> IST NICHT FÜR GEWERKEN BEI DUMMKOPFEN. DER <br>
+> RUBBERNECKEN SIGHTSEEREN KEEPEN DAS COTTONPICKEN<br>
+> HÄNDER IN DAS POCKETS MUSS.<br>
+> ZO RELAXEN UND WATSCHEN DER BLINKENLICHTEN.
+
+### Blinkenlights Counting in Bi-Quinary
+
+Go to the Emulator tab, and type the following commands:
+
+```
+set throttle 5/1
+do /tests/fpcount.ini
+```
+
+Switch to the Front Panel tab and enjoy bi-quinary counting at its finest!
+
+### Blinkenlights while the Tests Run
+
+For this one, **you'll want to set Yield Steps to 10** (under Advanced Options at the bottom of the Emulator tab).  Throttling makes the card load stages take too long, but you'll want it to yield often enough for the lights to sample a good amount of the CPU activity.
+
+```
+set nothrottle
+do /test/i650_test.ini
+```
+
+Now, switch back to the Front Panel tab and enjoy.
+
+### Blinkenlights while the Demos Run
+
+**Recommended Yield Steps: 100** (see above).
+
+```
+set nothrottle
+cd sw
+do i650_demo_all.ini
+```
+
+Switch to the Front Panel tab and be hypnotized!
+
+Once the lights stop blinken, switch back to the Emulator tab for some bonus printer graphics:
+
+```
+***
+*** Run Program
+***
+         0  1000000000  1000000000  1000000000  1000000000                               10040  
+         1   100000000  1000000000          10  1000000000                               20040  
+         2    10000000  1000000000              1000000000                               30040  
+         3      100000  1000000000                10000000                               40040  
+         4         100  1000000000                  100000                               50040  
+         5              1000000000                   10000                               60040  
+         6               100000000                    1000                               70040  
+         7                  100000                     100                               80040  
+         8                    1000                     100                               90040  
+         9                     100                     100                              100040  
+        10                      10                      10                              110040  
+        11                     100                     100                              120040  
+        12                    1000                     100                              130040  
+        13                  100000                     100                              140040  
+        14               100000000                    1000                              150040  
+        15              1000000000                   10000                              160040  
+        16         100  1000000000                  100000                              170040  
+        17      100000  1000000000                10000000                              180040  
+        18    10000000  1000000000              1000000000                              190040  
+        19   100000000  1000000000          10  1000000000                              200040  
+        20  1000000000  1000000000  1000000000  1000000000                              210040  
+
+Programmed Stop, IC: 00216 ( 0102160470+   HLT   0216  0470 )
+Press Enter to continue . . .  [cont] Goodbye
+```
+
+## Running Locally
 
 ### Install Dependencies
 
@@ -31,18 +126,6 @@ Open [http://localhost:3000](http://localhost:3000) with your browser to access 
 ## Developer Notes
 
 For architecture details, testing guidance, and build notes, see [DEVNOTES.md](DEVNOTES.md).
-
-## About the IBM 650
-
-The [IBM 650](https://en.wikipedia.org/wiki/IBM_650) (wikipedia.org) is an early digital computer released by IBM in 1954. It was one of the first mass-produced computers in the world (at a time when just under 2000 was considered mass-produced).
-
-Further reading:
-
-- [The IBM 650](https://www.ibm.com/history/650) (ibm.com)
-- [650 Manual of Operation](https://bitsavers.org/pdf/ibm/650/22-6060-2_650_OperMan.pdf) by IBM, 1955 (bitsavers.org)
-- [Programming the Magnetic Drum Computer and Data-Processing Machine](https://bitsavers.org/pdf/ibm/650/Andree_Programming_the_IBM_650_Magnetic_Drum_Computer_and_Data-Processing_Machine_1958.pdf) by Richard V. Andree (bitsavers.org)
-- [Other IBM 650 Documentation](https://bitsavers.org/pdf/ibm/650/) (bitsavers.org)
-- [IBM's Early Computers](https://mitpress.mit.edu/9780262523936/ibms-early-computers/) by Bashe, Pugh, Palmer and Johnson (mitpress.mit.edu)
 
 ## About Me
 
