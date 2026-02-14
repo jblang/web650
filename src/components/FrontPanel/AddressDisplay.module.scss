@@ -5,6 +5,7 @@
   grid-column: 3 / 7;
   grid-template-rows: auto 1fr;
   gap: 4px; // Match parent grid gap
+  position: relative;
 }
 
 .content {

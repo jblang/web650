@@ -42,6 +42,7 @@ describe('FrontPanel controls', () => {
       onProgramResetClick: vi.fn(),
       onComputerResetClick: vi.fn(),
       onAccumResetClick: vi.fn(),
+      onHelpClick: vi.fn(),
       onEmulatorResetClick: vi.fn(),
     };
 
@@ -57,6 +58,7 @@ describe('FrontPanel controls', () => {
     clickByLabel('PROGRAM RESET');
     clickByLabel('COMPUTER RESET');
     clickByLabel('ACCUM RESET');
+    clickByLabel('HELP');
     clickByLabel('EMULATOR RESET');
     clickByLabel('TRANSFER');
 
@@ -65,8 +67,28 @@ describe('FrontPanel controls', () => {
     expect(handlers.onProgramResetClick).toHaveBeenCalledTimes(1);
     expect(handlers.onComputerResetClick).toHaveBeenCalledTimes(1);
     expect(handlers.onAccumResetClick).toHaveBeenCalledTimes(1);
+    expect(handlers.onHelpClick).toHaveBeenCalledTimes(1);
     expect(handlers.onEmulatorResetClick).toHaveBeenCalledTimes(1);
     expect(handlers.onTransferClick).toHaveBeenCalledTimes(1);
+  });
+
+  it('shows active styling when help mode is enabled', () => {
+    render(<ButtonSection helpEnabled />);
+
+    const button = Array.from(container.querySelectorAll('button')).find((b) => b.textContent === 'HELP');
+    if (!button) throw new Error('button not found');
+
+    expect(button.classList.contains(controlStyles.active)).toBe(true);
+  });
+
+  it('updates HELP button hover tooltip based on help mode', () => {
+    render(<ButtonSection helpEnabled={false} />);
+    const helpOn = Array.from(container.querySelectorAll('button')).find((b) => b.textContent === 'HELP');
+    expect(helpOn?.getAttribute('title')).toBe('Toggle help mode on');
+
+    render(<ButtonSection helpEnabled />);
+    const helpOff = Array.from(container.querySelectorAll('button')).find((b) => b.textContent === 'HELP');
+    expect(helpOff?.getAttribute('title')).toBe('Toggle help mode off');
   });
 
   it('shows pressed state while holding a control button', () => {

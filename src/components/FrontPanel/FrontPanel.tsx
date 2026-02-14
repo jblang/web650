@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import OperatingStatus, { OperatingState } from './OperatingStatus';
 import CheckingStatus, { CheckingState } from './CheckingStatus';
 import DisplaySection from './DisplaySection';
@@ -8,6 +8,7 @@ import EntrySection from './EntrySection';
 import ControlSection from './ControlSection';
 import ButtonSection from './ButtonSection';
 import styles from './FrontPanel.module.scss';
+import cn from 'classnames';
 import type {
   DisplayPosition,
   ControlPosition,
@@ -55,21 +56,38 @@ export interface FrontPanelProps {
 }
 
 const FrontPanel: React.FC<FrontPanelProps> = (props) => {
+  const [helpEnabled, setHelpEnabled] = useState(false);
+  const [showHelpIntroTip, setShowHelpIntroTip] = useState(false);
+
+  const handleHelpToggle = () => {
+    setHelpEnabled((enabled) => {
+      const nextEnabled = !enabled;
+      if (nextEnabled) {
+        setShowHelpIntroTip(true);
+      }
+      if (!nextEnabled) {
+        setShowHelpIntroTip(false);
+      }
+      return nextEnabled;
+    });
+  };
+
   return (
     <div className={styles.scrollContainer}>
       <div className={styles.contentWidth}>
-        <div className={styles.container}>
-          <DisplaySection value={props.displayValue} />
+        <div className={cn(styles.container, { [styles.helpEnabled]: helpEnabled })}>
+          <DisplaySection value={props.displayValue} helpEnabled={helpEnabled} />
 
           <EntrySection
             value={props.entryValue}
             onChange={props.onEntryValueChange}
+            helpEnabled={helpEnabled}
           />
 
-          <OperationDisplay value={props.operation} />
-          <AddressDisplay value={props.addressDisplay} />
-          <OperatingStatus state={props.operatingState} />
-          <CheckingStatus state={props.checkingState} />
+          <OperationDisplay value={props.operation} helpEnabled={helpEnabled} />
+          <AddressDisplay value={props.addressDisplay} helpEnabled={helpEnabled} />
+          <OperatingStatus state={props.operatingState} helpEnabled={helpEnabled} />
+          <CheckingStatus state={props.checkingState} helpEnabled={helpEnabled} />
 
           <ControlSection
             programmed={props.programmed}
@@ -86,6 +104,7 @@ const FrontPanel: React.FC<FrontPanelProps> = (props) => {
             onDisplayChange={props.onDisplayChange}
             onOverflowChange={props.onOverflowChange}
             onErrorChange={props.onErrorChange}
+            helpEnabled={helpEnabled}
           />
 
           <ButtonSection
@@ -96,6 +115,9 @@ const FrontPanel: React.FC<FrontPanelProps> = (props) => {
             onComputerResetClick={props.onComputerResetClick}
             onAccumResetClick={props.onAccumResetClick}
             onEmulatorResetClick={props.onEmulatorResetClick}
+            onHelpClick={handleHelpToggle}
+            helpEnabled={helpEnabled}
+            showHelpIntroTip={showHelpIntroTip}
           />
         </div>
       </div>

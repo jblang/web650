@@ -1,19 +1,23 @@
 import React from 'react';
 import DecimalKnob from './DecimalKnob';
 import LabeledKnob from './LabeledKnob';
+import HelpTarget from './HelpTarget';
 import { normalizeWord } from '../../lib/simh/i650/format';
 import styles from './EntrySection.module.scss';
+import cn from 'classnames';
 
 const SIGN_POS = [{label: '-', angle: -30}, {label: '+', angle: 30}];
 
 interface EntrySectionProps {
   value: string | number;
   onChange: (newValue: string) => void;
+  helpEnabled?: boolean;
 }
 
 const EntrySection: React.FC<EntrySectionProps> = ({
   value,
   onChange,
+  helpEnabled = false,
 }) => {
   const digitKnobRefs = React.useRef<Array<HTMLDivElement | null>>(Array.from({ length: 10 }, () => null));
   const digitContainerRef = React.useRef<HTMLDivElement>(null);
@@ -54,7 +58,11 @@ const EntrySection: React.FC<EntrySectionProps> = ({
   return (
     <>
       {/* Knobs row */}
-      <div className={styles.knobsRow} data-testid="entry-section" data-entry-value={normalizedValue}>
+      <div
+        className={cn(styles.knobsRow, { [styles.helpLayer]: helpEnabled })}
+        data-testid="entry-section"
+        data-entry-value={normalizedValue}
+      >
         <div ref={digitContainerRef} className={styles.digitContainer}>
           {digits.map((digit, i) => (
             <div key={i} className={styles.cell}>
@@ -75,15 +83,25 @@ const EntrySection: React.FC<EntrySectionProps> = ({
         <div className={styles.storageEntryLabel}>
           STORAGE ⸻ ENTRY
         </div>
+        <HelpTarget
+          enabled={helpEnabled}
+          title="STORAGE ENTRY SWITCHES"
+          description="These ten digit switches act as the STORAGE ENTRY word. In program flow, they correspond to address 8000; in MANUAL mode, use them with TRANSFER/read-in-read-out operations to place data into drum storage."
+        />
       </div>
 
-      <div className={styles.signKnobCell}>
+      <div className={cn(styles.signKnobCell, { [styles.helpLayer]: helpEnabled })}>
         <div className={styles.cell}>
           <LabeledKnob position={signKnobPosition} positions={SIGN_POS} onChange={handleSignChange} testId="entry-sign-knob" label="Sign" />
         </div>
         <div className={styles.signLabel}>
           SIGN
         </div>
+        <HelpTarget
+          enabled={helpEnabled}
+          title="SIGN SWITCH"
+          description="Sets the sign for the STORAGE ENTRY word. Use this with the ten entry digits when preparing the value sent from console entry (address 8000)."
+        />
       </div>
     </>
   );

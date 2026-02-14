@@ -2,6 +2,7 @@
 
 .finalKnobsRow {
   grid-column: 1 / 12;
+  position: relative;
   display: grid;
   grid-template-columns: subgrid;
   grid-template-rows: auto auto;
@@ -14,6 +15,7 @@
 .knobLabel {
   @include section-heading-base('heading-compact-01');
   font-size: $font-size-control;
+  position: relative;
 
   &.programmed {
     grid-column: 1 / 2;
@@ -46,6 +48,50 @@
 }
 
 .displayKnob {
-  grid-column: 8 / 10;
   justify-self: center;
+}
+
+.helpLayer {
+  z-index: 20;
+}
+
+.programmedCell,
+.halfCycleCell,
+.addressSelectionCell,
+.controlCell,
+.displayCell,
+.overflowCell,
+.errorCell {
+  position: relative;
+}
+
+.programmedCell {
+  grid-column: 1 / 2;
+}
+
+.halfCycleCell {
+  grid-column: 2 / 3;
+}
+
+.addressSelectionCell {
+  grid-column: 3 / 7;
+  display: grid;
+  grid-template-columns: subgrid;
+  gap: 12px;
+}
+
+.controlCell {
+  grid-column: 7 / 8;
+}
+
+.displayCell {
+  grid-column: 8 / 10;
+}
+
+.overflowCell {
+  grid-column: 10 / 11;
+}
+
+.errorCell {
+  grid-column: 11 / 12;
 }

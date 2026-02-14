@@ -13,6 +13,7 @@
   padding: 0 12px;
   @include section-heading-base;
   @include spaced-text(5em);
+  position: relative;
 }
 
 .labelSign {
@@ -20,6 +21,7 @@
   padding: 0 12px;
   @include section-heading-base;
   @include spaced-text(0.6em);
+  position: relative;
 }
 
 .digitsRow {
@@ -27,6 +29,7 @@
   grid-column: 1 / 11;
   grid-template-rows: auto 1fr;
   gap: 4px; // Match parent grid gap
+  position: relative;
 }
 
 .opCodeGroup,
@@ -43,4 +46,5 @@
   @include panel-section;
   grid-column: 11;
   @include centered-cell;
+  position: relative;
 }

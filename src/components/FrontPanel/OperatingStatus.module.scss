@@ -8,6 +8,7 @@
   background-color: transparent;
   padding: 12px;
   gap: 12px;
+  position: relative;
 }
 
 .operatingTitle {
@@ -15,6 +16,11 @@
   @include section-heading-base;
   @include spaced-text(1.2em);
   color: $panel-text-dark;
+}
+
+.operatingTitleWrap {
+  grid-column: span 3;
+  position: relative;
 }
 
 .ledColumn {
@@ -29,6 +35,7 @@
   flex-direction: column;
   align-items: center;
   gap: 4px;
+  position: relative;
 }
 
 .bulb {
