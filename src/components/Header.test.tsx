@@ -205,6 +205,17 @@ describe('Header', () => {
     expect(link?.getAttribute('data-is-current')).toBe('true');
   });
 
+  it('marks Documentation as current page when pathname has trailing slash', () => {
+    mockPathname.value = '/docs/';
+
+    render(<AppHeader />);
+
+    const link = Array.from(container.querySelectorAll('[data-testid="header-menu-item"]')).find(
+      (el) => el.getAttribute('href') === '/docs'
+    );
+    expect(link?.getAttribute('data-is-current')).toBe('true');
+  });
+
   it('marks no page as current when on home page', () => {
     mockPathname.value = '/';
 

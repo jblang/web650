@@ -17,12 +17,21 @@ const links = [
   { href: '/docs', text: 'Documentation' },
 ];
 
+const normalizePath = (path: string) => {
+  if (path === '/') {
+    return '/';
+  }
+
+  return path.replace(/\/+$/, '');
+};
+
 export default function AppHeader() {
   const pathname = usePathname();
+  const normalizedPathname = normalizePath(pathname ?? '/');
 
   return (
     <Header aria-label="SIMH i650">
-      <HeaderName href="/" prefix="SIMH">
+      <HeaderName as={Link} href="/" prefix="SIMH">
         i650
       </HeaderName>
       <HeaderNavigation aria-label="Navigation">
@@ -31,7 +40,7 @@ export default function AppHeader() {
             key={link.href}
             as={Link}
             href={link.href}
-            isCurrentPage={pathname === link.href}
+            isCurrentPage={normalizedPathname === normalizePath(link.href)}
           >
             {link.text}
           </HeaderMenuItem>
