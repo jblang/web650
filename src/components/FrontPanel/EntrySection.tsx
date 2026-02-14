@@ -16,6 +16,7 @@ const EntrySection: React.FC<EntrySectionProps> = ({
   onChange,
 }) => {
   const digitKnobRefs = React.useRef<Array<HTMLDivElement | null>>(Array.from({ length: 10 }, () => null));
+  const digitContainerRef = React.useRef<HTMLDivElement>(null);
   const [normalizedValue, setNormalizedValue] = React.useState(() => normalizeWord(value));
 
   React.useEffect(() => {
@@ -54,7 +55,7 @@ const EntrySection: React.FC<EntrySectionProps> = ({
     <>
       {/* Knobs row */}
       <div className={styles.knobsRow} data-testid="entry-section" data-entry-value={normalizedValue}>
-        <div className={styles.digitContainer}>
+        <div ref={digitContainerRef} className={styles.digitContainer}>
           {digits.map((digit, i) => (
             <div key={i} className={styles.cell}>
               <DecimalKnob
@@ -62,6 +63,7 @@ const EntrySection: React.FC<EntrySectionProps> = ({
                 onChange={handleDigitChange(i)}
                 onNavigateNext={() => focusDigitKnob(i + 1)}
                 onNavigatePrevious={() => focusDigitKnob(i - 1)}
+                popupBoundaryRef={digitContainerRef}
                 knobRef={(el) => {
                   digitKnobRefs.current[i] = el;
                 }}

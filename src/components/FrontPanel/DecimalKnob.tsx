@@ -10,6 +10,7 @@ interface DecimalKnobProps {
   onNavigateNext?: () => void;
   onNavigatePrevious?: () => void;
   knobRef?: React.Ref<HTMLDivElement>;
+  popupBoundaryRef?: React.RefObject<HTMLElement | null>;
   scaleFactor?: number;
   testId?: string;
 }
@@ -24,6 +25,7 @@ const DecimalKnob: React.FC<DecimalKnobProps> = ({
   onNavigateNext,
   onNavigatePrevious,
   knobRef,
+  popupBoundaryRef,
   style,
   scaleFactor = DEFAULT_SCALE,
   testId,
@@ -51,6 +53,12 @@ const DecimalKnob: React.FC<DecimalKnobProps> = ({
   const handleDigitSelect = (digit: number) => {
     onChange?.(digit);
     setShowPopup(false);
+  };
+
+  const togglePopup = () => {
+    // Reset per-open position so clamping recalculates consistently.
+    setPopupOffset(0);
+    setShowPopup((prev) => !prev);
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -98,12 +106,18 @@ const DecimalKnob: React.FC<DecimalKnobProps> = ({
     if (showPopup && popupRef.current) {
       const popup = popupRef.current;
       const rect = popup.getBoundingClientRect();
-      const viewportWidth = window.innerWidth;
+      const boundaryRect = popupBoundaryRef?.current?.getBoundingClientRect();
+      const leftBoundary = boundaryRect?.left ?? 0;
+      const rightBoundary = boundaryRect?.right ?? window.innerWidth;
+      const boundaryPadding = 4;
+      const minLeft = leftBoundary + boundaryPadding;
+      const maxRight = rightBoundary - boundaryPadding;
       let newOffset = 0;
-      if (rect.left < 0) {
-        newOffset = -rect.left + 4;
-      } else if (rect.right > viewportWidth) {
-        newOffset = viewportWidth - rect.right - 4;
+
+      if (rect.left < minLeft) {
+        newOffset = minLeft - rect.left;
+      } else if (rect.right > maxRight) {
+        newOffset = maxRight - rect.right;
       }
 
       setPopupOffset(prevOffset => {
@@ -113,7 +127,7 @@ const DecimalKnob: React.FC<DecimalKnobProps> = ({
         return prevOffset;
       });
     }
-  }, [showPopup]);
+  }, [showPopup, popupBoundaryRef]);
 
   return (
     <div
@@ -132,13 +146,17 @@ const DecimalKnob: React.FC<DecimalKnobProps> = ({
       <div className={styles.decimalDisplayWrapper} ref={wrapperRef}>
         <div
           className={styles.decimalDisplay}
-          onClick={() => setShowPopup(!showPopup)}
+          onClick={togglePopup}
           title="CHOOSE"
         >
           {value}
         </div>
         {showPopup && (
-          <div ref={popupRef} className={styles.decimalPopup} style={{ marginLeft: popupOffset }}>
+          <div
+            ref={popupRef}
+            className={styles.decimalPopup}
+            style={{ marginLeft: popupOffset }}
+          >
             {[0, 1, 2, 3, 4, 5, 6, 7, 8, 9].map((digit) => (
               <div
                 key={digit}
