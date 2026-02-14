@@ -1,0 +1,68 @@
+.globalBar {
+  align-items: center;
+}
+
+.themeToggle {
+  display: grid;
+  grid-template-columns: 1rem auto 1rem;
+  align-items: center;
+  column-gap: 0.5rem;
+  padding-right: 1rem;
+}
+
+.themeIconSlot {
+  width: 1rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 1rem;
+}
+
+.themeIcon {
+  display: block;
+  flex: 0 0 auto;
+}
+
+.themeSwitch {
+  background: none;
+  border: 0;
+  padding: 0;
+  margin: 0;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+}
+
+.themeSwitch:focus-visible {
+  outline: 2px solid var(--cds-focus, #0f62fe);
+  outline-offset: 2px;
+  border-radius: 1rem;
+}
+
+.themeSwitchTrack {
+  width: 2rem;
+  height: 1rem;
+  border-radius: 0.5rem;
+  background-color: var(--cds-toggle-off, #8d8d8d);
+  position: relative;
+  transition: background-color 110ms ease;
+}
+
+.themeSwitchThumb {
+  position: absolute;
+  top: 0.1875rem;
+  left: 0.1875rem;
+  width: 0.625rem;
+  height: 0.625rem;
+  border-radius: 50%;
+  background-color: var(--cds-icon-on-color, #ffffff);
+  transition: transform 110ms ease;
+}
+
+.themeSwitch[data-toggled='true'] .themeSwitchThumb {
+  transform: translateX(1rem);
+}
+
+.themeSwitch[data-toggled='true'] .themeSwitchTrack {
+  background-color: var(--cds-toggle-off, #8d8d8d);
+}

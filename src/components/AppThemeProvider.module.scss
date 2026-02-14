@@ -1,0 +1,10 @@
+.themeRoot {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background-color: var(--cds-background);
+}
+
+.themeRoot :global(.cds--content) {
+  flex: 1 1 auto;
+}

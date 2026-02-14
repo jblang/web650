@@ -16,6 +16,28 @@ body {
   padding: 0;
 }
 
+html,
+html body {
+  background-color: #ffffff;
+}
+
+@media (prefers-color-scheme: dark) {
+  html,
+  html body {
+    background-color: #161616;
+  }
+}
+
+html[data-app-theme='white'],
+html[data-app-theme='white'] body {
+  background-color: #ffffff;
+}
+
+html[data-app-theme='g100'],
+html[data-app-theme='g100'] body {
+  background-color: #161616;
+}
+
 .mono-textarea textarea {
   @include type.font-family('mono');
 }

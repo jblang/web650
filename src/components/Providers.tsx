@@ -4,17 +4,19 @@ import { ReactNode } from 'react';
 import { EmulatorStateProvider } from './EmulatorStateProvider';
 import { EmulatorConsoleProvider } from './EmulatorConsoleProvider';
 import { EmulatorActionsProvider } from './EmulatorActionsProvider';
-
 import CardDeckProvider from './CardDeckProvider';
+import { AppThemeProvider } from './AppThemeProvider';
 
 export default function Providers({ children }: { children: ReactNode }) {
   return (
-    <CardDeckProvider>
-      <EmulatorStateProvider>
-        <EmulatorConsoleProvider>
-          <EmulatorActionsProvider>{children}</EmulatorActionsProvider>
-        </EmulatorConsoleProvider>
-      </EmulatorStateProvider>
-    </CardDeckProvider>
+    <AppThemeProvider>
+      <CardDeckProvider>
+        <EmulatorStateProvider>
+          <EmulatorConsoleProvider>
+            <EmulatorActionsProvider>{children}</EmulatorActionsProvider>
+          </EmulatorConsoleProvider>
+        </EmulatorStateProvider>
+      </CardDeckProvider>
+    </AppThemeProvider>
   );
 }

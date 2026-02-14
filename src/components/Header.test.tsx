@@ -9,6 +9,10 @@ let container: HTMLDivElement;
 let root: Root;
 
 const mockPathname = vi.hoisted(() => ({ value: '/' }));
+const mockTheme = vi.hoisted(() => ({
+  isDark: false,
+  toggleTheme: vi.fn(),
+}));
 
 // Mock next/link
 vi.mock('next/link', () => ({
@@ -18,6 +22,15 @@ vi.mock('next/link', () => ({
 // Mock next/navigation
 vi.mock('next/navigation', () => ({
   usePathname: () => mockPathname.value,
+}));
+
+vi.mock('./AppThemeProvider', () => ({
+  useAppTheme: () => mockTheme,
+}));
+
+vi.mock('@carbon/icons-react', () => ({
+  Sun: () => <span data-testid="theme-icon-sun" />,
+  Moon: () => <span data-testid="theme-icon-moon" />,
 }));
 
 // Mock Carbon components
@@ -46,6 +59,28 @@ vi.mock('@carbon/react', () => ({
       {children}
     </a>
   ),
+  HeaderGlobalBar: ({ children }: { children: React.ReactNode }) => (
+    <div data-testid="header-global-bar">{children}</div>
+  ),
+  Toggle: ({
+    id,
+    toggled,
+    onToggle,
+  }: {
+    id: string;
+    toggled: boolean;
+    onToggle: (checked: boolean) => void;
+  }) => (
+    <button
+      type="button"
+      data-testid="theme-toggle"
+      id={id}
+      data-toggled={String(toggled)}
+      onClick={() => onToggle(!toggled)}
+    >
+      Theme
+    </button>
+  ),
 }));
 
 const render = (ui: React.ReactElement) => {
@@ -60,6 +95,8 @@ describe('Header', () => {
     document.body.appendChild(container);
     root = createRoot(container);
     mockPathname.value = '/';
+    mockTheme.isDark = false;
+    mockTheme.toggleTheme.mockReset();
   });
 
   afterEach(() => {
@@ -226,6 +263,49 @@ describe('Header', () => {
       (el) => el.getAttribute('data-is-current') === 'true'
     );
     expect(currentItems.length).toBe(0);
+  });
+
+  it('renders a theme toggle in the header global bar', () => {
+    render(<AppHeader />);
+
+    const globalBar = container.querySelector('[data-testid="header-global-bar"]');
+    const themeToggle = container.querySelector('[data-testid="theme-toggle"]');
+
+    expect(globalBar).not.toBeNull();
+    expect(themeToggle).not.toBeNull();
+    expect(themeToggle?.getAttribute('data-toggled')).toBe('false');
+  });
+
+  it('renders sun and moon icons around the theme toggle', () => {
+    render(<AppHeader />);
+
+    const sun = container.querySelector('[data-testid="theme-icon-sun"]');
+    const moon = container.querySelector('[data-testid="theme-icon-moon"]');
+
+    expect(sun).not.toBeNull();
+    expect(moon).not.toBeNull();
+  });
+
+  it('reflects dark mode state in toggle', () => {
+    mockTheme.isDark = true;
+
+    render(<AppHeader />);
+
+    const themeToggle = container.querySelector('[data-testid="theme-toggle"]');
+    expect(themeToggle?.getAttribute('data-toggled')).toBe('true');
+  });
+
+  it('calls toggleTheme when theme toggle is clicked', () => {
+    render(<AppHeader />);
+
+    const themeToggle = container.querySelector('[data-testid="theme-toggle"]');
+    expect(themeToggle).not.toBeNull();
+
+    act(() => {
+      (themeToggle as HTMLButtonElement).click();
+    });
+
+    expect(mockTheme.toggleTheme).toHaveBeenCalledTimes(1);
   });
 });
 
