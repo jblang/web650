@@ -31,15 +31,19 @@ export default function DocsPage() {
   }, []);
 
   if (loading) {
-    return <div className="docs-container">Loading documentation...</div>;
+    return <div className="docs-content"><p>Loading documentation...</p></div>;
   }
 
   if (error) {
-    return <div className="docs-container" style={{ color: '#da1e28' }}>{error}</div>;
+    return (
+      <div className="docs-content">
+        <p style={{ color: 'var(--cds-support-error, #da1e28)' }}>{error}</p>
+      </div>
+    );
   }
 
   return (
-    <div className="docs-container">
+    <div className="docs-content">
       <Markdown>{content}</Markdown>
     </div>
   );
