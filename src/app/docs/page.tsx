@@ -4,6 +4,30 @@ import { useEffect, useState } from 'react';
 import Markdown from 'react-markdown';
 import './docs.scss';
 
+function resolvePublicAssetUrl(rawUrl: string | undefined): string | undefined {
+  if (!rawUrl) {
+    return rawUrl;
+  }
+
+  if (
+    rawUrl.startsWith('#') ||
+    rawUrl.startsWith('mailto:') ||
+    rawUrl.startsWith('data:') ||
+    /^[a-z][a-z0-9+.-]*:\/\//i.test(rawUrl)
+  ) {
+    return rawUrl;
+  }
+
+  const basePath = process.env.NEXT_PUBLIC_BASE_PATH ?? '';
+  const normalizedPath = rawUrl.replace(/^\.\//, '');
+
+  if (normalizedPath.startsWith('/')) {
+    return `${basePath}${normalizedPath}`;
+  }
+
+  return `${basePath}/${normalizedPath}`;
+}
+
 export default function DocsPage() {
   const [content, setContent] = useState('');
   const [loading, setLoading] = useState(true);
@@ -44,7 +68,21 @@ export default function DocsPage() {
 
   return (
     <div className="docs-content">
-      <Markdown>{content}</Markdown>
+      <Markdown
+        components={{
+          img: ({ src, alt }) => {
+            const resolvedSrc = typeof src === 'string' ? resolvePublicAssetUrl(src) : undefined;
+            return (
+              // Markdown from /public/about.md uses repo-relative image paths.
+              // In the docs route, these must be remapped to the static public root.
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={resolvedSrc} alt={alt ?? ''} />
+            );
+          },
+        }}
+      >
+        {content}
+      </Markdown>
     </div>
   );
 }
