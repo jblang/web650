@@ -308,7 +308,7 @@ test('emulator reset clears console output and keeps console usable', async ({ p
   await page.getByRole('link', { name: 'Emulator' }).click();
   await expect(output).toHaveValue('');
   await sendConsoleCommand(page, 'examine state');
-  await expect(output).toHaveValue(/ACCLO:\s*0000000123\+/);
+  await expect(output).toHaveValue(/ACCLO:\s*0000000000\+/);
 });
 
 test('display selector changes visible value without mutating register state', async ({ page }) => {

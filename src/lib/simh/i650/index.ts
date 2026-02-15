@@ -73,6 +73,19 @@ let stateStreamActive = false;
 let runRequestedUntil = 0;
 let stateStreamActivationId = 0;
 
+function handleSimhOutput(text: string): void {
+  for (const listener of outputListeners) {
+    listener(text);
+  }
+  const lines = text.split('\n').filter((line) => line.trim().length > 0);
+  for (const line of lines) {
+    const patch = parseDebugLine(line);
+    if (patch) {
+      queueDebugStreamPatch(patch);
+    }
+  }
+}
+
 const stateStreamListener = (sample: {
   pr: string;
   ar: string;
@@ -297,18 +310,7 @@ export async function init(): Promise<void> {
     try {
       if (!outputInitialized) {
         outputInitialized = true;
-        await simh.onOutput((text) => {
-          for (const listener of outputListeners) {
-            listener(text);
-          }
-          const lines = text.split('\n').filter((line) => line.trim().length > 0);
-          for (const line of lines) {
-            const patch = parseDebugLine(line);
-            if (patch) {
-              queueDebugStreamPatch(patch);
-            }
-          }
-        });
+        await simh.onOutput(handleSimhOutput);
       }
 
       debugLog('i650 init start');
@@ -368,16 +370,48 @@ export async function init(): Promise<void> {
  */
 export async function restart(): Promise<void> {
   await ensureInit();
-  mergeState({ initialized: false, isRunning: false });
-  await simh.restart(moduleName);
-  await simh.sendCommand('SET CPU 1K', { echo: false });
-  const persistedYieldSteps = readPersistedYieldSteps();
-  if (persistedYieldSteps !== null) {
-    await simh.setYieldSteps(persistedYieldSteps);
-    mergeState({ yieldSteps: persistedYieldSteps });
+  const restarting = (async () => {
+    runRequestedUntil = 0;
+    stateStreamInitialized = false;
+    mergeState({ initialized: false, isRunning: false });
+    await simh.restart(moduleName);
+    if (outputInitialized) {
+      await simh.onOutput(handleSimhOutput);
+    }
+    if (stateStreamActive) {
+      await startStateStream();
+    }
+    await simh.sendCommand('SET CPU 1K', { echo: false });
+    const persistedYieldSteps = readPersistedYieldSteps();
+    if (persistedYieldSteps !== null) {
+      await simh.setYieldSteps(persistedYieldSteps);
+      mergeState({ yieldSteps: persistedYieldSteps });
+    }
+    const snapshot = await getRegisterSnapshot();
+    mergeState({
+      addressRegister: snapshot.addressRegister,
+      programRegister: snapshot.programRegister,
+      lowerAccumulator: snapshot.lowerAccumulator,
+      upperAccumulator: snapshot.upperAccumulator,
+      distributor: snapshot.distributor,
+      consoleSwitches: snapshot.consoleSwitches,
+      programmedStop: snapshot.programmedStop,
+      overflowStop: snapshot.overflowStop,
+      halfCycle: snapshot.halfCycle,
+      initialized: true,
+    });
+  })();
+
+  initialized = false;
+  initPromise = restarting;
+  try {
+    await restarting;
+    initialized = true;
+  } catch (err) {
+    initialized = false;
+    initPromise = null;
+    throw err;
   }
-  await refreshRegisters();
-  mergeState({ initialized: true });
 }
 
 async function ensureInit(): Promise<void> {

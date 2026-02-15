@@ -286,6 +286,27 @@ describe('i650', () => {
     expect(service.getState().yieldSteps).toBe(2500);
   });
 
+  it('restart reinitializes active state stream and output forwarding', async () => {
+    const service = await setupService();
+    await service.init();
+    await flushPromises();
+
+    await service.setStateStreamActive(true);
+    simhMocks.clearStateStream.mockClear();
+    simhMocks.enableStateStream.mockClear();
+    simhMocks.setStateStreamStride.mockClear();
+    simhMocks.onStateStream.mockClear();
+    simhMocks.onOutput.mockClear();
+
+    await service.restart();
+
+    expect(simhMocks.onOutput).toHaveBeenCalledTimes(1);
+    expect(simhMocks.clearStateStream).toHaveBeenCalledTimes(1);
+    expect(simhMocks.enableStateStream).toHaveBeenCalledWith(true);
+    expect(simhMocks.setStateStreamStride).toHaveBeenCalledTimes(1);
+    expect(simhMocks.onStateStream).toHaveBeenCalledTimes(1);
+  });
+
   it('transfers address only in manual mode', async () => {
     const service = await setupService();
     await service.init();

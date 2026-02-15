@@ -20,7 +20,15 @@ describe('simh control', () => {
     coreMocks.init.mockReset();
     coreMocks.resetModule.mockReset();
     document.head.innerHTML = '';
-    delete (globalThis as Record<string, unknown>).createI650Module;
+    const globals = globalThis as Record<string, unknown>;
+    try {
+      Reflect.deleteProperty(globals, 'createI650Module');
+    } catch {
+      // Ignore and clear below.
+    }
+    if ('createI650Module' in globals) {
+      globals.createI650Module = undefined;
+    }
   });
 
   it('steps emulator via simh_step', async () => {
@@ -94,5 +102,22 @@ describe('simh control', () => {
 
     // Restore document
     global.document = originalDocument;
+  });
+
+  it('restart handles non-configurable module factory globals', async () => {
+    coreMocks.init.mockResolvedValue(undefined);
+    coreMocks.getModule.mockReturnValue({ ccall: vi.fn() });
+    Object.defineProperty(globalThis, 'createI650Module', {
+      value: vi.fn(),
+      configurable: false,
+      writable: true,
+    });
+
+    const control = await import('./control');
+    await expect(control.restart('i650')).resolves.toBeUndefined();
+
+    expect(coreMocks.resetModule).toHaveBeenCalledTimes(1);
+    expect(coreMocks.init).toHaveBeenCalledWith('i650');
+    expect((globalThis as Record<string, unknown>).createI650Module).toBeUndefined();
   });
 });

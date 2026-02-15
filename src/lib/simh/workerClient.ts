@@ -40,6 +40,13 @@ let running = false;
 let initPromise: Promise<void> | null = null;
 let initModuleName: string | null = null;
 
+function disposeWorker(): void {
+  if (!worker) return;
+  worker.terminate();
+  worker = null;
+  running = false;
+}
+
 function ensureWorker(): Worker {
   if (worker) return worker;
   worker = new Worker(new URL('./simh.worker.ts', import.meta.url), { type: 'classic' });
@@ -74,12 +81,17 @@ function ensureWorker(): Worker {
     }
   };
   worker.onerror = (event) => {
+    if (event instanceof ErrorEvent) {
+      event.preventDefault();
+    }
     const message = event instanceof ErrorEvent ? event.message : 'Worker error';
     const error = new Error(message);
     for (const { reject } of pending.values()) {
       reject(error);
     }
     pending.clear();
+    initPromise = null;
+    disposeWorker();
   };
   worker.onmessageerror = () => {
     const error = new Error('Worker message error');
@@ -87,6 +99,8 @@ function ensureWorker(): Worker {
       reject(error);
     }
     pending.clear();
+    initPromise = null;
+    disposeWorker();
   };
   return worker;
 }

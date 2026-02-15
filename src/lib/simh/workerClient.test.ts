@@ -17,6 +17,7 @@ class FakeWorker {
   onerror: ((event: Event) => void) | null = null;
   onmessageerror: ((event: MessageEvent) => void) | null = null;
   postedMessages: RequestMessage[] = [];
+  terminated = false;
 
   constructor() {
     FakeWorker.instances.push(this);
@@ -24,6 +25,10 @@ class FakeWorker {
 
   postMessage(message: RequestMessage): void {
     this.postedMessages.push(message);
+  }
+
+  terminate(): void {
+    this.terminated = true;
   }
 
   emitMessage(data: unknown): void {
@@ -183,12 +188,16 @@ describe('workerClient', () => {
     const worker = FakeWorker.instances[0];
     worker.emitError('boom');
     await expect(initPromise).rejects.toThrow('boom');
+    expect(worker.terminated).toBe(true);
 
     const retryPromise = workerClient.init('i650');
-    const retryReq = getLastRequest(worker);
+    const retryWorker = FakeWorker.instances[1];
+    expect(retryWorker).toBeDefined();
+    const retryReq = getLastRequest(retryWorker);
     expect(retryReq.method).toBe('init');
-    worker.emitMessageError();
+    retryWorker.emitMessageError();
     await expect(retryPromise).rejects.toThrow('Worker message error');
+    expect(retryWorker.terminated).toBe(true);
   });
 
   it('uses generic worker error when onerror receives a plain Event', async () => {

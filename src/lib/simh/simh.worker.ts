@@ -18,6 +18,7 @@ let echoEnabled = false;
 let stateStreamEnabled = false;
 let stateStreamInterval: ReturnType<typeof setInterval> | null = null;
 const STATE_STREAM_POLL_MS = 16;
+const MODULE_NOT_INITIALIZED_ERROR = 'WASM module not initialized';
 
 const ctx = self as unknown as {
   postMessage: (message: unknown) => void;
@@ -28,6 +29,10 @@ simh.onOutput((text) => {
   if (!outputEnabled) return;
   ctx.postMessage({ type: 'output', text });
 });
+
+function isModuleNotInitializedError(err: unknown): boolean {
+  return err instanceof Error && err.message.includes(MODULE_NOT_INITIALIZED_ERROR);
+}
 
 const handlers: Record<string, (...args: unknown[]) => unknown> = {
   init: (moduleName?: unknown, baseUrl?: unknown) => {
@@ -73,7 +78,15 @@ const handlers: Record<string, (...args: unknown[]) => unknown> = {
     simh.enableStateStream(stateStreamEnabled);
     if (stateStreamEnabled && !stateStreamInterval) {
       stateStreamInterval = setInterval(() => {
-        const sample = simh.readStateStreamLastSample();
+        let sample = null;
+        try {
+          sample = simh.readStateStreamLastSample();
+        } catch (err) {
+          if (!isModuleNotInitializedError(err)) {
+            console.error('[simh.worker] state stream poll failed', err);
+          }
+          return;
+        }
         if (!sample) return;
         ctx.postMessage({ type: 'state', sample });
       }, STATE_STREAM_POLL_MS);
@@ -94,7 +107,15 @@ let lastRunState: boolean | null = null;
 function startRunStatePolling(): void {
   if (runStateInterval) return;
   runStateInterval = setInterval(() => {
-    const runningState = simh.isEmulatorBusy();
+    let runningState = false;
+    try {
+      runningState = simh.isEmulatorBusy();
+    } catch (err) {
+      if (!isModuleNotInitializedError(err)) {
+        console.error('[simh.worker] runstate poll failed', err);
+      }
+      return;
+    }
     if (lastRunState === runningState) return;
     lastRunState = runningState;
     ctx.postMessage({ type: 'runstate', running: runningState });

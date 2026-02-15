@@ -30,7 +30,19 @@ export async function restart(moduleName: string): Promise<void> {
   }
 
   const moduleKey = `create${moduleName.charAt(0).toUpperCase() + moduleName.slice(1)}Module`;
-  delete (globalThis as unknown as Record<string, unknown>)[moduleKey];
+  const globals = globalThis as unknown as Record<string, unknown>;
+  try {
+    Reflect.deleteProperty(globals, moduleKey);
+  } catch {
+    // Ignore and fall back to assignment below.
+  }
+  if (moduleKey in globals) {
+    try {
+      globals[moduleKey] = undefined;
+    } catch {
+      // Ignore immutable globals; init() will still validate the factory shape.
+    }
+  }
 
   resetModule();
   await init(moduleName);
