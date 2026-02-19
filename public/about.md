@@ -6,6 +6,8 @@ The [IBM 650](https://en.wikipedia.org/wiki/IBM_650) (wikipedia.org) is an early
 
 -- Donald E. Knuth
 
+Here is a photo of someone other than Donald Knuth using a 650 once installed at [Texas A&M University](https://engineering.tamu.edu/cse/index.html):
+
 ![IBM 650 in use at Texas A&M University](tamu_650.jpg)
 
 Image credit: [Cushing Memorial Library and Archives, Texas A&M](https://www.flickr.com/people/29072716@N04): [IBM Processing Machine](https://www.flickr.com/photos/29072716@N04/3876089106). License: [CC BY-NC-ND 2.0](https://creativecommons.org/licenses/by-nc-nd/2.0/)
@@ -16,9 +18,23 @@ Image credit: [Cushing Memorial Library and Archives, Texas A&M](https://www.fli
 
 To get familiar with the front panel, click the HELP button near the bottom right. This will enter context help mode. Everywhere you see a ? cursor, you can click to get contextual help. The best way to learn is to explore.
 
+Here's a quick interactive demo to start your journey:
+
+1. Set the CONTROL switch to MANUAL OPERATION.
+2. Set the ADDRESS SELECTION switches to 8000. Click on the right half of the first knob twice to decrement it from 0 to 8.
+3. Click the TRANSFER button. The ADDRESS lights should change to display 8000.
+4. Enter whatever value you want on the ENTRY - STORAGE switches. You can do this in multiple ways:
+   - Turn the knobs by clicking on either side of them.
+   - Click on the window displaying the decimal digit to select a value.
+   - Click on a switch and then begin typing numbers on the keyboard.
+     - The selection will automatically advance to the next switch.
+     - Move focus between switches with tab or shift-tab (backspace works too).
+5. Set the DISPLAY switch to READ-OUT STORAGE.
+6. Press the PROGRAM START button. The value you selected on the ENTRY switches should now be shown on the DISPLAY lights.
+
 ### Blinkenlights
 
-[Obligatory warning](https://en.wikipedia.org/wiki/Blinkenlights):
+The term [blinkenlights](https://en.wikipedia.org/wiki/Blinkenlights) comes from a tongue-in-cheek warning popular in computer rooms of the mainframe and minicomputer era:
 
 > **ACHTUNG!**
 >
@@ -31,6 +47,8 @@ To get familiar with the front panel, click the HELP button near the bottom righ
 > RUBBERNECKEN SIGHTSEEREN KEEPEN DAS COTTONPICKEN
 > HÄNDER IN DAS POCKETS MUSS.
 > ZO RELAXEN UND WATSCHEN DER BLINKENLICHTEN.
+
+Luckily, this simulation of the 650 is more friendly to turisten und sightseeren than this warning suggests. Gefingerpoken und mittengrabben is encouraged. You're very unlikely to blowenfusen or schnappen der springenwerk, so have fun. If something breaks, just reload the web page and your virtual 650 is as good as new. 
 
 #### Bi-Quinary Counting
 
@@ -74,7 +92,7 @@ cd sw
 do i650_demo_all.ini
 ```
 
-This will begin running all the demo programs.  Output will scroll by in the console output window. If you stick around until the end of the demo script, you are rewarded with some nice text plots of mathematical curves:
+This will begin running all the demo programs.  Output will scroll by in the console output window. If you stick around until the end of the demo script, you are rewarded with some nice punched card plots of mathematical curves:
 
 ```
 ***
@@ -190,15 +208,36 @@ I highly recommend [Programming the Magnetic Drum Computer and Data-Processing M
 - [The IBM 650](https://www.ibm.com/history/650) (ibm.com) for IBM's own account of its pioneering computer system.
 - [IBM's Early Computers](https://mitpress.mit.edu/9780262523936/ibms-early-computers/) by Bashe, Pugh, Palmer and Johnson (mitpress.mit.edu) for a comprehensive technical and business history of IBM's computing devices from the Hollerith era beginning in the late 1800s to the pre-360 transistor computers of the early 1960s.
 
+## About Open SIMH
+
+[Open SIMH](https://opensimh.org) is a collection of simulators started by Robert Supnik and developed by a group of volunteers.  It includes simulators for many famous mini- and mainframe computers from the 1950s onwards, and specifically an [IBM 650 simulator](https://opensimh.org/simdocs/i650_doc) by Roberto Sancho. Without it, this project could not exist.
+
+### Copyright and License
+
+- Copyright (c) 1993-2022, Robert M Supnik
+- Copyright (c) 2018, Roberto Sancho
+
+Permission is hereby granted, free of charge, to any person obtaining a
+copy of this software and associated documentation files (the "Software"),
+to deal in the Software without restriction, including without limitation
+the rights to use, copy, modify, merge, publish, distribute, sublicense,
+and/or sell copies of the Software, and to permit persons to whom the
+Software is furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in
+all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL
+ROBERTO SANCHO BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
+IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
+CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+
 ## About This Project
 
-This project is developed by [J.B. Langston](https://www.linkedin.com/in/jblangston/). I happen to work for IBM, but this project is not affiliated with or endorsed by IBM. I made this on my own time for fun. 
-
-This project has been developed with the help of AI coding agents. I have used a combination of [Codex](https://chatgpt.com/codex) and [Claude](https://claude.ai/), with some early use of Gemini. For the most part, assume most commits not explicitly co-authored by Claude were probably co-authored by Codex.
-
-All of the SVG graphics have been generated by painstakingly prompting Codex. I am the first to admit I'm not an artist, but I do sweat the details and keep iterating until the agent gets them right.
-
-This documentation is written in my own words without the assistance of AI. Other documents, including developer notes and code reviews have been generated with the help of AI.
+This web front-end and port of SIMH to Emscripten is by [J.B. Langston](https://www.linkedin.com/in/jblangston/). I happen to work for IBM, but this project is not affiliated with or endorsed by IBM. I made this on my own time for fun. 
 
 ### Credits
 
@@ -210,9 +249,17 @@ This documentation is written in my own words without the assistance of AI. Othe
 - [Vitest](https://vitest.dev) — test runner.
 - [Playwright](https://playwright.dev) — end-to-end browser tests.
 
+### AI Disclosure
+
+This project has been developed with the help of AI coding agents. I have used a combination of [Codex](https://chatgpt.com/codex) and [Claude](https://claude.ai/), with some early use of Gemini. For the most part, assume most commits not explicitly co-authored by Claude were probably co-authored by Codex.
+
+All of the SVG graphics have been generated by painstakingly prompting Codex. I am the first to admit I'm not an artist, but I do sweat the details and keep iterating until the agent gets them right.
+
+This documentation is written in my own words without the assistance of AI. Other documents, including developer notes and code reviews have been generated with the help of AI.
+
 ### Source Code
 
-Check out the source code at [github.com/jblang/web650](https://github.com/jblang/web650). This site is deployed directly from the main branch by GitHub actions.
+The source code for the front panel and SIMH wrapper library is at [github.com/jblang/web650](https://github.com/jblang/web650). This site is deployed directly from the main branch by GitHub actions.
 
 My fork of Open SIMH is at [github.com/jblang/simh](https://github.com/jblang/simh). Currently the changes to make it compile with Emscripten and expose an interface to JavaScript are not upstreamed, so you will need this fork for now if you want to hack on the emulator backend.
 
