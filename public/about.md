@@ -67,12 +67,13 @@ Switch to the Front Panel tab and enjoy bi-quinary counting at its finest.
 
 #### Blinkenlights while Programs Run
 
-**Before running this, you'll want to set Yield Steps somewhere between 10 and 100.** The setting is under Advanced Options at the bottom of the Emulator tab. Throttling makes the card load stages take too long, but you'll want the emulator to yield to the UI frequently enough for the lights to sample a good amount of the CPU activity.
+**Before running this, set `yieldsteps` somewhere between 10 and 100 in the simulator CLI.** Throttling makes the card load stages take too long, but you'll want the emulator to yield to the UI frequently enough for the lights to sample a good amount of the CPU activity.
 
 Try running the test suite:
 
 ```
 set nothrottle
+set yieldsteps 50
 do /test/i650_test.ini
 ```
 
@@ -82,12 +83,13 @@ Now, switch back to the Front Panel tab and prepare to be hypnotized.
 
 The 650 is fundamentally a batch-oriented computer, which makes its applications amenable to scripting within the simulator. The SIMH 650 simulator comes with many example programs and the scripts to run them, including a single script that will run all of the demos in one go. If you want more Blinkenlights, this script will certainly deliver, but the console output may ultimately prove more interesting to the technically inclined. 
 
-**If you're not planning to watch the front panel, you should set yield steps to 1000 or higher to speed up program execution.** This setting trades frequent front panel updates (lower values) for more processing time (higher values).
+**If you're not planning to watch the front panel, set `yieldsteps` to 1000 or higher to speed up program execution.** This setting trades frequent front panel updates (lower values) for more processing time (higher values).
 
 To start the demo, run:
 
 ```
 set nothrottle
+set yieldsteps 10000
 cd sw
 do i650_demo_all.ini
 ```

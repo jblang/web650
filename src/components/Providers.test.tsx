@@ -16,7 +16,6 @@ let root: Root;
 const mockState: I650EmulatorState = {
   initialized: false,
   isRunning: false,
-  yieldSteps: 1000,
   displaySwitch: 0,
   controlSwitch: 0,
   errorSwitch: 0,
@@ -59,7 +58,6 @@ const mockServiceMocks = vi.hoisted(() => ({
   transferAddress: vi.fn(),
   restart: vi.fn(),
   executeCommand: vi.fn(),
-  setYieldSteps: vi.fn(),
 }));
 
 vi.mock('@/lib/simh/i650', () => mockServiceMocks);
@@ -247,14 +245,13 @@ describe('Providers', () => {
   it('allows EmulatorConsole to access EmulatorState', async () => {
     // EmulatorConsoleProvider depends on EmulatorStateProvider
     // This test verifies that Console can access State (correct nesting order)
-    const captured: { isRunning?: boolean; yieldSteps?: number } = {};
+    const captured: { isRunning?: boolean } = {};
 
     const Probe = () => {
-      const { isRunning, yieldSteps } = useEmulatorConsole();
+      const { isRunning } = useEmulatorConsole();
       React.useEffect(() => {
         captured.isRunning = isRunning;
-        captured.yieldSteps = yieldSteps;
-      }, [isRunning, yieldSteps]);
+      }, [isRunning]);
       return null;
     };
 
@@ -267,7 +264,6 @@ describe('Providers', () => {
     });
 
     expect(captured.isRunning).toBe(false);
-    expect(captured.yieldSteps).toBe(1000);
   });
 
   it('allows EmulatorActions to access EmulatorConsole', async () => {

@@ -13,7 +13,6 @@ let subscribeCallback: ((state: I650EmulatorState) => void) | null = null;
 const mockState: I650EmulatorState = {
   initialized: false,
   isRunning: false,
-  yieldSteps: 1000,
   displaySwitch: 0,
   controlSwitch: 0,
   errorSwitch: 0,
@@ -147,7 +146,6 @@ describe('EmulatorStateProvider', () => {
     expect(captured.state).toMatchObject({
       initialized: false,
       isRunning: false,
-      yieldSteps: 1000,
       displaySwitch: 0,
       controlSwitch: 0,
       errorSwitch: 0,
@@ -220,7 +218,7 @@ describe('EmulatorStateProvider', () => {
     act(() => {
       subscribeCallback?.({
         ...mockState,
-        yieldSteps: 2000,
+        isRunning: true,
       });
     });
 

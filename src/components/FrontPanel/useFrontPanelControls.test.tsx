@@ -16,7 +16,6 @@ let root: Root;
 const mockState: I650EmulatorState = {
   initialized: true,
   isRunning: false,
-  yieldSteps: 1000,
   displaySwitch: Display.LOWER_ACCUM,
   controlSwitch: 1,
   errorSwitch: 0,
@@ -59,7 +58,6 @@ const mockServiceMocks = vi.hoisted(() => ({
   transferAddress: vi.fn(),
   restart: vi.fn(),
   executeCommand: vi.fn(),
-  setYieldSteps: vi.fn(),
 }));
 
 vi.mock('@/lib/simh/i650', () => mockServiceMocks);

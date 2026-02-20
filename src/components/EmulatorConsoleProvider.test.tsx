@@ -11,7 +11,6 @@ let root: Root;
 const mockServiceMocks = vi.hoisted(() => ({
   init: vi.fn(),
   executeCommand: vi.fn(),
-  setYieldSteps: vi.fn(),
   subscribeOutput: vi.fn(),
   unsubscribeOutputMock: vi.fn(),
 }));
@@ -20,8 +19,14 @@ const mockEmulatorStateMocks = vi.hoisted(() => ({
   useEmulatorState: vi.fn(),
 }));
 
+const mockDebugMocks = vi.hoisted(() => ({
+  subscribeDebugOutput: vi.fn(),
+  unsubscribeDebugOutputMock: vi.fn(),
+}));
+
 vi.mock('@/lib/simh/i650', () => mockServiceMocks);
 vi.mock('./EmulatorStateProvider', () => mockEmulatorStateMocks);
+vi.mock('@/lib/simh/debug', () => mockDebugMocks);
 
 const render = (ui: React.ReactElement) => {
   act(() => {
@@ -39,12 +44,12 @@ describe('EmulatorConsoleProvider', () => {
 
     mockEmulatorStateMocks.useEmulatorState.mockReturnValue({
       isRunning: false,
-      yieldSteps: 1000,
     });
 
     mockServiceMocks.init.mockResolvedValue(undefined);
     mockServiceMocks.executeCommand.mockResolvedValue('command result');
     mockServiceMocks.subscribeOutput.mockReturnValue(mockServiceMocks.unsubscribeOutputMock);
+    mockDebugMocks.subscribeDebugOutput.mockReturnValue(mockDebugMocks.unsubscribeDebugOutputMock);
   });
 
   afterEach(() => {
@@ -120,6 +125,7 @@ describe('EmulatorConsoleProvider', () => {
     );
 
     expect(mockServiceMocks.subscribeOutput).toHaveBeenCalled();
+    expect(mockDebugMocks.subscribeDebugOutput).toHaveBeenCalled();
   });
 
   it('buffers output and flushes every 50ms', () => {
@@ -163,6 +169,40 @@ describe('EmulatorConsoleProvider', () => {
 
     // Now output should be flushed
     expect(captured.context?.output).toBe('Hello World');
+  });
+
+  it('forwards debug output into emulator console output', () => {
+    const captured: { context?: ReturnType<typeof useEmulatorConsole> } = {};
+    let debugOutputCallback: ((text: string) => void) | null = null;
+
+    mockDebugMocks.subscribeDebugOutput.mockImplementation((callback: (text: string) => void) => {
+      debugOutputCallback = callback;
+      return mockDebugMocks.unsubscribeDebugOutputMock;
+    });
+
+    const Probe = () => {
+      const context = useEmulatorConsole();
+      React.useEffect(() => {
+        captured.context = context;
+      }, [context]);
+      return null;
+    };
+
+    render(
+      <EmulatorConsoleProvider>
+        <Probe />
+      </EmulatorConsoleProvider>
+    );
+
+    act(() => {
+      debugOutputCallback?.('[simh] debug line\n');
+    });
+
+    act(() => {
+      vi.advanceTimersByTime(50);
+    });
+
+    expect(captured.context?.output).toContain('[simh] debug line');
   });
 
   it('sendCommand echoes command with sim> prefix', async () => {
@@ -347,32 +387,6 @@ describe('EmulatorConsoleProvider', () => {
     expect(result).toBe('');
   });
 
-  it('setYieldSteps calls service method', async () => {
-    const captured: { context?: ReturnType<typeof useEmulatorConsole> } = {};
-
-    const Probe = () => {
-      const context = useEmulatorConsole();
-      React.useEffect(() => {
-        captured.context = context;
-      }, [context]);
-      return null;
-    };
-
-    await act(async () => {
-      render(
-        <EmulatorConsoleProvider>
-          <Probe />
-        </EmulatorConsoleProvider>
-      );
-    });
-
-    act(() => {
-      captured.context?.setYieldSteps(2000);
-    });
-
-    expect(mockServiceMocks.setYieldSteps).toHaveBeenCalledWith(2000);
-  });
-
   it('clearOutput clears buffer and state', async () => {
     const captured: { context?: ReturnType<typeof useEmulatorConsole> } = {};
     let outputCallback: ((text: string) => void) | null = null;
@@ -428,7 +442,6 @@ describe('EmulatorConsoleProvider', () => {
     const captured: { context?: ReturnType<typeof useEmulatorConsole> } = {};
     mockEmulatorStateMocks.useEmulatorState.mockReturnValue({
       isRunning: true,
-      yieldSteps: 1000,
     });
 
     const Probe = () => {
@@ -448,32 +461,6 @@ describe('EmulatorConsoleProvider', () => {
     });
 
     expect(captured.context?.isRunning).toBe(true);
-  });
-
-  it('passes through yieldSteps from EmulatorState', async () => {
-    const captured: { context?: ReturnType<typeof useEmulatorConsole> } = {};
-    mockEmulatorStateMocks.useEmulatorState.mockReturnValue({
-      isRunning: false,
-      yieldSteps: 2500,
-    });
-
-    const Probe = () => {
-      const context = useEmulatorConsole();
-      React.useEffect(() => {
-        captured.context = context;
-      }, [context]);
-      return null;
-    };
-
-    await act(async () => {
-      render(
-        <EmulatorConsoleProvider>
-          <Probe />
-        </EmulatorConsoleProvider>
-      );
-    });
-
-    expect(captured.context?.yieldSteps).toBe(2500);
   });
 
   it('clears interval on unmount', async () => {
@@ -515,12 +502,14 @@ describe('EmulatorConsoleProvider', () => {
     });
 
     expect(mockServiceMocks.unsubscribeOutputMock).not.toHaveBeenCalled();
+    expect(mockDebugMocks.unsubscribeDebugOutputMock).not.toHaveBeenCalled();
 
     await act(async () => {
       root.unmount();
     });
 
     expect(mockServiceMocks.unsubscribeOutputMock).toHaveBeenCalled();
+    expect(mockDebugMocks.unsubscribeDebugOutputMock).toHaveBeenCalled();
   });
 
   it('passes children through provider', async () => {

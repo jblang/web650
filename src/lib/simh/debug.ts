@@ -1,5 +1,27 @@
 const DEBUG_FLAG = '__SIMH_DEBUG__';
 const DEBUG_STORAGE_KEY = '__SIMH_DEBUG__';
+type DebugOutputListener = (text: string) => void;
+const debugOutputListeners = new Set<DebugOutputListener>();
+
+function formatPayload(payload: unknown): string {
+  if (payload instanceof Error) return payload.stack ?? payload.message;
+  if (typeof payload === 'string') return payload;
+  try {
+    return JSON.stringify(payload);
+  } catch {
+    return String(payload);
+  }
+}
+
+function emitDebugOutput(message: string, payload?: unknown): void {
+  const line =
+    payload === undefined
+      ? `[simh] ${message}\n`
+      : `[simh] ${message} ${formatPayload(payload)}\n`;
+  for (const listener of debugOutputListeners) {
+    listener(line);
+  }
+}
 
 export function isDebugEnabled(): boolean {
   if (typeof globalThis === 'undefined') return false;
@@ -9,19 +31,18 @@ export function isDebugEnabled(): boolean {
 
 export function debugLog(message: string, payload?: unknown): void {
   if (!isDebugEnabled()) return;
-  if (payload === undefined) {
-    console.log(`[simh] ${message}`);
-  } else {
-    console.log(`[simh] ${message}`, payload);
-  }
+  emitDebugOutput(message, payload);
 }
 
 export function errorLog(message: string, payload?: unknown): void {
-  if (payload === undefined) {
-    console.error(`[simh] ${message}`);
-  } else {
-    console.error(`[simh] ${message}`, payload);
-  }
+  emitDebugOutput(message, payload);
+}
+
+export function subscribeDebugOutput(listener: DebugOutputListener): () => void {
+  debugOutputListeners.add(listener);
+  return () => {
+    debugOutputListeners.delete(listener);
+  };
 }
 
 function readPersistedFlag(): boolean {

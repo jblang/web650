@@ -17,7 +17,7 @@ export default function EmulatorConsole() {
   const [command, setCommand] = useState('');
   const [sending, setSending] = useState(false);
   const [debugEnabled, setDebugEnabledState] = useState(() => isDebugEnabled());
-  const { output, sendCommand, isRunning, yieldSteps, setYieldSteps } = useEmulatorConsole();
+  const { output, sendCommand, isRunning } = useEmulatorConsole();
   const { onProgramStopClick } = useEmulatorActions();
   const textAreaRef = useRef<HTMLTextAreaElement>(null);
   const commandInputRef = useRef<HTMLInputElement>(null);
@@ -149,30 +149,13 @@ export default function EmulatorConsole() {
           )}
         </div>
       </div>
-      <div style={{ borderTop: '1px solid #e0e0e0', paddingTop: '1rem' }}>
-        <div style={{ marginBottom: '0.5rem', fontWeight: 600 }}>Advanced options</div>
-        <div style={{ display: 'flex', gap: '1rem', alignItems: 'flex-end' }}>
-          <div style={{ width: '9rem' }}>
-            <TextInput
-              id="yield-steps"
-              labelText="Yield steps"
-              type="number"
-              min={0}
-              max={100000}
-              step={1}
-              value={String(yieldSteps)}
-              onChange={(e) => setYieldSteps(Number(e.target.value))}
-              disabled={busy}
-              size="lg"
-            />
-          </div>
-          <Checkbox
-            id="simh-debug"
-            labelText="Enable SIMH debug logging"
-            checked={debugEnabled}
-            onChange={(e) => handleDebugToggle((e.target as HTMLInputElement).checked)}
-          />
-        </div>
+      <div>
+        <Checkbox
+          id="simh-debug"
+          labelText="Enable SIMH debug logging"
+          checked={debugEnabled}
+          onChange={(e) => handleDebugToggle((e.target as HTMLInputElement).checked)}
+        />
       </div>
     </Stack>
   );

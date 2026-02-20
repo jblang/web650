@@ -6,11 +6,6 @@ const debugMocks = {
   errorLog: vi.fn(),
 };
 
-const yieldMocks = {
-  persistYieldSteps: vi.fn<(steps: number) => void>(),
-  readPersistedYieldSteps: vi.fn<() => number | null>(),
-};
-
 const simhMocks = {
   init: vi.fn<() => Promise<void>>(),
   restart: vi.fn<() => Promise<void>>(),
@@ -19,8 +14,6 @@ const simhMocks = {
   sendCommand: vi.fn<(cmd: string, options?: { streamOutput?: boolean; echo?: boolean }) => Promise<string>>(),
   examine: vi.fn<(ref: string, options?: { echo?: boolean }) => Promise<Record<string, string>>>(),
   deposit: vi.fn<(ref: string, value: string, options?: { echo?: boolean }) => Promise<void>>(),
-  getYieldSteps: vi.fn<() => Promise<number>>(),
-  setYieldSteps: vi.fn<(steps: number) => Promise<void>>(),
   enableStateStream: vi.fn<(enabled: boolean) => Promise<void>>(),
   setStateStreamStride: vi.fn<(stride: number) => Promise<void>>(),
   clearStateStream: vi.fn<() => Promise<void>>(),
@@ -47,7 +40,6 @@ const simhMocks = {
 
 vi.mock('../workerClient', () => simhMocks);
 vi.mock('../debug', () => debugMocks);
-vi.mock('../yield', () => yieldMocks);
 
 const defaultState: Record<string, string> = {
   AR: '0000',
@@ -79,9 +71,6 @@ describe('i650', () => {
     runStateListener = null;
     debugMocks.debugLog.mockReset();
     debugMocks.errorLog.mockReset();
-    yieldMocks.persistYieldSteps.mockReset();
-    yieldMocks.readPersistedYieldSteps.mockReset();
-    yieldMocks.readPersistedYieldSteps.mockReturnValue(null);
     simhMocks.init.mockResolvedValue(undefined);
     simhMocks.restart.mockResolvedValue(undefined);
     simhMocks.onOutput.mockResolvedValue(undefined);
@@ -91,8 +80,6 @@ describe('i650', () => {
     simhMocks.sendCommand.mockResolvedValue('');
     simhMocks.examine.mockResolvedValue({ ...defaultState });
     simhMocks.deposit.mockResolvedValue(undefined);
-    simhMocks.getYieldSteps.mockResolvedValue(100);
-    simhMocks.setYieldSteps.mockResolvedValue(undefined);
     simhMocks.stop.mockResolvedValue(undefined);
   });
 
@@ -274,18 +261,6 @@ describe('i650', () => {
     await expect(second).resolves.toBeUndefined();
   });
 
-  it('restarts and restores persisted yield steps when present', async () => {
-    yieldMocks.readPersistedYieldSteps.mockReturnValue(2500);
-    const service = await setupService();
-    await service.init();
-    await flushPromises();
-
-    await service.restart();
-
-    expect(simhMocks.setYieldSteps).toHaveBeenCalledWith(2500);
-    expect(service.getState().yieldSteps).toBe(2500);
-  });
-
   it('restart reinitializes active state stream and output forwarding', async () => {
     const service = await setupService();
     await service.init();
@@ -418,22 +393,6 @@ describe('i650', () => {
     expect(output).toBe('OK');
     expect(simhMocks.sendCommand).toHaveBeenCalledWith('EXAMINE STATE', undefined);
     expect(simhMocks.examine).toHaveBeenCalledWith('STATE', { echo: false });
-  });
-
-  it('setYieldSteps clamps values and persists normalized setting', async () => {
-    const service = await setupService();
-    await service.init();
-    await flushPromises();
-
-    await service.setYieldSteps(0.4);
-    expect(simhMocks.setYieldSteps).toHaveBeenLastCalledWith(0);
-    expect(yieldMocks.persistYieldSteps).toHaveBeenCalledWith(0);
-
-    await service.setYieldSteps(200000);
-    expect(simhMocks.setYieldSteps).toHaveBeenLastCalledWith(100000);
-
-    await service.setYieldSteps(Number.NaN);
-    expect(simhMocks.setYieldSteps).toHaveBeenLastCalledWith(1000);
   });
 
   it('maps register snapshot booleans from trimmed values', async () => {

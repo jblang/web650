@@ -50,16 +50,16 @@ describe('simh debug', () => {
     expect(debug.isDebugEnabled()).toBe(true);
   });
 
-  it('logs debug and error messages when enabled', async () => {
+  it('emits debug and error messages to debug output subscribers', async () => {
     const storage = {
       getItem: vi.fn(() => null),
       setItem: vi.fn(),
       removeItem: vi.fn(),
     };
     stubLocalStorage(storage);
-    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
-    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
     const debug = await import('./debug');
+    const output = vi.fn();
+    const unsubscribe = debug.subscribeDebugOutput(output);
 
     debug.setDebugEnabled(true);
     debug.debugLog('hello');
@@ -67,12 +67,29 @@ describe('simh debug', () => {
     debug.errorLog('oops');
     debug.errorLog('payload', { value: 2 });
 
-    expect(logSpy).toHaveBeenCalledWith('[simh] hello');
-    expect(logSpy).toHaveBeenCalledWith('[simh] payload', { value: 1 });
-    expect(errorSpy).toHaveBeenCalledWith('[simh] oops');
-    expect(errorSpy).toHaveBeenCalledWith('[simh] payload', { value: 2 });
+    expect(output).toHaveBeenCalledWith('[simh] hello\n');
+    expect(output).toHaveBeenCalledWith('[simh] payload {"value":1}\n');
+    expect(output).toHaveBeenCalledWith('[simh] oops\n');
+    expect(output).toHaveBeenCalledWith('[simh] payload {"value":2}\n');
 
-    logSpy.mockRestore();
-    errorSpy.mockRestore();
+    unsubscribe();
+  });
+
+  it('stops emitting after unsubscribe', async () => {
+    const storage = {
+      getItem: vi.fn(() => null),
+      setItem: vi.fn(),
+      removeItem: vi.fn(),
+    };
+    stubLocalStorage(storage);
+    const debug = await import('./debug');
+    const output = vi.fn();
+    const unsubscribe = debug.subscribeDebugOutput(output);
+
+    debug.setDebugEnabled(true);
+    unsubscribe();
+    debug.debugLog('hello');
+
+    expect(output).not.toHaveBeenCalled();
   });
 });

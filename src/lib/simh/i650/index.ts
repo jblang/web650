@@ -4,7 +4,6 @@ import { getDisplayValue, isManualOperation, DisplaySwitch } from './controls';
 import { extractOperationCode, validateAddress, validateWord, normalizeAddresses } from './format';
 import type { DisplayPosition, ControlPosition, ErrorSwitchPosition } from './controls';
 import { debugLog, errorLog } from '../debug';
-import { persistYieldSteps, readPersistedYieldSteps } from '../yield';
 
 /**
  * I650 emulator state containing all registers, switches, and control flags.
@@ -12,7 +11,6 @@ import { persistYieldSteps, readPersistedYieldSteps } from '../yield';
 export type I650EmulatorState = {
   initialized: boolean;
   isRunning: boolean;
-  yieldSteps: number;
   displaySwitch: DisplayPosition;
   controlSwitch: ControlPosition;
   errorSwitch: ErrorSwitchPosition;
@@ -40,7 +38,6 @@ const outputListeners = new Set<OutputListener>();
 let state: I650EmulatorState = {
   initialized: false,
   isRunning: false,
-  yieldSteps: 1000,
   displaySwitch: 0,
   controlSwitch: 0,
   errorSwitch: 0,
@@ -319,13 +316,6 @@ export async function init(): Promise<void> {
       const postInit = async () => {
         debugLog('i650 postInit start');
         await simh.sendCommand('SET CPU 1K', { echo: false });
-        const persistedYieldSteps = readPersistedYieldSteps();
-        const initialYieldSteps = persistedYieldSteps ?? 1000;
-        await simh.setYieldSteps(initialYieldSteps);
-        mergeState({ yieldSteps: initialYieldSteps });
-        if (persistedYieldSteps === null) {
-          persistYieldSteps(initialYieldSteps);
-        }
 
         await refreshRegisters();
         mergeState({ initialized: true });
@@ -365,8 +355,7 @@ export async function init(): Promise<void> {
 /**
  * Restarts the I650 emulator.
  *
- * Resets the SIMH module and reconfigures CPU settings while preserving
- * persisted yield steps configuration.
+ * Resets the SIMH module and reconfigures CPU settings.
  */
 export async function restart(): Promise<void> {
   await ensureInit();
@@ -382,11 +371,6 @@ export async function restart(): Promise<void> {
       await startStateStream();
     }
     await simh.sendCommand('SET CPU 1K', { echo: false });
-    const persistedYieldSteps = readPersistedYieldSteps();
-    if (persistedYieldSteps !== null) {
-      await simh.setYieldSteps(persistedYieldSteps);
-      mergeState({ yieldSteps: persistedYieldSteps });
-    }
     const snapshot = await getRegisterSnapshot();
     mergeState({
       addressRegister: snapshot.addressRegister,
@@ -512,31 +496,6 @@ export async function executeCommand(
       mergeState({ isRunning: false });
     }
   }
-}
-
-/**
- * Sets the number of execution steps before yielding control.
- *
- * Controls how frequently the emulator yields during execution.
- * Lower values provide more responsive UI updates but slower execution.
- * Higher values improve execution speed but reduce UI responsiveness.
- *
- * @param steps - Number of steps (0 for unlimited, 1-100000 for limited)
- */
-export async function setYieldSteps(steps: number): Promise<void> {
-  await ensureInit();
-  if (!Number.isFinite(steps)) {
-    const fallback = 1000;
-    await simh.setYieldSteps(fallback);
-    mergeState({ yieldSteps: fallback });
-    persistYieldSteps(fallback);
-    return;
-  }
-  const normalized = Math.round(steps);
-  const next = normalized === 0 ? 0 : Math.max(1, Math.min(100000, normalized));
-  await simh.setYieldSteps(next);
-  mergeState({ yieldSteps: next });
-  persistYieldSteps(next);
 }
 
 /**

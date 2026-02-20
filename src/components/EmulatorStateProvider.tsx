@@ -34,7 +34,6 @@ export const INITIAL_CHECKING_STATE: CheckingState = Object.freeze({
 interface EmulatorStateContextType {
   initialized: boolean;
   isRunning: boolean;
-  yieldSteps: number;
   displaySwitch: DisplayPosition;
   controlSwitch: ControlPosition;
   errorSwitch: ErrorSwitchPosition;
@@ -72,7 +71,6 @@ export function EmulatorStateProvider({ children }: { children: ReactNode }) {
     () => ({
       initialized: emuState.initialized,
       isRunning: emuState.isRunning,
-      yieldSteps: emuState.yieldSteps,
       displaySwitch: emuState.displaySwitch,
       controlSwitch: emuState.controlSwitch,
       errorSwitch: emuState.errorSwitch,

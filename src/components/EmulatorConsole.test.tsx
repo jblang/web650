@@ -56,10 +56,8 @@ vi.mock('@carbon/icons-react', () => ({
 
 const emulatorConsoleState = vi.hoisted(() => ({
   sendCommand: vi.fn(async () => ''),
-  setYieldSteps: vi.fn(),
   outputValue: 'hello\n',
   isRunningValue: false,
-  yieldStepsValue: 1000,
 }));
 
 vi.mock('./EmulatorConsoleProvider', () => ({
@@ -67,8 +65,6 @@ vi.mock('./EmulatorConsoleProvider', () => ({
     output: emulatorConsoleState.outputValue,
     sendCommand: emulatorConsoleState.sendCommand,
     isRunning: emulatorConsoleState.isRunningValue,
-    yieldSteps: emulatorConsoleState.yieldStepsValue,
-    setYieldSteps: emulatorConsoleState.setYieldSteps,
   }),
 }));
 
@@ -122,12 +118,10 @@ describe('EmulatorConsole', () => {
     allowTextAreaRef = true;
     emulatorConsoleState.sendCommand.mockReset();
     emulatorConsoleState.sendCommand.mockImplementation(async () => '');
-    emulatorConsoleState.setYieldSteps.mockClear();
     actionMocks.onProgramStopClick.mockClear();
     optionState.setDebugEnabled.mockClear();
     emulatorConsoleState.outputValue = 'hello\n';
     emulatorConsoleState.isRunningValue = false;
-    emulatorConsoleState.yieldStepsValue = 1000;
     optionState.debugEnabled = false;
   });
 
@@ -227,14 +221,6 @@ describe('EmulatorConsole', () => {
 
     const commandInput = container.querySelector('#command') as HTMLInputElement;
     expect(commandInput.disabled).toBe(true);
-  });
-
-  it('updates yield steps from advanced options', () => {
-    render(<EmulatorConsole />);
-    act(() => {
-      inputPropsById.get('yield-steps')?.onChange?.({ target: { value: '2500' } });
-    });
-    expect(emulatorConsoleState.setYieldSteps).toHaveBeenCalledWith(2500);
   });
 
   it('toggles debug option', () => {

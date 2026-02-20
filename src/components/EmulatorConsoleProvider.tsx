@@ -11,14 +11,13 @@ import {
   ReactNode,
 } from 'react';
 import * as i650Service from '@/lib/simh/i650';
+import { subscribeDebugOutput } from '@/lib/simh/debug';
 import { useEmulatorState } from './EmulatorStateProvider';
 
 interface EmulatorConsoleContextType {
   output: string;
   sendCommand: (command: string) => Promise<string>;
   isRunning: boolean;
-  yieldSteps: number;
-  setYieldSteps: (steps: number) => void;
   clearOutput: () => void;
 }
 
@@ -33,7 +32,7 @@ export function useEmulatorConsole() {
 }
 
 export function EmulatorConsoleProvider({ children }: { children: ReactNode }) {
-  const { isRunning, yieldSteps } = useEmulatorState();
+  const { isRunning } = useEmulatorState();
   const [output, setOutput] = useState('');
   const outputBufferRef = useRef('');
 
@@ -59,6 +58,7 @@ export function EmulatorConsoleProvider({ children }: { children: ReactNode }) {
   }, []);
 
   useEffect(() => i650Service.subscribeOutput(enqueueOutput), [enqueueOutput]);
+  useEffect(() => subscribeDebugOutput(enqueueOutput), [enqueueOutput]);
 
   useEffect(() => {
     const initialize = async () => {
@@ -90,21 +90,14 @@ export function EmulatorConsoleProvider({ children }: { children: ReactNode }) {
     [enqueueOutput]
   );
 
-  const setYieldSteps = useCallback((steps: number) => {
-    void i650Service.setYieldSteps(steps);
-  }, []);
-
-
   const consoleValue = useMemo(
     () => ({
       output,
       sendCommand,
       isRunning,
-      yieldSteps,
-      setYieldSteps,
       clearOutput,
     }),
-    [output, sendCommand, isRunning, yieldSteps, setYieldSteps, clearOutput]
+    [output, sendCommand, isRunning, clearOutput]
   );
 
   return <EmulatorConsoleContext.Provider value={consoleValue}>{children}</EmulatorConsoleContext.Provider>;
