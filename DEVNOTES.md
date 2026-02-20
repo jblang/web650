@@ -155,3 +155,7 @@ git submodule update --init
 ```
 
 This produces `i650.js`, `i650.wasm`, and `i650.data` in the `public/` directory.
+
+## Host I/O Bridge Roadmap
+
+The incremental migration plan is documented in `IO_BRIDGE.md`.
