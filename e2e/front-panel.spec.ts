@@ -540,8 +540,9 @@ test('emulator remains usable across navigation', async ({ page }) => {
   await page.getByRole('link', { name: 'Front Panel' }).click();
   await expect(page).toHaveURL(/\/front-panel\/?$/);
   await page.getByRole('link', { name: 'Emulator' }).click();
+  await expect(page).toHaveURL(/\/emulator\/?$/);
 
-  await expect(page.getByPlaceholder('Type a command...')).toBeVisible();
+  await expect(page.locator('#command')).toBeVisible();
   await sendConsoleCommand(page, 'examine state');
   await expect(output).toHaveValue(/IC:\s*00000/);
 });
