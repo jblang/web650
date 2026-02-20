@@ -530,27 +530,18 @@ test('keyboard navigation works on decimal knobs', async ({ page }) => {
   await expect(digit0).toHaveAttribute('aria-valuenow', '9');
 });
 
-test('yield steps control remains usable across navigation', async ({ page }) => {
+test('emulator remains usable across navigation', async ({ page }) => {
   const output = await setupEmulatorConsole(page);
-  const yieldInput = page.locator('#yield-steps');
 
-  // Ensure simulator init has completed before changing advanced options.
+  // Ensure simulator init has completed before navigating.
   await sendConsoleCommand(page, 'examine state');
-  await page.evaluate(() => {
-    const input = document.querySelector<HTMLInputElement>('#yield-steps');
-    if (!input) throw new Error('yield-steps input not found');
-    input.value = '777';
-    input.dispatchEvent(new Event('input', { bubbles: true }));
-    input.dispatchEvent(new Event('change', { bubbles: true }));
-  });
-  // This test verifies control usability/navigation; it does not assert persisted yield configuration semantics.
-  await expect(yieldInput).toHaveValue('777');
+  await expect(output).toHaveValue(/IC:\s*00000/);
 
   await page.getByRole('link', { name: 'Front Panel' }).click();
   await expect(page).toHaveURL(/\/front-panel\/?$/);
   await page.getByRole('link', { name: 'Emulator' }).click();
 
-  await expect(page.locator('#yield-steps')).toBeVisible();
+  await expect(page.getByPlaceholder('Type a command...')).toBeVisible();
   await sendConsoleCommand(page, 'examine state');
   await expect(output).toHaveValue(/IC:\s*00000/);
 });
