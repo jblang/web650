@@ -227,6 +227,24 @@ describe('EmulatorConsole', () => {
     expect(emulatorConsoleState.sendCommand).toHaveBeenCalledWith('RESET');
   });
 
+  it('retains command input focus after Enter submit', async () => {
+    vi.useFakeTimers();
+    const focusSpy = vi.spyOn(HTMLInputElement.prototype, 'focus');
+    render(<EmulatorConsole />);
+    focusSpy.mockClear();
+    typeCommand('RESET');
+
+    const commandInput = inputPropsById.get('command');
+    await act(async () => {
+      commandInput?.onKeyDown?.({ key: 'Enter', preventDefault: vi.fn() });
+      await Promise.resolve();
+      vi.runAllTimers();
+    });
+
+    expect(focusSpy).toHaveBeenCalled();
+    focusSpy.mockRestore();
+  });
+
   it('ignores non-Enter key presses', async () => {
     render(<EmulatorConsole />);
     typeCommand('RESET');

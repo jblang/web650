@@ -51,6 +51,10 @@ export default function EmulatorConsole() {
   const { onProgramStopClick } = useEmulatorActions();
   const textAreaRef = useRef<HTMLTextAreaElement>(null);
   const sendTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const focusCommandInput = () => {
+    const commandInput = document.getElementById('command') as HTMLInputElement | null;
+    commandInput?.focus();
+  };
 
   useEffect(() => {
     if (textAreaRef.current) {
@@ -63,10 +67,19 @@ export default function EmulatorConsole() {
 
   useEffect(() => {
     if (!busy) {
-      const commandInput = document.getElementById('command') as HTMLInputElement | null;
-      commandInput?.focus();
+      focusCommandInput();
     }
   }, [busy]);
+
+  useEffect(() => {
+    if (busy) return;
+    const timeoutId = window.setTimeout(() => {
+      focusCommandInput();
+    }, 0);
+    return () => {
+      window.clearTimeout(timeoutId);
+    };
+  }, [busy, commandInputResetKey]);
 
   useEffect(() => {
     if (!isRunning && sending) {
