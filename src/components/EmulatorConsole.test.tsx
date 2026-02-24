@@ -8,6 +8,7 @@ import EmulatorConsole from './EmulatorConsole';
 type InputProps = {
   id?: string;
   onChange?: (e: { target: { value: string; checked?: boolean } }) => void;
+  onInputChange?: (value: string) => void;
   onKeyDown?: (e: { key: string; preventDefault: () => void }) => void;
 } & Record<string, unknown>;
 type ButtonProps = { onClick?: (e?: unknown) => void } & Record<string, unknown>;
@@ -16,15 +17,35 @@ const inputPropsById = new Map<string, InputProps>();
 let allowTextAreaRef = true;
 
 const stripDomProps = (props: Record<string, unknown>) => {
-  const { labelText, renderIcon, ...rest } = props;
+  const {
+    labelText,
+    titleText,
+    renderIcon,
+    itemToString,
+    inputValue,
+    items,
+    selectedItem,
+    ...rest
+  } = props;
   void labelText;
+  void titleText;
   void renderIcon;
+  void itemToString;
+  void inputValue;
+  void items;
+  void selectedItem;
   return rest;
 };
 
 vi.mock('@carbon/react', () => ({
-  TextInput: ({ onChange, onKeyDown, ...props }: InputProps) => {
-    const merged = { ...props, onChange, onKeyDown };
+  ComboBox: ({ onInputChange, onKeyDown, ...props }: InputProps) => {
+    const merged = {
+      ...props,
+      onChange: (e: { target: { value: string } }) => {
+        onInputChange?.(e.target.value);
+      },
+      onKeyDown,
+    };
     if (typeof merged.id === 'string') {
       inputPropsById.set(merged.id, merged as InputProps);
     }
@@ -104,6 +125,16 @@ const typeCommand = (value: string) => {
   });
 };
 
+const getStorageValue = (key: string): string | null => {
+  const storage = window.localStorage as { getItem?: (k: string) => string | null };
+  return storage.getItem ? storage.getItem(key) : null;
+};
+
+const setStorageValue = (key: string, value: string): void => {
+  const storage = window.localStorage as { setItem?: (k: string, v: string) => void };
+  storage.setItem?.(key, value);
+};
+
 const getButtonByText = (text: string) =>
   Array.from(container.querySelectorAll('button')).find((button) =>
     button.textContent?.includes(text)
@@ -111,6 +142,20 @@ const getButtonByText = (text: string) =>
 
 describe('EmulatorConsole', () => {
   beforeEach(() => {
+    const memoryStorage = new Map<string, string>();
+    Object.defineProperty(window, 'localStorage', {
+      configurable: true,
+      value: {
+        getItem: (key: string) => (memoryStorage.has(key) ? memoryStorage.get(key)! : null),
+        setItem: (key: string, value: string) => {
+          memoryStorage.set(key, String(value));
+        },
+        clear: () => {
+          memoryStorage.clear();
+        },
+      },
+    });
+
     container = document.createElement('div');
     document.body.appendChild(container);
     root = createRoot(container);
@@ -123,6 +168,7 @@ describe('EmulatorConsole', () => {
     emulatorConsoleState.outputValue = 'hello\n';
     emulatorConsoleState.isRunningValue = false;
     optionState.debugEnabled = false;
+    setStorageValue('simh.command-history', JSON.stringify([]));
   });
 
   afterEach(() => {
@@ -139,6 +185,13 @@ describe('EmulatorConsole', () => {
     emulatorConsoleState.outputValue = 'hello\nworld\n';
     render(<EmulatorConsole />);
     expect(textarea.value).toContain('world');
+  });
+
+  it('loads command history from local storage', () => {
+    setStorageValue('simh.command-history', JSON.stringify(['EXAMINE STATE', 'GO']));
+    render(<EmulatorConsole />);
+    const commandInput = inputPropsById.get('command') as (InputProps & { items?: Array<{ text: string }> });
+    expect(commandInput.items?.map((item) => item.text)).toEqual(['EXAMINE STATE', 'GO']);
   });
 
   it('skips auto-scroll when output ref is unavailable', () => {
@@ -159,6 +212,7 @@ describe('EmulatorConsole', () => {
     });
 
     expect(emulatorConsoleState.sendCommand).toHaveBeenCalledWith('SHOW DEV');
+    expect(JSON.parse(getStorageValue('simh.command-history') ?? '[]')).toEqual(['SHOW DEV']);
   });
 
   it('submits command on Enter key', async () => {

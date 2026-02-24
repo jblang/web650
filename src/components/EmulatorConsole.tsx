@@ -2,7 +2,7 @@
 
 import { useState, useRef, KeyboardEvent, useEffect } from 'react';
 import {
-  TextInput,
+  ComboBox,
   TextArea,
   Button,
   Stack,
@@ -14,13 +14,42 @@ import { useEmulatorActions } from './EmulatorActionsProvider';
 import { setDebugEnabled, isDebugEnabled } from '@/lib/simh/debug';
 
 export default function EmulatorConsole() {
+  const COMMAND_HISTORY_KEY = 'simh.command-history';
+  const MAX_COMMAND_HISTORY = 50;
+
+  type CommandHistoryItem = { id: string; text: string };
+  const toHistoryItems = (commands: string[]): CommandHistoryItem[] =>
+    commands.map((text, index) => ({ id: `${index}-${text}`, text }));
+
+  const readStoredHistory = (): string[] => {
+    if (typeof window === 'undefined') return [];
+    const storage = window.localStorage as { getItem?: (key: string) => string | null } | undefined;
+    if (!storage?.getItem) return [];
+    try {
+      const raw = storage.getItem(COMMAND_HISTORY_KEY);
+      if (!raw) return [];
+      const parsed: unknown = JSON.parse(raw);
+      if (!Array.isArray(parsed)) return [];
+      return parsed.filter((value): value is string => typeof value === 'string');
+    } catch {
+      return [];
+    }
+  };
+
+  const persistHistory = (commands: string[]) => {
+    if (typeof window === 'undefined') return;
+    const storage = window.localStorage as { setItem?: (key: string, value: string) => void } | undefined;
+    storage?.setItem?.(COMMAND_HISTORY_KEY, JSON.stringify(commands));
+  };
+
   const [command, setCommand] = useState('');
+  const [commandHistory, setCommandHistory] = useState<string[]>(() => readStoredHistory());
+  const [commandInputResetKey, setCommandInputResetKey] = useState(0);
   const [sending, setSending] = useState(false);
   const [debugEnabled, setDebugEnabledState] = useState(() => isDebugEnabled());
   const { output, sendCommand, isRunning } = useEmulatorConsole();
   const { onProgramStopClick } = useEmulatorActions();
   const textAreaRef = useRef<HTMLTextAreaElement>(null);
-  const commandInputRef = useRef<HTMLInputElement>(null);
   const sendTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
@@ -30,10 +59,12 @@ export default function EmulatorConsole() {
   }, [output]);
 
   const busy = isRunning;
+  const commandItems = toHistoryItems(commandHistory);
 
   useEffect(() => {
     if (!busy) {
-      commandInputRef.current?.focus();
+      const commandInput = document.getElementById('command') as HTMLInputElement | null;
+      commandInput?.focus();
     }
   }, [busy]);
 
@@ -59,12 +90,17 @@ export default function EmulatorConsole() {
   const handleSend = async () => {
     if (!command.trim() || sending) return;
 
+    const trimmed = command.trim();
     setSending(true);
     try {
-      await sendCommand(command.trim());
+      await sendCommand(trimmed);
+      const nextHistory = [trimmed, ...commandHistory.filter((item) => item !== trimmed)].slice(0, MAX_COMMAND_HISTORY);
+      setCommandHistory(nextHistory);
+      persistHistory(nextHistory);
     } finally {
       setSending(false);
       setCommand('');
+      setCommandInputResetKey((current) => current + 1);
     }
   };
 
@@ -105,16 +141,22 @@ export default function EmulatorConsole() {
       />
       <div style={{ display: 'flex', gap: '1rem', alignItems: 'flex-end' }}>
         <div style={{ flexGrow: 1 }}>
-          <TextInput
+          <ComboBox
+            key={commandInputResetKey}
             id="command"
-            labelText="Command"
-            placeholder="Enter SIMH command..."
-            value={command}
-            onChange={(e) => setCommand(e.target.value)}
+            titleText="Command"
+            placeholder="Type a command..."
+            items={commandItems}
+            itemToString={(item) => item?.text ?? ''}
+            onInputChange={(value) => setCommand(value ?? '')}
+            onChange={({ selectedItem }) => {
+              if (selectedItem) {
+                setCommand(selectedItem.text);
+              }
+            }}
             onKeyDown={handleKeyDown}
             disabled={busy}
             size="lg"
-            ref={commandInputRef}
           />
         </div>
         <div style={{ display: 'flex', gap: '0.5rem' }}>
