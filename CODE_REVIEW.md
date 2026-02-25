@@ -1,6 +1,6 @@
 # Code Review: IBM 650 Simulator UI
 
-Comprehensive review at commit `cc07d6a` (February 14, 2026).
+Comprehensive review at commit `ee4f34c` (reviewed February 25, 2026).
 
 ## Project Overview
 
@@ -8,22 +8,22 @@ Web-based UI for the Open SIMH IBM 650 simulator. Built with Next.js 16.1.4, Rea
 
 ## Current Snapshot
 
-- Source files (`.ts`/`.tsx`, excluding tests): **55**
-- Unit/integration test files (`*.test.*`): **39**
-- Unit/integration tests (Vitest): **431 passing**
-- Playwright E2E tests: **19** (in `e2e/front-panel.spec.ts`)
+- Source files (`.ts`/`.tsx`, excluding tests): **58**
+- Unit/integration test files (`*.test.*`): **40**
+- Unit/integration tests (Vitest): **450 passing**
+- Playwright E2E tests: **20** (across `e2e/front-panel.spec.ts` and `e2e/cards.spec.ts`)
 
 ### Verification Run
 
 - `npm run lint`: **pass**
-- `npx vitest run`: **39 files, 431 tests passing**
+- `npx vitest run`: **40 files, 450 tests passing**
 - `npx vitest run --coverage`: **pass**
 
-Coverage (Vitest V8):
-- Statements: **97.20%**
-- Branches: **93.19%**
-- Functions: **99.18%**
-- Lines: **97.98%**
+Coverage (Vitest V8, all instrumented files):
+- Statements: **88.04%**
+- Branches: **79.38%**
+- Functions: **85.98%**
+- Lines: **89.91%**
 
 ---
 
@@ -32,13 +32,11 @@ Coverage (Vitest V8):
 | # | Severity | Issue | Section |
 |---|----------|-------|---------|
 | 1 | **Medium** | Unbounded console output buffer | [1](#1-unbounded-console-output-buffer-medium) |
-| 2 | **Medium** | State stream is never disabled after front panel unmount | [2](#2-state-stream-is-never-disabled-after-front-panel-unmount-medium) |
+| 2 | **Medium** | State stream lifecycle mismatch (always enabled, never explicitly disabled) | [2](#2-state-stream-lifecycle-mismatch-always-enabled-never-explicitly-disabled-medium) |
 | 3 | **Low** | Run-state race window in `executeCommand` | [3](#3-run-state-race-window-in-executecommand-low) |
 | 4 | **Low** | Fire-and-forget `postInit` in service `init()` | [4](#4-fire-and-forget-postinit-in-service-init-low) |
 | 5 | **Low** | No app-level error boundary; hydration warnings globally suppressed | [5](#5-no-app-level-error-boundary-hydration-warnings-globally-suppressed-low) |
-| 6 | **Low** | "HELP" and "CHEAT" buttons are dead controls | [6](#6-help-and-cheat-buttons-are-dead-controls-low) |
-| 7 | **Low** | File upload race in card deck provider | [7](#7-file-upload-race-in-card-deck-provider-low) |
-| 8 | **Low** | Yield-steps field commits on every keystroke (including transient invalid input) | [8](#8-yield-steps-field-commits-on-every-keystroke-including-transient-invalid-input-low) |
+| 6 | **Low** | File upload race in card deck provider | [6](#6-file-upload-race-in-card-deck-provider-low) |
 
 ---
 
@@ -46,127 +44,98 @@ Coverage (Vitest V8):
 
 ### 1. Unbounded Console Output Buffer (Medium)
 
-`src/components/EmulatorConsoleProvider.tsx:37` and `src/components/EmulatorConsoleProvider.tsx:54` keep appending output forever (`prev + chunk`) with no cap.
+`src/components/EmulatorConsoleProvider.tsx:40` and `src/components/EmulatorConsoleProvider.tsx:53` keep appending output forever (`prev + chunk`) with no cap.
 
 Impact:
 - Memory growth over long sessions
-- Increasing string concat cost
-- Slower `TextArea` updates and scroll behavior
+- Increasing string concatenation cost
+- Slower `TextArea` updates and scroll behavior over time
 
 Recommendation:
-- Cap by size or lines (for example, keep last 100KB or last 2,000 lines).
-- Trim from the front before calling `setOutput`.
+- Cap output by size or line count (for example, keep last 100KB or last 2,000 lines).
+- Trim from the front before `setOutput`.
 
 ---
 
-### 2. State Stream Is Never Disabled After Front Panel Unmount (Medium)
+### 2. State Stream Lifecycle Mismatch (Always Enabled, Never Explicitly Disabled) (Medium)
 
-`src/app/front-panel/page.tsx:12-15` toggles stream active on mount/unmount. But `src/lib/simh/i650/index.ts:153-164` does nothing when `active` is `false` beyond flipping a local flag.
-
-`startStateStream()` enables worker polling (`src/lib/simh/i650/index.ts:139-145`), and worker polling keeps running until explicit disable (`src/lib/simh/simh.worker.ts:71-83`). Because disable is never sent, state polling can continue after leaving the front panel page.
+`src/lib/simh/i650/index.ts:327` starts the state stream during `init()` regardless of whether UI streaming is active. `setStateStreamActive(false)` in `src/lib/simh/i650/index.ts:168-179` only flips a local flag and does not call `simh.enableStateStream(false)`.
 
 Impact:
-- Ongoing worker interval activity and message traffic when page no longer needs stream
-- Wasted CPU/battery
+- Worker state polling can continue even when the front panel is not active
+- Unnecessary interval/message activity and wasted CPU/battery
 
 Recommendation:
-- In `setStateStreamActive(false)`, call `simh.enableStateStream(false)` and keep listener behavior aligned with active state.
-- Add a deactivation test in `src/lib/simh/i650/index.test.ts`.
+- Tie worker stream enable/disable directly to `setStateStreamActive(active)`.
+- Add a deactivation assertion in `src/lib/simh/i650/index.test.ts` that verifies `enableStateStream(false)` is sent.
 
 ---
 
 ### 3. Run-State Race Window in `executeCommand` (Low)
 
-`src/lib/simh/i650/index.ts:455-467` optimistically sets `isRunning=true` for `GO/CONT/RUN`, then unconditionally sets `isRunning=false` in `finally`.
+`src/lib/simh/i650/index.ts:489-502` optimistically sets `isRunning=true` for `GO/CONT/RUN`, then unconditionally sets `isRunning=false` in `finally`.
 
-If CPU is still running asynchronously, UI can briefly show not-running before worker runstate updates arrive.
+If the CPU is still running asynchronously, UI can briefly show not-running before the worker `onRunState` callback updates state.
 
 Recommendation:
 - Do not force `isRunning=false` in `finally` for run commands.
-- Let `onRunState` own the authoritative running flag.
+- Let `onRunState` own the authoritative run-state transitions.
 
 ---
 
 ### 4. Fire-and-Forget `postInit` in Service `init()` (Low)
 
-`src/lib/simh/i650/index.ts:305-339` launches `postInit()` with `void ...catch(...)` and returns from `init()` before post-init steps complete.
+`src/lib/simh/i650/index.ts:321-348` launches `postInit()` with `void ...catch(...)` and resolves `init()` before post-init steps finish.
 
 Impact:
-- `await init()` does not guarantee registers loaded, stream setup done, or runstate callback attached.
+- `await init()` does not guarantee registers are loaded or run-state listeners are fully attached
+- Early callers can observe partially initialized state
 
 Recommendation:
-- Await `postInit()` before resolving `initPromise`, or split API into explicit `initCore()`/`warmup()` semantics.
+- Await `postInit()` before resolving `initPromise`, or split APIs into explicit phased initialization semantics.
 
 ---
 
 ### 5. No App-Level Error Boundary; Hydration Warnings Globally Suppressed (Low)
 
-`src/app/layout.tsx:18-19` suppresses hydration warnings on `<html>` and `<body>`, and there is no app-level error boundary for provider failures.
+`src/app/layout.tsx:46` and `src/app/layout.tsx:56` suppress hydration warnings on both `<html>` and `<body>`. There is no app-level `error.tsx`/`global-error.tsx` fallback route.
 
 Impact:
-- Harder to detect legitimate hydration mismatches
-- Unhandled errors can blank the full UI without a controlled fallback
+- Legitimate hydration mismatch warnings are masked
+- Unhandled provider/layout errors can fail without a controlled user-facing recovery path
 
 Recommendation:
-- Add an app-level boundary (or route-level error boundary) with a minimal recovery UI.
-- Narrow or remove blanket hydration suppression.
+- Add an app-level error boundary (`src/app/error.tsx` or `src/app/global-error.tsx`).
+- Narrow hydration suppression to the smallest necessary subtree.
 
 ---
 
-### 6. "HELP" and "CHEAT" Buttons Are Dead Controls (Low)
+### 6. File Upload Race in Card Deck Provider (Low)
 
-Buttons exist in `src/components/FrontPanel/ButtonSection.tsx:9` but have no entries in handler map (`src/components/FrontPanel/ButtonSection.tsx:24-32`).
-
-Impact:
-- Clicks silently no-op
-- Confusing UX on a control panel that otherwise behaves realistically
-
-Recommendation:
-- Either wire handlers (open docs/cheat sheet panel) or remove/disable with explicit "Not implemented" feedback.
-
----
-
-### 7. File Upload Race in Card Deck Provider (Low)
-
-`src/components/CardDeckProvider.tsx:39-57` starts a new `FileReader` per selection but does not guard against out-of-order `onload` completions.
+`src/components/CardDeckProvider.tsx:46-63` starts a new `FileReader` per selection but does not guard against out-of-order `onload` completion.
 
 Scenario:
-- User selects file A, then quickly file B.
+- User selects file A, then quickly selects file B.
 - File A finishes later and overwrites B’s deck.
 
 Recommendation:
-- Track a monotonically increasing request ID or active file token and ignore stale callbacks.
-
----
-
-### 8. Yield-Steps Field Commits on Every Keystroke (Including Transient Invalid Input) (Low)
-
-`src/components/EmulatorConsole.tsx:164` immediately persists `Number(e.target.value)` on each input change.
-
-Impact:
-- Transient edits (empty string, partial values) can produce unintended `0` writes
-- Extra simulator/localStorage churn while typing
-
-Recommendation:
-- Keep a local input string and commit on blur/Enter, with explicit validation and clamp before calling `setYieldSteps`.
+- Track a monotonically increasing request token or active-file id and ignore stale callbacks.
 
 ---
 
 ## Resolved Since Previous Review
 
-These prior items no longer reproduce in current `HEAD`:
+These prior findings are no longer applicable in current `HEAD`:
 
-- `BiQuinaryNumber` title class wiring bug and decay-related overhead claim
-- Docs page hardcoded markdown URL (now base-path aware)
-- "Missing `'use client'` in `printer/page.tsx`" (not an issue for a server component)
+- "HELP" and "CHEAT" buttons are dead controls (handlers are now wired and tested).
+- Yield-steps field commits transient invalid input (the yield-steps input path is no longer present in the console UI).
 
 ---
 
 ## Strengths
 
-1. Strong architecture boundaries: generic SIMH layer, IBM 650 service layer, React providers, UI components.
-2. Worker isolation is robust and keeps emulator execution off the main thread.
-3. High test quality and coverage with both mocked unit tests and real WASM integration tests.
-4. Accessibility is broadly solid across knobs, status indicators, and controls.
-5. Input normalization/validation in `format.ts` is well-covered and consistently used.
-6. Typed worker client API is clear and resilient for request/response flow.
+1. Clear architecture boundaries between generic SIMH worker/client APIs and IBM 650-specific state/control logic.
+2. Worker isolation keeps emulator execution off the main thread and preserves UI responsiveness.
+3. Robust automated testing: 450 passing Vitest tests with both mock-heavy unit coverage and real WASM integration coverage.
+4. Front panel component suite has strong behavioral test coverage, including help/cheat interactions and control wiring.
+5. i650 formatting and validation code (`format.ts`) remains comprehensive and fully covered.

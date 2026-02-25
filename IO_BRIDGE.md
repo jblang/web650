@@ -37,6 +37,23 @@ Current behavior works for most i650 use cases, but there are known gaps and sca
 - `SET ENV -P` path in SIMH reads via `read_line_p(..., stdin)` in `simh/scp.c`.
 - i650 reader/punch has concrete hook points in `simh/I650/i650_cdr.c` and `simh/I650/i650_cdp.c`.
 
+## Status snapshot (updated)
+
+Milestone 0A is mostly complete in UI/FS plumbing, with a smaller attach workflow still pending.
+
+Already in place:
+
+- Worker-level filesystem RPCs (`readFile`, `writeFile`, `mkdir`, `unlink`, `listDirectory`) are exposed and tested (`src/lib/simh/workerClient.ts`, `src/lib/simh/simh.worker.ts`).
+- i650 service exposes filesystem read/list helpers (`listFilesystemDirectory`, `readFilesystemFile`) in `src/lib/simh/i650/index.ts`.
+- Card workflow can browse MEMFS and preview deck contents from emulator files (`src/components/FilesystemBrowser.tsx`, `src/app/cards/page.tsx`).
+- End-to-end cards flow verifies selecting a deck from `/sw/...` and rendering punched-card preview (`e2e/cards.spec.ts`).
+
+Remaining for 0A:
+
+- Add explicit i650 helpers for card-device attach/detach commands (`CDR1`/`CDP1`, optional `CDP0`).
+- Wire deck selection/upload flow so a chosen deck path is attached to `CDR1` (not just previewed).
+- Add upload-to-MEMFS path in the cards workflow when source file is local/user-provided.
+
 ## Immediate priority (reordered with latest decisions)
 
 Execution order for near-term work:
@@ -48,7 +65,7 @@ Execution order for near-term work:
 
 Why this order:
 
-- It delivers user-visible value quickly (`Reader` UI and `PunchedCard` UI become functional with the emulator).
+- It delivers user-visible value quickly (cards/deck UI and `PunchedCard` UI become functional with the emulator).
 - It uses existing bridge primitives already present in this repo (`readFile`/`writeFile` worker wrappers).
 - It avoids premature complexity while still leaving a clean migration path to the generic host I/O bus.
 
@@ -60,7 +77,7 @@ Recommended file layout in MEMFS (can be adjusted later, but keep it stable per 
 - Punch output: `/output/cdp1.pch`
 - Optional print stream: `/output/cdp0.prt`
 
-Recommended service-level helpers to add in `src/lib/simh/i650/index.ts`:
+Recommended service-level helpers to add in `src/lib/simh/i650/index.ts` (still pending):
 
 - `attachReader(deckPath: string, unit = 1)` -> `ATTACH CDR${unit} ${deckPath}`
 - `detachReader(unit = 1)` -> `DETACH CDR${unit}`
@@ -109,21 +126,21 @@ Input path:
 
 Deliverables:
 
-- Make emulator MEMFS the source of truth for decks used by the Reader UI.
-- Use existing wrappers (`src/lib/simh/workerClient.ts` -> `writeFile`/`readFile`) instead of adding new low-level FS plumbing.
-- Add i650 card-device command helpers in TS service code for:
+- Make emulator MEMFS the source of truth for decks used by the cards UI. (Done for browse/read path)
+- Use existing wrappers (`src/lib/simh/workerClient.ts` -> `writeFile`/`readFile`) instead of adding new low-level FS plumbing. (Done)
+- Add i650 card-device command helpers in TS service code for: (Pending)
   - `ATTACH CDR1 <deck-path>` and `DETACH CDR1`,
   - output attach path setup (`ATTACH CDP1 <output-path>`, optional `ATTACH CDP0 <print-path>`).
-- Update `src/components/CardDeckProvider.tsx` and `src/app/reader/page.tsx` flow:
-  - upload file -> write to MEMFS,
-  - preview deck from MEMFS contents,
-  - attach selected deck path to CDR unit.
+- Update `src/components/CardDeckProvider.tsx` and `src/app/cards/page.tsx` flow:
+  - upload file -> write to MEMFS, (Pending)
+  - preview deck from MEMFS contents, (Done)
+  - attach selected deck path to CDR unit. (Pending)
 
 Exit criteria:
 
-- A deck uploaded in UI can be attached to `CDR1` and consumed by a simulator run.
-- Deck preview and simulator input come from the same MEMFS file.
-- No new SIMH C changes are required for this step.
+- A deck uploaded or selected in UI can be attached to `CDR1` and consumed by a simulator run. (Pending)
+- Deck preview and simulator input come from the same MEMFS file. (Pending final attach wiring)
+- No new SIMH C changes are required for this step. (Still expected)
 
 ### Milestone 0B: Punched output streaming (easy-first implementation)
 
@@ -326,7 +343,7 @@ Use this checklist when picking up work without prior chat context:
    - `npx vitest run`
    - `npm run lint`
 5. If working on Milestone 0A:
-   - verify deck upload -> MEMFS write -> CDR attach -> successful read path.
+   - verify deck browse/upload -> MEMFS read/write -> CDR attach -> successful read path.
 6. If working on Milestone 0B:
    - verify CDP output file tail stream emits incremental cards and preserves file output.
 7. Run a manual sanity flow:
@@ -341,7 +358,7 @@ Use this checklist when picking up work without prior chat context:
 
 ## Immediate next tasks (recommended order)
 
-1. Implement Milestone 0A: wire `CardDeckProvider`/Reader UI to MEMFS-backed deck files and CDR attach/detach commands.
+1. Finish remaining Milestone 0A work: add CDR/CDP attach helpers and wire cards flow from preview-only to actual CDR attach (including upload-to-MEMFS path).
 2. Implement Milestone 0B: add punched-card streaming via CDP output file tailing.
 3. Optionally implement Milestone 0C only if it directly helps shared request/response input plumbing.
 4. After 0A/0B are stable, continue with Milestone 1 metrics and then Milestones 2-3 genericization work.
