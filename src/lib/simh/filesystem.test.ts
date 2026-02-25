@@ -16,8 +16,10 @@ describe('simh filesystem', () => {
     const FS = {
       writeFile: vi.fn(),
       readFile: vi.fn(() => 'content'),
+      readdir: vi.fn(() => ['.', '..', 'dir', 'deck.dck']),
       mkdir: vi.fn(),
       unlink: vi.fn(),
+      stat: vi.fn((path: string) => ({ mode: path.endsWith('/dir') ? 0o040777 : 0o100644 })),
     };
     coreMocks.getModule.mockReturnValue({ FS });
     const filesystem = await import('./filesystem');
@@ -34,5 +36,14 @@ describe('simh filesystem', () => {
 
     filesystem.unlink('/tmp/test.txt');
     expect(FS.unlink).toHaveBeenCalledWith('/tmp/test.txt');
+
+    const entries = filesystem.listDirectory('/tmp');
+    expect(FS.readdir).toHaveBeenCalledWith('/tmp');
+    expect(FS.stat).toHaveBeenCalledWith('/tmp/dir');
+    expect(FS.stat).toHaveBeenCalledWith('/tmp/deck.dck');
+    expect(entries).toEqual([
+      { name: 'dir', path: '/tmp/dir', isDirectory: true },
+      { name: 'deck.dck', path: '/tmp/deck.dck', isDirectory: false },
+    ]);
   });
 });

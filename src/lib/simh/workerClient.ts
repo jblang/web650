@@ -29,6 +29,7 @@ type StateStreamMessage = {
 type AnyMessage = ResponseMessage | OutputMessage | RunStateMessage | StateStreamMessage;
 
 import { debugLog } from './debug';
+import type { FilesystemEntry } from './filesystem';
 
 let worker: Worker | null = null;
 let requestId = 1;
@@ -214,6 +215,11 @@ export async function mkdir(path: string): Promise<void> {
 export async function unlink(path: string): Promise<void> {
   await ensureInit();
   await call('unlink', path);
+}
+
+export async function listDirectory(path: string): Promise<FilesystemEntry[]> {
+  await ensureInit();
+  return call<FilesystemEntry[]>('listDirectory', path);
 }
 
 export async function getYieldSteps(): Promise<number> {

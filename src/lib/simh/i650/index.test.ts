@@ -14,6 +14,12 @@ const simhMocks = {
   sendCommand: vi.fn<(cmd: string, options?: { streamOutput?: boolean; echo?: boolean }) => Promise<string>>(),
   examine: vi.fn<(ref: string, options?: { echo?: boolean }) => Promise<Record<string, string>>>(),
   deposit: vi.fn<(ref: string, value: string, options?: { echo?: boolean }) => Promise<void>>(),
+  readFile: vi.fn<(path: string) => Promise<string>>(),
+  listDirectory: vi.fn<(path: string) => Promise<Array<{
+    name: string;
+    path: string;
+    isDirectory: boolean;
+  }>>>(),
   enableStateStream: vi.fn<(enabled: boolean) => Promise<void>>(),
   setStateStreamStride: vi.fn<(stride: number) => Promise<void>>(),
   clearStateStream: vi.fn<() => Promise<void>>(),
@@ -80,6 +86,8 @@ describe('i650', () => {
     simhMocks.sendCommand.mockResolvedValue('');
     simhMocks.examine.mockResolvedValue({ ...defaultState });
     simhMocks.deposit.mockResolvedValue(undefined);
+    simhMocks.readFile.mockResolvedValue('');
+    simhMocks.listDirectory.mockResolvedValue([]);
     simhMocks.stop.mockResolvedValue(undefined);
   });
 
@@ -98,6 +106,21 @@ describe('i650', () => {
     await service.setConsoleSwitches('1111111111+');
     expect(simhMocks.deposit).toHaveBeenCalledWith('CSW', '1111111111+');
     expect(service.getState().consoleSwitches).toBe('1111111111+');
+  });
+
+  it('lists and reads filesystem entries through worker client', async () => {
+    const service = await setupService();
+    await service.init();
+
+    simhMocks.listDirectory.mockResolvedValueOnce([
+      { name: 'soap4.dck', path: '/sw/soap4.dck', isDirectory: false },
+    ]);
+    simhMocks.readFile.mockResolvedValueOnce('CARD1\nCARD2\n');
+
+    await expect(service.listFilesystemDirectory('/sw')).resolves.toEqual([
+      { name: 'soap4.dck', path: '/sw/soap4.dck', isDirectory: false },
+    ]);
+    await expect(service.readFilesystemFile('/sw/soap4.dck')).resolves.toBe('CARD1\nCARD2\n');
   });
 
   it('subscribes and unsubscribes state listeners', async () => {

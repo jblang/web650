@@ -8,6 +8,7 @@ interface CardDeckContextType {
   setCardDeck: (deck: string[]) => void;
   setUploadedFile: (file: File | null) => void;
   handleFileChange: (e: React.ChangeEvent<HTMLInputElement> | { addedFiles: File[] }) => void;
+  loadDeckFromText: (name: string, text: string) => void;
   handleClearDeck: () => void;
 }
 
@@ -24,6 +25,12 @@ export function useCardDeck() {
 export default function CardDeckProvider({ children }: { children: ReactNode }) {
   const [cardDeck, setCardDeck] = useState<string[]>([]);
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
+  const parseDeckText = useCallback((text: string): string[] => (
+    text
+      .split('\n')
+      .map((line) => line.trim())
+      .filter((line) => line.length > 0)
+  ), []);
 
   const handleFileChange = useCallback((e: React.ChangeEvent<HTMLInputElement> | { addedFiles: File[] }) => {
     let file: File | null = null;
@@ -42,8 +49,7 @@ export default function CardDeckProvider({ children }: { children: ReactNode }) 
       reader.onload = (event) => {
         const result = event.target?.result;
         if (typeof result === 'string') {
-          const lines = result.split('\n').map((line) => line.trim()).filter(line => line.length > 0);
-          setCardDeck(lines);
+          setCardDeck(parseDeckText(result));
         } else {
           console.error('FileReader result is not a string:', result);
           setCardDeck([]);
@@ -59,7 +65,12 @@ export default function CardDeckProvider({ children }: { children: ReactNode }) 
       setUploadedFile(null);
       setCardDeck([]);
     }
-  }, []);
+  }, [parseDeckText]);
+
+  const loadDeckFromText = useCallback((name: string, text: string) => {
+    setUploadedFile(new File([text], name, { type: 'text/plain' }));
+    setCardDeck(parseDeckText(text));
+  }, [parseDeckText]);
 
   const handleClearDeck = useCallback(() => {
     setCardDeck([]);
@@ -72,8 +83,9 @@ export default function CardDeckProvider({ children }: { children: ReactNode }) 
     setCardDeck,
     setUploadedFile,
     handleFileChange,
+    loadDeckFromText,
     handleClearDeck,
-  }), [cardDeck, uploadedFile, handleFileChange, handleClearDeck]);
+  }), [cardDeck, uploadedFile, handleFileChange, loadDeckFromText, handleClearDeck]);
 
   return (
     <CardDeckContext.Provider value={value}>

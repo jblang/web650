@@ -157,14 +157,14 @@ describe('Header', () => {
     expect(link?.textContent).toBe('Programming');
   });
 
-  it('renders Reader link', () => {
+  it('renders Punched Cards link', () => {
     render(<AppHeader />);
 
     const link = Array.from(container.querySelectorAll('[data-testid="header-menu-item"]')).find(
-      (el) => el.getAttribute('href') === '/reader'
+      (el) => el.getAttribute('href') === '/cards'
     );
     expect(link).not.toBeNull();
-    expect(link?.textContent).toBe('Reader');
+    expect(link?.textContent).toBe('Punched Cards');
   });
 
   it('renders Emulator link', () => {

@@ -322,6 +322,23 @@ describe('workerClient', () => {
     worker.emitMessage({ id: unlinkReq.id, ok: true, result: null });
     await unlinkPromise;
 
+    const messageCountBeforeList = worker.postedMessages.length;
+    const listPromise = workerClient.listDirectory('/sw');
+    await flushMicrotasks();
+    const listReq = worker.postedMessages[messageCountBeforeList];
+    if (!listReq) {
+      throw new Error('Expected listDirectory request');
+    }
+    expect(listReq.method).toBe('listDirectory');
+    worker.emitMessage({
+      id: listReq.id,
+      ok: true,
+      result: [{ name: 'soap4.dck', path: '/sw/soap4.dck', isDirectory: false }],
+    });
+    await expect(listPromise).resolves.toEqual([
+      { name: 'soap4.dck', path: '/sw/soap4.dck', isDirectory: false },
+    ]);
+
     const messageCountBeforeYield = worker.postedMessages.length;
     const yieldPromise = workerClient.getYieldSteps();
     await flushMicrotasks();

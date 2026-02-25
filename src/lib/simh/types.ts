@@ -11,6 +11,7 @@ export interface EmscriptenModule {
   FS: {
     writeFile(path: string, data: string | Uint8Array): void;
     readFile(path: string, opts?: { encoding?: string }): string | Uint8Array;
+    readdir(path: string): string[];
     mkdir(path: string): void;
     unlink(path: string): void;
     stat(path: string): { mode: number };

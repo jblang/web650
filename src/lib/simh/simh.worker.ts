@@ -69,6 +69,7 @@ const handlers: Record<string, (...args: unknown[]) => unknown> = {
   writeFile: (path: unknown, data: unknown) => simh.writeFile(String(path), data as string | Uint8Array),
   mkdir: (path: unknown) => simh.mkdir(String(path)),
   unlink: (path: unknown) => simh.unlink(String(path)),
+  listDirectory: (path: unknown) => simh.listDirectory(String(path)),
   isCpuRunning: () => simh.isCpuRunning(),
   isEmulatorBusy: () => simh.isEmulatorBusy(),
   getYieldSteps: () => simh.getYieldSteps(),

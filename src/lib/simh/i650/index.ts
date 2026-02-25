@@ -31,6 +31,11 @@ export type I650EmulatorState = {
 
 type StateListener = (state: I650EmulatorState) => void;
 type OutputListener = (text: string) => void;
+export type I650FilesystemEntry = {
+  name: string;
+  path: string;
+  isDirectory: boolean;
+};
 
 const listeners = new Set<StateListener>();
 const outputListeners = new Set<OutputListener>();
@@ -496,6 +501,16 @@ export async function executeCommand(
       mergeState({ isRunning: false });
     }
   }
+}
+
+export async function listFilesystemDirectory(path: string): Promise<I650FilesystemEntry[]> {
+  await ensureInit();
+  return simh.listDirectory(path);
+}
+
+export async function readFilesystemFile(path: string): Promise<string> {
+  await ensureInit();
+  return simh.readFile(path);
 }
 
 /**

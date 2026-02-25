@@ -7,6 +7,7 @@
 
 // Types
 export type { EmscriptenModule } from './types';
+export type { FilesystemEntry } from './filesystem';
 
 // Generic SIMH Constants
 export {
@@ -53,6 +54,7 @@ export {
   readFile,
   mkdir,
   unlink,
+  listDirectory,
 } from './filesystem';
 
 // Generic init/restart are exported from core/control above.

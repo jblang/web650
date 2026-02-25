@@ -16,7 +16,7 @@ import styles from './Header.module.scss';
 const links = [
   { href: '/front-panel', text: 'Front Panel' },
   { href: '/programming', text: 'Programming' },
-  { href: '/reader', text: 'Reader' },
+  { href: '/cards', text: 'Punched Cards' },
   { href: '/emulator', text: 'Emulator' },
   { href: '/docs', text: 'Documentation' },
 ];
