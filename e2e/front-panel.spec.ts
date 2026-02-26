@@ -477,14 +477,14 @@ test('keyboard navigation works on labeled knobs', async ({ page }) => {
 
   // Focus the programmed knob (STOP/RUN) and use arrow keys
   const programmedKnob = page.getByTestId('programmed-knob');
-  await expect(programmedKnob).toHaveAttribute('data-current-label', 'RUN');
-
-  await programmedKnob.focus();
-  await page.keyboard.press('ArrowLeft');
   await expect(programmedKnob).toHaveAttribute('data-current-label', 'STOP');
 
+  await programmedKnob.focus();
   await page.keyboard.press('ArrowRight');
   await expect(programmedKnob).toHaveAttribute('data-current-label', 'RUN');
+
+  await page.keyboard.press('ArrowLeft');
+  await expect(programmedKnob).toHaveAttribute('data-current-label', 'STOP');
 
   // Home and End keys on the control knob (3 positions)
   const controlKnob = page.getByTestId('control-knob');

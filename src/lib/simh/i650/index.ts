@@ -1,6 +1,6 @@
 import * as simh from '../workerClient';
 import { ZERO_ADDRESS, ZERO_DATA, ZERO_OPERATION } from './constants';
-import { getDisplayValue, isManualOperation, DisplaySwitch } from './controls';
+import { getDisplayValue, isManualOperation, DisplaySwitch, Control, Display, ErrorSwitch } from './controls';
 import { extractOperationCode, validateAddress, validateWord, normalizeAddresses } from './format';
 import type { DisplayPosition, ControlPosition, ErrorSwitchPosition } from './controls';
 import { debugLog, errorLog } from '../debug';
@@ -43,9 +43,9 @@ const outputListeners = new Set<OutputListener>();
 let state: I650EmulatorState = {
   initialized: false,
   isRunning: false,
-  displaySwitch: 0,
-  controlSwitch: 0,
-  errorSwitch: 0,
+  displaySwitch: Display.LOWER_ACCUM,
+  controlSwitch: Control.RUN,
+  errorSwitch: ErrorSwitch.STOP,
   addressSwitches: ZERO_ADDRESS,
   addressRegister: ZERO_ADDRESS,
   programRegister: ZERO_DATA,
@@ -53,7 +53,7 @@ let state: I650EmulatorState = {
   upperAccumulator: ZERO_DATA,
   distributor: ZERO_DATA,
   consoleSwitches: ZERO_DATA,
-  programmedStop: false,
+  programmedStop: true,
   overflowStop: false,
   halfCycle: false,
   displayValue: ZERO_DATA,
