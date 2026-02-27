@@ -1,7 +1,7 @@
 import React, { act } from 'react';
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { createRoot } from 'react-dom/client';
-import { Programmed, HalfCycle, Control, Display, Overflow, ErrorSwitch } from '@/lib/simh/i650/controls';
+import { Programmed, HalfCycle, Control, Display, Overflow, ErrorSwitch } from '@/lib/i650/controls';
 
 type KnobProps = { position: number; onChange?: (v: number) => void; testId?: string };
 const knobPropsByTestId = new Map<string, KnobProps>();

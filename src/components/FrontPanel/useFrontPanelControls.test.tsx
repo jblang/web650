@@ -5,8 +5,8 @@ import { useFrontPanelControls } from './useFrontPanelControls';
 import { EmulatorStateProvider } from '../EmulatorStateProvider';
 import { EmulatorConsoleProvider } from '../EmulatorConsoleProvider';
 import { EmulatorActionsProvider } from '../EmulatorActionsProvider';
-import { Programmed, HalfCycle, Overflow, Display } from '@/lib/simh/i650/controls';
-import type { I650EmulatorState } from '@/lib/simh/i650';
+import { Programmed, HalfCycle, Overflow, Display } from '@/lib/i650/controls';
+import type { I650EmulatorState } from '@/lib/i650';
 
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
 
@@ -60,7 +60,7 @@ const mockServiceMocks = vi.hoisted(() => ({
   executeCommand: vi.fn(),
 }));
 
-vi.mock('@/lib/simh/i650', () => mockServiceMocks);
+vi.mock('@/lib/i650', () => mockServiceMocks);
 
 const render = (ui: React.ReactElement) => {
   act(() => {

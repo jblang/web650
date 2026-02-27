@@ -8,7 +8,7 @@ import {
   extractOperationCode,
   extractDataAddress,
   extractInstructionAddress,
-} from '../../lib/simh/i650/format';
+} from '../../lib/i650/format';
 import styles from './DisplaySection.module.scss';
 
 interface DisplaySectionProps {

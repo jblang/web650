@@ -2,7 +2,7 @@ import React, { act } from 'react';
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { createRoot, Root } from 'react-dom/client';
 import FrontPanel from './FrontPanel';
-import { Programmed, HalfCycle, Overflow, Control, Display, ErrorSwitch } from '@/lib/simh/i650/controls';
+import { Programmed, HalfCycle, Overflow, Control, Display, ErrorSwitch } from '@/lib/i650/controls';
 
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
 

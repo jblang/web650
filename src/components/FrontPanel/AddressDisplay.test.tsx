@@ -12,7 +12,7 @@ const mockFormatMocks = vi.hoisted(() => ({
   normalizeAddress: vi.fn(),
 }));
 
-vi.mock('@/lib/simh/i650/format', () => mockFormatMocks);
+vi.mock('@/lib/i650/format', () => mockFormatMocks);
 
 // Mock BiQuinaryNumber
 vi.mock('./BiQuinaryNumber', () => ({

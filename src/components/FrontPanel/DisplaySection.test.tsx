@@ -16,7 +16,7 @@ const mockFormatMocks = vi.hoisted(() => ({
   extractInstructionAddress: vi.fn(),
 }));
 
-vi.mock('@/lib/simh/i650/format', () => mockFormatMocks);
+vi.mock('@/lib/i650/format', () => mockFormatMocks);
 
 // Mock child components to simplify testing
 vi.mock('./BiQuinaryNumber', () => ({

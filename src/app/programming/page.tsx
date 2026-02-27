@@ -19,15 +19,15 @@ import {
   I650_DEFAULT_MNEMONICS_BY_OPCODE,
   I650_SOAP_MNEMONICS_BY_OPCODE,
   ZERO_ADDRESS,
-} from '@/lib/simh/i650/constants';
+} from '@/lib/i650/constants';
 import {
   normalizeAddress,
   normalizeWord,
   extractOperationCode,
   extractDataAddress,
   extractInstructionAddress,
-} from '@/lib/simh/i650/format';
-import { depositMemory } from '@/lib/simh/i650';
+} from '@/lib/i650/format';
+import { depositMemory } from '@/lib/i650';
 
 type OperationItem = {
   opcode: number;

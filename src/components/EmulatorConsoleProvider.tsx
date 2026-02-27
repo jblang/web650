@@ -10,7 +10,7 @@ import {
   useRef,
   ReactNode,
 } from 'react';
-import * as i650Service from '@/lib/simh/i650';
+import * as i650Service from '@/lib/i650';
 import { subscribeDebugOutput } from '@/lib/simh/debug';
 import { useEmulatorState } from './EmulatorStateProvider';
 

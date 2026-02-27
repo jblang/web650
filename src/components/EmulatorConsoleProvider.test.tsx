@@ -24,7 +24,7 @@ const mockDebugMocks = vi.hoisted(() => ({
   unsubscribeDebugOutputMock: vi.fn(),
 }));
 
-vi.mock('@/lib/simh/i650', () => mockServiceMocks);
+vi.mock('@/lib/i650', () => mockServiceMocks);
 vi.mock('./EmulatorStateProvider', () => mockEmulatorStateMocks);
 vi.mock('@/lib/simh/debug', () => mockDebugMocks);
 

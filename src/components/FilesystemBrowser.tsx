@@ -2,7 +2,7 @@
 
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Modal, TreeView, TreeNode, InlineLoading } from '@carbon/react';
-import * as i650Service from '@/lib/simh/i650';
+import * as i650Service from '@/lib/i650';
 
 type FsNode = {
   name: string;

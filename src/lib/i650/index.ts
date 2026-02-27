@@ -1,9 +1,9 @@
-import * as simh from '../workerClient';
+import * as simh from '../simh/workerClient';
 import { ZERO_ADDRESS, ZERO_DATA, ZERO_OPERATION } from './constants';
 import { getDisplayValue, isManualOperation, DisplaySwitch, Control, Display, ErrorSwitch } from './controls';
 import { extractOperationCode, validateAddress, validateWord, normalizeAddresses } from './format';
 import type { DisplayPosition, ControlPosition, ErrorSwitchPosition } from './controls';
-import { debugLog, errorLog } from '../debug';
+import { debugLog, errorLog } from '../simh/debug';
 
 /**
  * I650 emulator state containing all registers, switches, and control flags.

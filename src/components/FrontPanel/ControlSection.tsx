@@ -11,7 +11,7 @@ import type {
   ProgrammedPosition,
   HalfCyclePosition,
   OverflowPosition,
-} from '@/lib/simh/i650/controls';
+} from '@/lib/i650/controls';
 
 // Knob position configurations
 const STOP_RUN_POS = [{label: 'STOP', angle: -30}, {label: 'RUN', angle: 30}];

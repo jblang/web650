@@ -17,7 +17,7 @@ import type {
   ProgrammedPosition,
   HalfCyclePosition,
   OverflowPosition,
-} from '@/lib/simh/i650/controls';
+} from '@/lib/i650/controls';
 
 
 export interface FrontPanelProps {

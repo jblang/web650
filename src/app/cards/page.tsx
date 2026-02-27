@@ -12,7 +12,7 @@ import { TreeViewAlt, Clean } from '@carbon/icons-react';
 import PunchedCard from '@/components/PunchedCard';
 import { useCardDeck } from '@/components/CardDeckProvider';
 import FilesystemBrowser from '@/components/FilesystemBrowser';
-import * as i650Service from '@/lib/simh/i650';
+import * as i650Service from '@/lib/i650';
 
 const SPACING = '1.25rem';
 

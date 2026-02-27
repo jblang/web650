@@ -1,7 +1,7 @@
 import React from 'react';
 import BiQuinaryNumber from './BiQuinaryNumber';
 import HelpTarget from './HelpTarget';
-import { normalizeAddress } from '../../lib/simh/i650/format';
+import { normalizeAddress } from '../../lib/i650/format';
 import styles from './AddressDisplay.module.scss';
 
 interface AddressDisplayProps {

@@ -1,7 +1,7 @@
 import React from 'react';
 import cn from 'classnames';
 import BiQuinaryDigit from './BiQuinaryDigit';
-import { normalizeAddress } from '../../lib/simh/i650/format';
+import { normalizeAddress } from '../../lib/i650/format';
 import styles from './BiQuinaryNumber.module.scss';
 
 interface BiQuinaryNumberProps {

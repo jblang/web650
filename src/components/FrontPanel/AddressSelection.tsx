@@ -1,6 +1,6 @@
 import React from 'react';
 import DecimalKnob from './DecimalKnob';
-import { normalizeAddress } from '../../lib/simh/i650/format';
+import { normalizeAddress } from '../../lib/i650/format';
 
 interface AddressSelectionProps {
   value: string | number;

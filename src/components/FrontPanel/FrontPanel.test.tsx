@@ -4,7 +4,7 @@ import { createRoot, Root } from 'react-dom/client';
 import FrontPanel, { FrontPanelProps } from './FrontPanel';
 import type { OperatingState } from './OperatingStatus';
 import type { CheckingState } from './CheckingStatus';
-import { Programmed, HalfCycle, Overflow, Control, Display, ErrorSwitch } from '@/lib/simh/i650/controls';
+import { Programmed, HalfCycle, Overflow, Control, Display, ErrorSwitch } from '@/lib/i650/controls';
 
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
 

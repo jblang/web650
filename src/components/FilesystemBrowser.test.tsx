@@ -12,7 +12,7 @@ const fsMocks = vi.hoisted(() => ({
   listFilesystemDirectory: vi.fn<(path: string) => Promise<Array<{ name: string; path: string; isDirectory: boolean }>>>(),
 }));
 
-vi.mock('@/lib/simh/i650', () => fsMocks);
+vi.mock('@/lib/i650', () => fsMocks);
 
 vi.mock('@carbon/react', () => {
   let treeSelect:

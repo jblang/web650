@@ -2,7 +2,7 @@ import React from 'react';
 import DecimalKnob from './DecimalKnob';
 import LabeledKnob from './LabeledKnob';
 import HelpTarget from './HelpTarget';
-import { normalizeWord } from '../../lib/simh/i650/format';
+import { normalizeWord } from '../../lib/i650/format';
 import styles from './EntrySection.module.scss';
 import cn from 'classnames';
 

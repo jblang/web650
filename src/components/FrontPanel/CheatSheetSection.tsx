@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
 import { Button, Form, TextInput, Theme } from '@carbon/react';
 import { Download, Export } from '@carbon/icons-react';
-import * as i650Service from '@/lib/simh/i650';
+import * as i650Service from '@/lib/i650';
 import {
   normalizeAddress,
   normalizeWord,
-} from '@/lib/simh/i650/format';
+} from '@/lib/i650/format';
 import styles from './CheatSheetSection.module.scss';
 
 interface CheatSheetSectionProps {

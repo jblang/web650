@@ -44,8 +44,8 @@ const simhMocks = {
   stop: vi.fn<() => Promise<void>>(),
 };
 
-vi.mock('../workerClient', () => simhMocks);
-vi.mock('../debug', () => debugMocks);
+vi.mock('../simh/workerClient', () => simhMocks);
+vi.mock('../simh/debug', () => debugMocks);
 
 const defaultState: Record<string, string> = {
   AR: '0000',
