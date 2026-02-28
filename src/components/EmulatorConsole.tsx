@@ -10,6 +10,42 @@ import { useEmulatorConsole } from './EmulatorConsoleProvider';
 import { useEmulatorActions } from './EmulatorActionsProvider';
 import { setDebugEnabled, isDebugEnabled } from '@/lib/simh/debug';
 
+const COMMAND_HISTORY_KEY = 'simh.command-history';
+const MAX_COMMAND_HISTORY = 50;
+
+function loadCommandHistory(): string[] {
+  if (typeof window === 'undefined') return [];
+  const storages: Storage[] = [window.localStorage, window.sessionStorage];
+  for (const storage of storages) {
+    try {
+      const raw = storage.getItem(COMMAND_HISTORY_KEY);
+      if (!raw) continue;
+      const parsed: unknown = JSON.parse(raw);
+      if (!Array.isArray(parsed)) return [];
+      return parsed.filter((value): value is string => typeof value === 'string');
+    } catch {
+      // Try next storage backend.
+    }
+  }
+  return [];
+}
+
+function saveCommandHistory(history: string[]): void {
+  if (typeof window === 'undefined') return;
+  const payload = JSON.stringify(history);
+  try {
+    window.localStorage.setItem(COMMAND_HISTORY_KEY, payload);
+    return;
+  } catch {
+    // Fall back to session storage.
+  }
+  try {
+    window.sessionStorage.setItem(COMMAND_HISTORY_KEY, payload);
+  } catch {
+    // Ignore storage failures.
+  }
+}
+
 export default function EmulatorConsole() {
   const PROMPT = 'sim> ';
 
@@ -86,7 +122,6 @@ export default function EmulatorConsole() {
   const sendTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const textAreaRef = useRef<HTMLTextAreaElement | null>(null);
   const outputCursorRef = useRef(0);
-  const commandHistoryRef = useRef<string[]>([]);
   const historyIndexRef = useRef<number | null>(null);
   const historyDraftRef = useRef('');
 
@@ -183,7 +218,10 @@ export default function EmulatorConsole() {
     if (!rawInput) return;
 
     setTranscript((current) => `${current}${PROMPT}${rawInput}\n`);
-    commandHistoryRef.current.push(rawInput);
+    const previousHistory = loadCommandHistory();
+    const nextHistory = [...previousHistory.filter((item) => item !== rawInput), rawInput]
+      .slice(-MAX_COMMAND_HISTORY);
+    saveCommandHistory(nextHistory);
     setSending(true);
     try {
       await sendCommand(rawInput);
@@ -199,7 +237,7 @@ export default function EmulatorConsole() {
     const end = element.selectionEnd ?? element.value.length;
 
     if (event.key === 'ArrowUp') {
-      const history = commandHistoryRef.current;
+      const history = loadCommandHistory();
       if (history.length === 0) {
         event.preventDefault();
         return;
@@ -216,12 +254,12 @@ export default function EmulatorConsole() {
     }
 
     if (event.key === 'ArrowDown') {
+      const history = loadCommandHistory();
       if (historyIndexRef.current === null) {
         event.preventDefault();
         return;
       }
       event.preventDefault();
-      const history = commandHistoryRef.current;
       if (historyIndexRef.current < history.length - 1) {
         historyIndexRef.current += 1;
         setCommandInput(history[historyIndexRef.current]);

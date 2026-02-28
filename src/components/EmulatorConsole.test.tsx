@@ -4,6 +4,7 @@ import { createRoot, Root } from 'react-dom/client';
 import EmulatorConsole from './EmulatorConsole';
 
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
+const COMMAND_HISTORY_KEY = 'simh.command-history';
 
 type CheckboxProps = {
   id?: string;
@@ -127,6 +128,23 @@ const pressKey = (key: string) => {
 
 describe('EmulatorConsole', () => {
   beforeEach(() => {
+    const memoryStorage = new Map<string, string>();
+    Object.defineProperty(window, 'localStorage', {
+      configurable: true,
+      value: {
+        getItem: (key: string) => (memoryStorage.has(key) ? memoryStorage.get(key)! : null),
+        setItem: (key: string, value: string) => {
+          memoryStorage.set(key, String(value));
+        },
+        removeItem: (key: string) => {
+          memoryStorage.delete(key);
+        },
+        clear: () => {
+          memoryStorage.clear();
+        },
+      },
+    });
+
     container = document.createElement('div');
     document.body.appendChild(container);
     root = createRoot(container);
@@ -139,6 +157,7 @@ describe('EmulatorConsole', () => {
     optionState.debugEnabled = false;
     optionState.setDebugEnabled.mockClear();
     actionMocks.onProgramStopClick.mockClear();
+    window.localStorage.clear();
   });
 
   afterEach(() => {
@@ -208,6 +227,28 @@ describe('EmulatorConsole', () => {
     expect(getCurrentCommand()).toBe('second');
     pressKey('ArrowDown');
     expect(getCurrentCommand()).toBe('draft');
+  });
+
+  it('persists command history to localStorage', async () => {
+    render(<EmulatorConsole />);
+    typeCommand('persist me');
+    pressKey('Enter');
+
+    await act(async () => {
+      await Promise.resolve();
+    });
+
+    expect(JSON.parse(window.localStorage.getItem(COMMAND_HISTORY_KEY) ?? '[]')).toEqual(['persist me']);
+  });
+
+  it('loads persisted history from localStorage', () => {
+    window.localStorage.setItem(COMMAND_HISTORY_KEY, JSON.stringify(['older', 'newer']));
+    render(<EmulatorConsole />);
+
+    pressKey('ArrowUp');
+    expect(getCurrentCommand()).toBe('newer');
+    pressKey('ArrowUp');
+    expect(getCurrentCommand()).toBe('older');
   });
 
   it('keeps caret out of historical output on ArrowLeft', () => {
