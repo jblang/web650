@@ -17,6 +17,7 @@ import { useEmulatorState } from './EmulatorStateProvider';
 interface EmulatorConsoleContextType {
   output: string;
   sendCommand: (command: string) => Promise<string>;
+  initialized: boolean;
   isRunning: boolean;
   clearOutput: () => void;
 }
@@ -32,7 +33,7 @@ export function useEmulatorConsole() {
 }
 
 export function EmulatorConsoleProvider({ children }: { children: ReactNode }) {
-  const { isRunning } = useEmulatorState();
+  const { initialized, isRunning } = useEmulatorState();
   const [output, setOutput] = useState('');
   const outputBufferRef = useRef('');
 
@@ -77,8 +78,6 @@ export function EmulatorConsoleProvider({ children }: { children: ReactNode }) {
       const trimmed = command.trim();
       if (!trimmed) return '';
 
-      enqueueOutput(`sim> ${trimmed}\n`);
-
       try {
         const result = await i650Service.executeCommand(trimmed, { streamOutput: true, echo: false });
         return result;
@@ -87,17 +86,18 @@ export function EmulatorConsoleProvider({ children }: { children: ReactNode }) {
         return '';
       }
     },
-    [enqueueOutput]
+    []
   );
 
   const consoleValue = useMemo(
     () => ({
       output,
       sendCommand,
+      initialized,
       isRunning,
       clearOutput,
     }),
-    [output, sendCommand, isRunning, clearOutput]
+    [output, sendCommand, initialized, isRunning, clearOutput]
   );
 
   return <EmulatorConsoleContext.Provider value={consoleValue}>{children}</EmulatorConsoleContext.Provider>;

@@ -22,15 +22,15 @@ async function clickPanelButtonDom(page: import('@playwright/test').Page, label:
 
 async function sendConsoleCommand(page: import('@playwright/test').Page, command: string) {
   const commandInput = page.locator('#command');
-  const output = page.locator('#output');
+  const output = page.locator('.emulator-console__output');
   await commandInput.fill(command);
-  await page.getByRole('button', { name: 'Send' }).click();
-  await expect(output).toHaveValue(new RegExp(`sim>\\s*${command.replace(/[.*+?^${}()|[\\]\\\\]/g, '\\$&')}`, 'i'));
+  await commandInput.press('Enter');
+  await expect(output).toContainText(new RegExp(`sim>\\s*${command.replace(/[.*+?^${}()|[\\]\\\\]/g, '\\$&')}`, 'i'));
 }
 
 async function expectConsoleState(output: import('@playwright/test').Locator, values: Record<string, string>) {
   for (const [key, value] of Object.entries(values)) {
-    await expect(output).toHaveValue(new RegExp(`${key}:\\s*${value.replace(/[.*+?^${}()|[\\]\\\\]/g, '\\$&')}`));
+    await expect(output).toContainText(new RegExp(`${key}:\\s*${value.replace(/[.*+?^${}()|[\\]\\\\]/g, '\\$&')}`));
   }
 }
 
@@ -55,7 +55,7 @@ async function setupFrontPanelManualReadOut(page: import('@playwright/test').Pag
 
 async function setupEmulatorConsole(page: import('@playwright/test').Page) {
   await page.goto('/emulator');
-  return page.locator('#output');
+  return page.locator('.emulator-console__output');
 }
 
 test('loads the front panel and allows navigation from the header', async ({ page }) => {
@@ -155,8 +155,8 @@ test('emulator console can run and stop a program and show state output', async 
   await expect(page.getByRole('button', { name: 'Stop' })).toBeVisible();
 
   await page.getByRole('button', { name: 'Stop' }).click();
-  await expect(page.getByRole('button', { name: 'Send' })).toBeVisible();
-  await expect(output).toHaveValue(
+  await expect(page.getByRole('button', { name: 'Go' })).toBeVisible();
+  await expect(output).toContainText(
     /Simulation stopped,\s+IC:\s+(?:00000\s+\(\s+0000000001\+\s+NOOP\s+0000\s+0001\s+\)|00001\s+\(\s+0000000000\+\s+NOOP\s+0000\s+0000\s+\))/m
   );
 });
@@ -165,16 +165,16 @@ test('console register deposit round-trip and front panel display mapping', asyn
   const output = await setupEmulatorConsole(page);
 
   await sendConsoleCommand(page, 'examine state');
-  await expect(output).toHaveValue(/ACCLO:\s*0000000000\+/);
-  await expect(output).toHaveValue(/ACCUP:\s*0000000000\+/);
-  await expect(output).toHaveValue(/PR:\s*0000000000\+/);
-  await expect(output).toHaveValue(/DIST:\s*0000000000\+/);
-  await expect(output).toHaveValue(/AR:\s*00000/);
-  await expect(output).toHaveValue(/CSW:\s*0000000000\+/);
-  await expect(output).toHaveValue(/OV:\s*0/);
-  await expect(output).toHaveValue(/CSWPS:\s*1/);
-  await expect(output).toHaveValue(/CSWOS:\s*0/);
-  await expect(output).toHaveValue(/HALF:\s*0/);
+  await expect(output).toContainText(/ACCLO:\s*0000000000\+/);
+  await expect(output).toContainText(/ACCUP:\s*0000000000\+/);
+  await expect(output).toContainText(/PR:\s*0000000000\+/);
+  await expect(output).toContainText(/DIST:\s*0000000000\+/);
+  await expect(output).toContainText(/AR:\s*00000/);
+  await expect(output).toContainText(/CSW:\s*0000000000\+/);
+  await expect(output).toContainText(/OV:\s*0/);
+  await expect(output).toContainText(/CSWPS:\s*1/);
+  await expect(output).toContainText(/CSWOS:\s*0/);
+  await expect(output).toContainText(/HALF:\s*0/);
 
   await sendConsoleCommand(page, 'deposit ACCLO 0123456789+');
   await sendConsoleCommand(page, 'deposit ACCUP 9876543210-');
@@ -188,16 +188,16 @@ test('console register deposit round-trip and front panel display mapping', asyn
   await sendConsoleCommand(page, 'deposit HALF 1');
 
   await sendConsoleCommand(page, 'examine state');
-  await expect(output).toHaveValue(/ACCLO:\s*0123456789\+/);
-  await expect(output).toHaveValue(/ACCUP:\s*9876543210-/);
-  await expect(output).toHaveValue(/PR:\s*0246813579-/);
-  await expect(output).toHaveValue(/DIST:\s*0123498765\+/);
-  await expect(output).toHaveValue(/AR:\s*02468/);
-  await expect(output).toHaveValue(/CSW:\s*0918273645-/);
-  await expect(output).toHaveValue(/OV:\s*1/);
-  await expect(output).toHaveValue(/CSWPS:\s*0/);
-  await expect(output).toHaveValue(/CSWOS:\s*1/);
-  await expect(output).toHaveValue(/HALF:\s*1/);
+  await expect(output).toContainText(/ACCLO:\s*0123456789\+/);
+  await expect(output).toContainText(/ACCUP:\s*9876543210-/);
+  await expect(output).toContainText(/PR:\s*0246813579-/);
+  await expect(output).toContainText(/DIST:\s*0123498765\+/);
+  await expect(output).toContainText(/AR:\s*02468/);
+  await expect(output).toContainText(/CSW:\s*0918273645-/);
+  await expect(output).toContainText(/OV:\s*1/);
+  await expect(output).toContainText(/CSWPS:\s*0/);
+  await expect(output).toContainText(/CSWOS:\s*1/);
+  await expect(output).toContainText(/HALF:\s*1/);
 
   await page.getByRole('link', { name: 'Front Panel' }).click();
   await expect(page).toHaveURL(/\/front-panel\/?$/);
@@ -253,7 +253,7 @@ test('emulator console runs i650_test.ini from /tests and reports success', asyn
 
   await sendConsoleCommand(page, 'cd /tests');
   await sendConsoleCommand(page, 'do i650_test.ini');
-  await expect(output).toHaveValue(/All Tests Passed/i, { timeout: 90000 });
+  await expect(output).toContainText(/All Tests Passed/i, { timeout: 90000 });
 });
 
 test('program reset stops execution and clears PR and AR', async ({ page }) => {
@@ -301,14 +301,14 @@ test('emulator reset clears console output and keeps console usable', async ({ p
 
   await sendConsoleCommand(page, 'deposit ACCLO 123+');
   await sendConsoleCommand(page, 'examine state');
-  await expect(output).toHaveValue(/ACCLO:\s*0000000123\+/);
+  await expect(output).toContainText(/ACCLO:\s*0000000123\+/);
 
   await page.getByRole('link', { name: 'Front Panel' }).click();
   await clickPanelButtonDom(page, 'MASTER RESET');
   await page.getByRole('link', { name: 'Emulator' }).click();
-  await expect(output).toHaveValue('');
+  await expect(output).not.toContainText(/ACCLO:\s*0000000123\+/);
   await sendConsoleCommand(page, 'examine state');
-  await expect(output).toHaveValue(/ACCLO:\s*0000000000\+/);
+  await expect(output).toContainText(/ACCLO:\s*0000000000\+/);
 });
 
 test('display selector changes visible value without mutating register state', async ({ page }) => {
@@ -375,10 +375,10 @@ test('console command errors are shown and console remains usable', async ({ pag
   const output = await setupEmulatorConsole(page);
 
   await sendConsoleCommand(page, 'deposit AR ABC');
-  await expect(output).toHaveValue(/(Invalid|error|non-existent|must|Value)/i);
+  await expect(output).toContainText(/(Invalid|error|non-existent|must|Value)/i);
 
   await sendConsoleCommand(page, 'examine state');
-  await expect(output).toHaveValue(/ACCLO:\s*0000000000\+/);
+  await expect(output).toContainText(/ACCLO:\s*0000000000\+/);
 });
 
 test('manual read-in writes memory and manual read-out reads it back', async ({ page }) => {
@@ -425,14 +425,14 @@ test('programmed stop and overflow stop conditions are surfaced in console outpu
   await sendConsoleCommand(page, `deposit 0 ${PROGRAMMED_STOP_WORD}`);
   await sendConsoleCommand(page, 'deposit CSWPS 1');
   await sendConsoleCommand(page, 'go');
-  await expect(output).toHaveValue(/Programmed Stop/i, { timeout: 20000 });
+  await expect(output).toContainText(/Programmed Stop/i, { timeout: 20000 });
 
   await sendConsoleCommand(page, 'deposit 0 1');
   await sendConsoleCommand(page, 'deposit OV 1');
   await sendConsoleCommand(page, 'deposit CSWPS 0');
   await sendConsoleCommand(page, 'deposit CSWOS 1');
   await sendConsoleCommand(page, 'go');
-  await expect(output).toHaveValue(/Overflow/i, { timeout: 20000 });
+  await expect(output).toContainText(/Overflow/i, { timeout: 20000 });
 });
 
 test('front panel ARIA roles and labels are present', async ({ page }) => {
@@ -535,7 +535,7 @@ test('emulator remains usable across navigation', async ({ page }) => {
 
   // Ensure simulator init has completed before navigating.
   await sendConsoleCommand(page, 'examine state');
-  await expect(output).toHaveValue(/IC:\s*00000/);
+  await expect(output).toContainText(/IC:\s*00000/);
 
   await page.getByRole('link', { name: 'Front Panel' }).click();
   await expect(page).toHaveURL(/\/front-panel\/?$/);
@@ -544,5 +544,5 @@ test('emulator remains usable across navigation', async ({ page }) => {
 
   await expect(page.locator('#command')).toBeVisible();
   await sendConsoleCommand(page, 'examine state');
-  await expect(output).toHaveValue(/IC:\s*00000/);
+  await expect(output).toContainText(/IC:\s*00000/);
 });

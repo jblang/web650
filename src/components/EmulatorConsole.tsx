@@ -1,91 +1,166 @@
 'use client';
 
-import { useState, useRef, KeyboardEvent, useEffect } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type KeyboardEvent } from 'react';
 import {
-  ComboBox,
-  TextArea,
   Button,
-  Stack,
   Checkbox,
 } from '@carbon/react';
-import { Send, Stop, Play } from '@carbon/icons-react';
+import { Stop, Play } from '@carbon/icons-react';
 import { useEmulatorConsole } from './EmulatorConsoleProvider';
 import { useEmulatorActions } from './EmulatorActionsProvider';
 import { setDebugEnabled, isDebugEnabled } from '@/lib/simh/debug';
 
 export default function EmulatorConsole() {
-  const COMMAND_HISTORY_KEY = 'simh.command-history';
-  const MAX_COMMAND_HISTORY = 50;
+  const PROMPT = 'sim> ';
 
-  type CommandHistoryItem = { id: string; text: string };
-  const toHistoryItems = (commands: string[]): CommandHistoryItem[] =>
-    commands.map((text, index) => ({ id: `${index}-${text}`, text }));
+  const CONSOLE_CONTAINER_STYLE = {
+    height: 'calc(100dvh - var(--cds-shell-header-height, 3rem))',
+    maxHeight: 'calc(100dvh - var(--cds-shell-header-height, 3rem))',
+    margin: 0,
+    padding: '1rem 0',
+    boxSizing: 'border-box',
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '1rem',
+    overflow: 'hidden',
+  } as const;
+  const TERMINAL_ROW_STYLE = {
+    flex: 1,
+    minHeight: 0,
+    display: 'flex',
+    flexDirection: 'row',
+    gap: '1rem',
+  } as const;
+  const TERMINAL_SLOT_STYLE = {
+    flex: 1,
+    minHeight: 0,
+  } as const;
+  const CONTROL_COLUMN_STYLE = {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '0.5rem',
+    alignItems: 'stretch',
+  } as const;
+  const ICON_BUTTON_STYLE = {
+    width: '3rem',
+    minWidth: '3rem',
+    height: '3rem',
+    padding: 0,
+  } as const;
+  const TERMINAL_CONTAINER_STYLE = {
+    height: '100%',
+    maxHeight: '100%',
+    minHeight: 0,
+    backgroundColor: 'var(--cds-layer, #f4f4f4)',
+    border: '1px solid var(--cds-border-subtle-01, #c6c6c6)',
+    borderRadius: 0,
+    overflow: 'hidden',
+  } as const;
+  const TERMINAL_TEXTAREA_STYLE = {
+    width: '100%',
+    height: '100%',
+    minHeight: 0,
+    resize: 'none',
+    border: 'none',
+    outline: 'none',
+    backgroundColor: 'var(--cds-layer, #f4f4f4)',
+    color: 'var(--cds-text-primary, #161616)',
+    caretColor: 'var(--cds-text-primary, #161616)',
+    fontFamily: '"IBM Plex Mono", monospace',
+    fontSize: '0.875rem',
+    fontWeight: 400,
+    lineHeight: '1.5',
+    whiteSpace: 'pre-wrap',
+    overflowY: 'auto',
+    padding: '0.5rem',
+    boxSizing: 'border-box',
+  } as const;
 
-  const readStoredHistory = (): string[] => {
-    if (typeof window === 'undefined') return [];
-    const storage = window.localStorage as { getItem?: (key: string) => string | null } | undefined;
-    if (!storage?.getItem) return [];
-    try {
-      const raw = storage.getItem(COMMAND_HISTORY_KEY);
-      if (!raw) return [];
-      const parsed: unknown = JSON.parse(raw);
-      if (!Array.isArray(parsed)) return [];
-      return parsed.filter((value): value is string => typeof value === 'string');
-    } catch {
-      return [];
-    }
-  };
-
-  const persistHistory = (commands: string[]) => {
-    if (typeof window === 'undefined') return;
-    const storage = window.localStorage as { setItem?: (key: string, value: string) => void } | undefined;
-    storage?.setItem?.(COMMAND_HISTORY_KEY, JSON.stringify(commands));
-  };
-
-  const [command, setCommand] = useState('');
-  const [commandHistory, setCommandHistory] = useState<string[]>(() => readStoredHistory());
-  const [commandInputResetKey, setCommandInputResetKey] = useState(0);
   const [sending, setSending] = useState(false);
   const [debugEnabled, setDebugEnabledState] = useState(() => isDebugEnabled());
-  const { output, sendCommand, isRunning } = useEmulatorConsole();
+  const [commandInput, setCommandInput] = useState('');
+  const [transcript, setTranscript] = useState('');
+  const { output, sendCommand, initialized, isRunning } = useEmulatorConsole();
   const { onProgramStopClick } = useEmulatorActions();
-  const textAreaRef = useRef<HTMLTextAreaElement>(null);
+
   const sendTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const focusCommandInput = () => {
-    const commandInput = document.getElementById('command') as HTMLInputElement | null;
-    commandInput?.focus();
+  const textAreaRef = useRef<HTMLTextAreaElement | null>(null);
+  const outputCursorRef = useRef(0);
+  const commandHistoryRef = useRef<string[]>([]);
+  const historyIndexRef = useRef<number | null>(null);
+  const historyDraftRef = useRef('');
+
+  const busy = isRunning;
+  const inputReady = initialized && !busy && !sending;
+  const editableStart = useMemo(
+    () => transcript.length + (inputReady ? PROMPT.length : 0),
+    [transcript, inputReady]
+  );
+  const terminalValue = useMemo(
+    () => (inputReady ? `${transcript}${PROMPT}${commandInput}` : transcript),
+    [transcript, commandInput, inputReady]
+  );
+
+  const placeCaretAtEnd = useCallback(() => {
+    const element = textAreaRef.current;
+    if (!element) return;
+    const end = element.value.length;
+    element.setSelectionRange(end, end);
+  }, []);
+
+  const focusTerminalInput = useCallback(() => {
+    const element = textAreaRef.current;
+    if (!element) return;
+    element.focus();
+    placeCaretAtEnd();
+  }, [placeCaretAtEnd]);
+
+  const scrollTerminalToBottom = () => {
+    const element = textAreaRef.current;
+    if (!element) return;
+    element.scrollTop = element.scrollHeight;
   };
 
+  const clampSelectionToCommand = useCallback((element: HTMLTextAreaElement) => {
+    if (!inputReady) return;
+    const start = element.selectionStart ?? element.value.length;
+    const end = element.selectionEnd ?? element.value.length;
+    if (start >= editableStart && end >= editableStart) return;
+    element.setSelectionRange(
+      Math.max(editableStart, start),
+      Math.max(editableStart, end)
+    );
+  }, [editableStart, inputReady]);
+
   useEffect(() => {
-    if (textAreaRef.current) {
-      textAreaRef.current.scrollTop = textAreaRef.current.scrollHeight;
+    if (output.length < outputCursorRef.current) {
+      outputCursorRef.current = 0;
+      setTranscript('');
+    }
+    if (output.length === outputCursorRef.current) return;
+
+    const chunk = output.slice(outputCursorRef.current);
+    outputCursorRef.current = output.length;
+
+    if (chunk.length > 0) {
+      setTranscript((current) => current + chunk);
     }
   }, [output]);
 
-  const busy = isRunning;
-  const commandItems = toHistoryItems(commandHistory);
+  useEffect(() => {
+    requestAnimationFrame(scrollTerminalToBottom);
+  }, [transcript]);
 
   useEffect(() => {
-    if (!busy) {
-      focusCommandInput();
-    }
-  }, [busy]);
-
-  useEffect(() => {
-    if (busy) return;
+    if (!inputReady) return;
+    focusTerminalInput();
     const timeoutId = window.setTimeout(() => {
-      focusCommandInput();
+      focusTerminalInput();
     }, 0);
     return () => {
       window.clearTimeout(timeoutId);
     };
-  }, [busy, commandInputResetKey]);
-
-  useEffect(() => {
-    if (!isRunning && sending) {
-      setSending(false);
-    }
-  }, [isRunning, sending]);
+  }, [inputReady, focusTerminalInput]);
 
   useEffect(() => {
     if (!sending) return;
@@ -100,21 +175,130 @@ export default function EmulatorConsole() {
     };
   }, [sending]);
 
-  const handleSend = async () => {
-    if (!command.trim() || sending) return;
+  const submitCommand = async () => {
+    const rawInput = commandInput.trim();
+    setCommandInput('');
+    historyIndexRef.current = null;
+    historyDraftRef.current = '';
+    if (!rawInput) return;
 
-    const trimmed = command.trim();
+    setTranscript((current) => `${current}${PROMPT}${rawInput}\n`);
+    commandHistoryRef.current.push(rawInput);
     setSending(true);
     try {
-      await sendCommand(trimmed);
-      const nextHistory = [trimmed, ...commandHistory.filter((item) => item !== trimmed)].slice(0, MAX_COMMAND_HISTORY);
-      setCommandHistory(nextHistory);
-      persistHistory(nextHistory);
+      await sendCommand(rawInput);
     } finally {
       setSending(false);
-      setCommand('');
-      setCommandInputResetKey((current) => current + 1);
     }
+  };
+
+  const handleInputKeyDown = async (event: KeyboardEvent<HTMLTextAreaElement>) => {
+    if (event.metaKey || event.ctrlKey || event.altKey) return;
+    const element = event.currentTarget;
+    const start = element.selectionStart ?? element.value.length;
+    const end = element.selectionEnd ?? element.value.length;
+
+    if (event.key === 'ArrowUp') {
+      const history = commandHistoryRef.current;
+      if (history.length === 0) {
+        event.preventDefault();
+        return;
+      }
+      event.preventDefault();
+      if (historyIndexRef.current === null) {
+        historyDraftRef.current = commandInput;
+        historyIndexRef.current = history.length - 1;
+      } else {
+        historyIndexRef.current = Math.max(0, historyIndexRef.current - 1);
+      }
+      setCommandInput(history[historyIndexRef.current]);
+      return;
+    }
+
+    if (event.key === 'ArrowDown') {
+      if (historyIndexRef.current === null) {
+        event.preventDefault();
+        return;
+      }
+      event.preventDefault();
+      const history = commandHistoryRef.current;
+      if (historyIndexRef.current < history.length - 1) {
+        historyIndexRef.current += 1;
+        setCommandInput(history[historyIndexRef.current]);
+        return;
+      }
+      historyIndexRef.current = null;
+      setCommandInput(historyDraftRef.current);
+      return;
+    }
+
+    if (event.key === 'Enter') {
+      event.preventDefault();
+      await submitCommand();
+      return;
+    }
+
+    if (event.key === 'Backspace') {
+      if (start <= editableStart && end <= editableStart) {
+        event.preventDefault();
+      }
+      return;
+    }
+
+    if (event.key === 'Delete') {
+      if (start < editableStart || end < editableStart) {
+        event.preventDefault();
+      }
+      return;
+    }
+
+    if (event.key === 'Home') {
+      event.preventDefault();
+      element.setSelectionRange(editableStart, editableStart);
+      return;
+    }
+
+    if (event.key === 'ArrowLeft') {
+      if (start <= editableStart && end <= editableStart) {
+        event.preventDefault();
+        element.setSelectionRange(editableStart, editableStart);
+      }
+      return;
+    }
+
+    if (event.key === 'ArrowRight' || event.key === 'End') {
+      return;
+    }
+
+    if (event.key.length === 1) {
+      historyIndexRef.current = null;
+      if (start < editableStart || end < editableStart) {
+        event.preventDefault();
+        placeCaretAtEnd();
+      }
+      return;
+    }
+
+    if (event.key === 'PageUp' || event.key === 'PageDown') {
+      event.preventDefault();
+    }
+  };
+
+  const handleTextAreaChange = (nextValue: string) => {
+    const expectedPrefix = `${transcript}${PROMPT}`;
+    if (nextValue.startsWith(expectedPrefix)) {
+      setCommandInput(nextValue.slice(expectedPrefix.length));
+      historyIndexRef.current = null;
+      return;
+    }
+
+    const lastLine = nextValue.split('\n').at(-1) ?? '';
+    if (lastLine.startsWith(PROMPT)) {
+      setCommandInput(lastLine.slice(PROMPT.length));
+    } else {
+      setCommandInput(lastLine);
+    }
+    historyIndexRef.current = null;
   };
 
   const handleGo = async () => {
@@ -125,14 +309,6 @@ export default function EmulatorConsole() {
       await sendCommand('go');
     } finally {
       setSending(false);
-      setCommand('');
-    }
-  };
-
-  const handleKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter') {
-      e.preventDefault();
-      handleSend();
     }
   };
 
@@ -142,53 +318,38 @@ export default function EmulatorConsole() {
   };
 
   return (
-    <Stack gap={5}>
-      <TextArea
-        ref={textAreaRef}
-        id="output"
-        labelText="Output"
-        value={output}
-        readOnly
-        rows={20}
-        className="mono-textarea"
-      />
-      <div style={{ display: 'flex', gap: '1rem', alignItems: 'flex-end' }}>
-        <div style={{ flexGrow: 1 }}>
-          <ComboBox
-            key={commandInputResetKey}
-            id="command"
-            titleText="Command"
-            placeholder="Type a command..."
-            items={commandItems}
-            itemToString={(item) => item?.text ?? ''}
-            onInputChange={(value) => setCommand(value ?? '')}
-            onChange={({ selectedItem }) => {
-              if (selectedItem) {
-                setCommand(selectedItem.text);
-              }
-            }}
-            onKeyDown={handleKeyDown}
-            disabled={busy}
-            size="lg"
-          />
+    <div style={CONSOLE_CONTAINER_STYLE}>
+      <div style={TERMINAL_ROW_STYLE}>
+        <div style={TERMINAL_SLOT_STYLE}>
+          <div style={TERMINAL_CONTAINER_STYLE}>
+            <textarea
+              id="command"
+              ref={textAreaRef}
+              className="emulator-console__output"
+              value={terminalValue}
+              disabled={!inputReady}
+              spellCheck={false}
+              style={TERMINAL_TEXTAREA_STYLE}
+              onFocus={placeCaretAtEnd}
+              onClick={(e) => clampSelectionToCommand(e.currentTarget)}
+              onSelect={(e) => clampSelectionToCommand(e.currentTarget)}
+              onKeyDown={handleInputKeyDown}
+              onChange={(e) => handleTextAreaChange(e.target.value)}
+            />
+          </div>
         </div>
-        <div style={{ display: 'flex', gap: '0.5rem' }}>
-          <Button
-            renderIcon={Send}
-            onClick={handleSend}
-            disabled={busy || !command.trim() || sending}
-            size="lg"
-          >
-            Send
-          </Button>
+        <div style={CONTROL_COLUMN_STYLE}>
           {busy ? (
             <Button
               kind="danger"
               renderIcon={Stop}
               onClick={onProgramStopClick}
               size="lg"
+              hasIconOnly
+              iconDescription="Stop"
+              aria-label="Stop"
+              style={ICON_BUTTON_STYLE}
             >
-              Stop
             </Button>
           ) : (
             <Button
@@ -198,8 +359,11 @@ export default function EmulatorConsole() {
               kind="primary"
               className="emulator-console__go"
               renderIcon={Play}
+              hasIconOnly
+              iconDescription="Go"
+              aria-label="Go"
+              style={ICON_BUTTON_STYLE}
             >
-              Go
             </Button>
           )}
         </div>
@@ -212,6 +376,6 @@ export default function EmulatorConsole() {
           onChange={(e) => handleDebugToggle((e.target as HTMLInputElement).checked)}
         />
       </div>
-    </Stack>
+    </div>
   );
 }

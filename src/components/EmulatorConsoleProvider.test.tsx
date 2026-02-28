@@ -43,6 +43,7 @@ describe('EmulatorConsoleProvider', () => {
     vi.useFakeTimers();
 
     mockEmulatorStateMocks.useEmulatorState.mockReturnValue({
+      initialized: false,
       isRunning: false,
     });
 
@@ -205,7 +206,7 @@ describe('EmulatorConsoleProvider', () => {
     expect(captured.context?.output).toContain('[simh] debug line');
   });
 
-  it('sendCommand echoes command with sim> prefix', async () => {
+  it('sendCommand does not add prompt echo to output', async () => {
     const captured: { context?: ReturnType<typeof useEmulatorConsole> } = {};
 
     mockServiceMocks.subscribeOutput.mockImplementation((callback: (text: string) => void) => {
@@ -239,7 +240,7 @@ describe('EmulatorConsoleProvider', () => {
       vi.advanceTimersByTime(50);
     });
 
-    expect(captured.context?.output).toContain('sim> test command\n');
+    expect(captured.context?.output).toBe('');
   });
 
   it('sendCommand trims whitespace', async () => {
@@ -441,6 +442,7 @@ describe('EmulatorConsoleProvider', () => {
   it('passes through isRunning from EmulatorState', async () => {
     const captured: { context?: ReturnType<typeof useEmulatorConsole> } = {};
     mockEmulatorStateMocks.useEmulatorState.mockReturnValue({
+      initialized: true,
       isRunning: true,
     });
 
@@ -461,6 +463,32 @@ describe('EmulatorConsoleProvider', () => {
     });
 
     expect(captured.context?.isRunning).toBe(true);
+  });
+
+  it('passes through initialized from EmulatorState', async () => {
+    const captured: { context?: ReturnType<typeof useEmulatorConsole> } = {};
+    mockEmulatorStateMocks.useEmulatorState.mockReturnValue({
+      initialized: true,
+      isRunning: false,
+    });
+
+    const Probe = () => {
+      const context = useEmulatorConsole();
+      React.useEffect(() => {
+        captured.context = context;
+      }, [context]);
+      return null;
+    };
+
+    await act(async () => {
+      render(
+        <EmulatorConsoleProvider>
+          <Probe />
+        </EmulatorConsoleProvider>
+      );
+    });
+
+    expect(captured.context?.initialized).toBe(true);
   });
 
   it('clears interval on unmount', async () => {

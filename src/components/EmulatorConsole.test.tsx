@@ -5,60 +5,36 @@ import EmulatorConsole from './EmulatorConsole';
 
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
 
-type InputProps = {
+type CheckboxProps = {
   id?: string;
   onChange?: (e: { target: { value: string; checked?: boolean } }) => void;
-  onInputChange?: (value: string) => void;
-  onKeyDown?: (e: { key: string; preventDefault: () => void }) => void;
 } & Record<string, unknown>;
 type ButtonProps = { onClick?: (e?: unknown) => void } & Record<string, unknown>;
 
-const inputPropsById = new Map<string, InputProps>();
-let allowTextAreaRef = true;
+const inputPropsById = new Map<string, CheckboxProps>();
 
 const stripDomProps = (props: Record<string, unknown>) => {
   const {
     labelText,
     titleText,
     renderIcon,
-    itemToString,
-    inputValue,
-    items,
-    selectedItem,
+    hasIconOnly,
+    iconDescription,
     ...rest
   } = props;
   void labelText;
   void titleText;
   void renderIcon;
-  void itemToString;
-  void inputValue;
-  void items;
-  void selectedItem;
+  void hasIconOnly;
+  void iconDescription;
   return rest;
 };
 
 vi.mock('@carbon/react', () => ({
-  ComboBox: ({ onInputChange, onKeyDown, ...props }: InputProps) => {
-    const merged = {
-      ...props,
-      onChange: (e: { target: { value: string } }) => {
-        onInputChange?.(e.target.value);
-      },
-      onKeyDown,
-    };
-    if (typeof merged.id === 'string') {
-      inputPropsById.set(merged.id, merged as InputProps);
-    }
-    return <input {...stripDomProps(merged)} />;
-  },
-  TextArea: (props: Record<string, unknown>) => {
-    const { ref, ...rest } = props as Record<string, unknown> & { ref?: React.Ref<HTMLTextAreaElement> };
-    return <textarea {...stripDomProps(rest)} ref={allowTextAreaRef ? (ref as React.Ref<HTMLTextAreaElement>) : undefined} />;
-  },
-  Checkbox: ({ onChange, ...props }: InputProps) => {
+  Checkbox: ({ onChange, ...props }: CheckboxProps) => {
     const merged = { ...props, onChange };
     if (typeof merged.id === 'string') {
-      inputPropsById.set(merged.id, merged as InputProps);
+      inputPropsById.set(merged.id, merged as CheckboxProps);
     }
     return <input type="checkbox" {...stripDomProps(merged)} />;
   },
@@ -66,11 +42,9 @@ vi.mock('@carbon/react', () => ({
     const merged = { ...props, onClick };
     return <button type="button" {...stripDomProps(merged)} />;
   },
-  Stack: (props: Record<string, unknown>) => <div {...props} />,
 }));
 
 vi.mock('@carbon/icons-react', () => ({
-  Send: () => null,
   Stop: () => null,
   Play: () => null,
 }));
@@ -78,6 +52,7 @@ vi.mock('@carbon/icons-react', () => ({
 const emulatorConsoleState = vi.hoisted(() => ({
   sendCommand: vi.fn(async () => ''),
   outputValue: 'hello\n',
+  initializedValue: true,
   isRunningValue: false,
 }));
 
@@ -85,6 +60,7 @@ vi.mock('./EmulatorConsoleProvider', () => ({
   useEmulatorConsole: () => ({
     output: emulatorConsoleState.outputValue,
     sendCommand: emulatorConsoleState.sendCommand,
+    initialized: emulatorConsoleState.initializedValue,
     isRunning: emulatorConsoleState.isRunningValue,
   }),
 }));
@@ -118,57 +94,51 @@ const render = (ui: React.ReactElement) => {
   });
 };
 
+const getButtonByLabel = (label: string) =>
+  container.querySelector(`button[aria-label="${label}"]`) as HTMLButtonElement | null;
+
+const getCommandInput = () => container.querySelector('#command') as HTMLTextAreaElement;
+
+const getCurrentCommand = () => {
+  const terminalValue = getCommandInput().value;
+  const lastLine = terminalValue.split('\n').at(-1) ?? '';
+  return lastLine.replace(/^sim>\s?/, '');
+};
+
 const typeCommand = (value: string) => {
+  const commandInput = getCommandInput();
+  const nativeValueSetter = Object.getOwnPropertyDescriptor(
+    HTMLTextAreaElement.prototype,
+    'value'
+  )?.set;
   act(() => {
-    const commandInput = inputPropsById.get('command');
-    commandInput?.onChange?.({ target: { value } });
+    nativeValueSetter?.call(commandInput, value);
+    commandInput.dispatchEvent(new Event('input', { bubbles: true }));
+    commandInput.dispatchEvent(new Event('change', { bubbles: true }));
   });
 };
 
-const getStorageValue = (key: string): string | null => {
-  const storage = window.localStorage as { getItem?: (k: string) => string | null };
-  return storage.getItem ? storage.getItem(key) : null;
+const pressKey = (key: string) => {
+  const commandInput = getCommandInput();
+  act(() => {
+    commandInput.dispatchEvent(new KeyboardEvent('keydown', { key, bubbles: true }));
+  });
 };
-
-const setStorageValue = (key: string, value: string): void => {
-  const storage = window.localStorage as { setItem?: (k: string, v: string) => void };
-  storage.setItem?.(key, value);
-};
-
-const getButtonByText = (text: string) =>
-  Array.from(container.querySelectorAll('button')).find((button) =>
-    button.textContent?.includes(text)
-  ) as HTMLButtonElement | undefined;
 
 describe('EmulatorConsole', () => {
   beforeEach(() => {
-    const memoryStorage = new Map<string, string>();
-    Object.defineProperty(window, 'localStorage', {
-      configurable: true,
-      value: {
-        getItem: (key: string) => (memoryStorage.has(key) ? memoryStorage.get(key)! : null),
-        setItem: (key: string, value: string) => {
-          memoryStorage.set(key, String(value));
-        },
-        clear: () => {
-          memoryStorage.clear();
-        },
-      },
-    });
-
     container = document.createElement('div');
     document.body.appendChild(container);
     root = createRoot(container);
     inputPropsById.clear();
-    allowTextAreaRef = true;
     emulatorConsoleState.sendCommand.mockReset();
     emulatorConsoleState.sendCommand.mockImplementation(async () => '');
-    actionMocks.onProgramStopClick.mockClear();
-    optionState.setDebugEnabled.mockClear();
     emulatorConsoleState.outputValue = 'hello\n';
+    emulatorConsoleState.initializedValue = true;
     emulatorConsoleState.isRunningValue = false;
     optionState.debugEnabled = false;
-    setStorageValue('simh.command-history', JSON.stringify([]));
+    optionState.setDebugEnabled.mockClear();
+    actionMocks.onProgramStopClick.mockClear();
   });
 
   afterEach(() => {
@@ -177,122 +147,106 @@ describe('EmulatorConsole', () => {
     container.remove();
   });
 
-  it('shows output updates', () => {
+  it('renders provider output in terminal area', () => {
     render(<EmulatorConsole />);
-    const textarea = container.querySelector('textarea') as HTMLTextAreaElement;
-    expect(textarea.value).toContain('hello');
-
-    emulatorConsoleState.outputValue = 'hello\nworld\n';
-    render(<EmulatorConsole />);
-    expect(textarea.value).toContain('world');
+    const output = container.querySelector('.emulator-console__output');
+    expect((output as HTMLTextAreaElement | null)?.value).toContain('hello');
   });
 
-  it('loads command history from local storage', () => {
-    setStorageValue('simh.command-history', JSON.stringify(['EXAMINE STATE', 'GO']));
+  it('does not show prompt before emulator is initialized', () => {
+    emulatorConsoleState.initializedValue = false;
     render(<EmulatorConsole />);
-    const commandInput = inputPropsById.get('command') as (InputProps & { items?: Array<{ text: string }> });
-    expect(commandInput.items?.map((item) => item.text)).toEqual(['EXAMINE STATE', 'GO']);
+    expect(getCommandInput().value).toBe('hello\n');
+    expect(getCommandInput().disabled).toBe(true);
   });
 
-  it('skips auto-scroll when output ref is unavailable', () => {
-    allowTextAreaRef = false;
-    render(<EmulatorConsole />);
-
-    emulatorConsoleState.outputValue = 'next line\n';
-    render(<EmulatorConsole />);
-  });
-
-  it('sends command on send click and trims input', async () => {
+  it('submits command on Enter and trims input', async () => {
     render(<EmulatorConsole />);
     typeCommand('  SHOW DEV  ');
+    pressKey('Enter');
 
-    const sendButton = getButtonByText('Send') as HTMLButtonElement;
     await act(async () => {
-      sendButton.click();
+      await Promise.resolve();
     });
 
     expect(emulatorConsoleState.sendCommand).toHaveBeenCalledWith('SHOW DEV');
-    expect(JSON.parse(getStorageValue('simh.command-history') ?? '[]')).toEqual(['SHOW DEV']);
+    expect(getCurrentCommand()).toBe('');
   });
 
-  it('submits command on Enter key', async () => {
+  it('ignores empty and whitespace-only commands', async () => {
     render(<EmulatorConsole />);
-    typeCommand('RESET');
-
-    const commandInput = inputPropsById.get('command');
-    await act(async () => {
-      commandInput?.onKeyDown?.({ key: 'Enter', preventDefault: vi.fn() });
-    });
-
-    expect(emulatorConsoleState.sendCommand).toHaveBeenCalledWith('RESET');
-  });
-
-  it('retains command input focus after Enter submit', async () => {
-    vi.useFakeTimers();
-    const focusSpy = vi.spyOn(HTMLInputElement.prototype, 'focus');
-    render(<EmulatorConsole />);
-    focusSpy.mockClear();
-    typeCommand('RESET');
-
-    const commandInput = inputPropsById.get('command');
-    await act(async () => {
-      commandInput?.onKeyDown?.({ key: 'Enter', preventDefault: vi.fn() });
-      await Promise.resolve();
-      vi.runAllTimers();
-    });
-
-    expect(focusSpy).toHaveBeenCalled();
-    focusSpy.mockRestore();
-  });
-
-  it('ignores non-Enter key presses', async () => {
-    render(<EmulatorConsole />);
-    typeCommand('RESET');
-
-    const commandInput = inputPropsById.get('command');
-    await act(async () => {
-      commandInput?.onKeyDown?.({ key: 'Escape', preventDefault: vi.fn() });
-    });
-
-    expect(emulatorConsoleState.sendCommand).not.toHaveBeenCalled();
-  });
-
-  it('ignores empty commands', async () => {
-    render(<EmulatorConsole />);
-    const sendButton = getButtonByText('Send') as HTMLButtonElement;
-
-    await act(async () => {
-      sendButton.click();
-    });
-
-    expect(emulatorConsoleState.sendCommand).not.toHaveBeenCalled();
-  });
-
-  it('ignores whitespace-only commands on Enter', async () => {
-    render(<EmulatorConsole />);
+    pressKey('Enter');
     typeCommand('   ');
+    pressKey('Enter');
 
-    const commandInput = inputPropsById.get('command');
     await act(async () => {
-      commandInput?.onKeyDown?.({ key: 'Enter', preventDefault: vi.fn() });
+      await Promise.resolve();
     });
 
     expect(emulatorConsoleState.sendCommand).not.toHaveBeenCalled();
+  });
+
+  it('supports command history on ArrowUp and ArrowDown', async () => {
+    render(<EmulatorConsole />);
+
+    typeCommand('first');
+    pressKey('Enter');
+    typeCommand('second');
+    pressKey('Enter');
+
+    await act(async () => {
+      await Promise.resolve();
+    });
+
+    typeCommand('draft');
+
+    pressKey('ArrowUp');
+    expect(getCurrentCommand()).toBe('second');
+    pressKey('ArrowUp');
+    expect(getCurrentCommand()).toBe('first');
+    pressKey('ArrowDown');
+    expect(getCurrentCommand()).toBe('second');
+    pressKey('ArrowDown');
+    expect(getCurrentCommand()).toBe('draft');
+  });
+
+  it('keeps caret out of historical output on ArrowLeft', () => {
+    render(<EmulatorConsole />);
+    typeCommand('abc');
+    const input = getCommandInput();
+    const promptStart = input.value.lastIndexOf('sim> ') + 'sim> '.length;
+
+    act(() => {
+      input.setSelectionRange(0, 0);
+    });
+    pressKey('ArrowLeft');
+
+    expect(input.selectionStart).toBe(promptStart);
+    expect(input.selectionEnd).toBe(promptStart);
   });
 
   it('shows stop button while running and calls stop handler', async () => {
     emulatorConsoleState.isRunningValue = true;
     render(<EmulatorConsole />);
 
-    const stopButton = getButtonByText('Stop') as HTMLButtonElement;
+    const stopButton = getButtonByLabel('Stop') as HTMLButtonElement;
     expect(stopButton).toBeDefined();
     await act(async () => {
       stopButton.click();
     });
     expect(actionMocks.onProgramStopClick).toHaveBeenCalledTimes(1);
+    expect(getCommandInput().disabled).toBe(true);
+  });
 
-    const commandInput = container.querySelector('#command') as HTMLInputElement;
-    expect(commandInput.disabled).toBe(true);
+  it('runs go command from Go button', async () => {
+    render(<EmulatorConsole />);
+    const goButton = getButtonByLabel('Go') as HTMLButtonElement;
+
+    await act(async () => {
+      goButton.click();
+    });
+
+    expect(emulatorConsoleState.sendCommand).toHaveBeenCalledWith('go');
   });
 
   it('toggles debug option', () => {
@@ -301,43 +255,6 @@ describe('EmulatorConsole', () => {
       inputPropsById.get('simh-debug')?.onChange?.({ target: { value: '', checked: true } });
     });
     expect(optionState.setDebugEnabled).toHaveBeenCalledWith(true);
-  });
-
-  it('clears send timeout when command finishes', async () => {
-    const setTimeoutSpy = vi.spyOn(globalThis, 'setTimeout');
-    const clearTimeoutSpy = vi.spyOn(globalThis, 'clearTimeout');
-    let resolveSend: (() => void) | null = null;
-    let timeoutCallback: (() => void) | null = null;
-    setTimeoutSpy.mockImplementation((cb) => {
-      timeoutCallback = cb as () => void;
-      return 123 as unknown as ReturnType<typeof setTimeout>;
-    });
-    emulatorConsoleState.sendCommand.mockImplementation(
-      () =>
-        new Promise<string>((resolve) => {
-          resolveSend = () => resolve('');
-        })
-    );
-
-    render(<EmulatorConsole />);
-    typeCommand('LONG');
-    const sendButton = getButtonByText('Send') as HTMLButtonElement;
-    await act(async () => {
-      sendButton.click();
-    });
-
-    expect(setTimeoutSpy).toHaveBeenCalled();
-
-    await act(async () => {
-      await Promise.resolve();
-    });
-
-    await act(async () => {
-      resolveSend?.();
-    });
-
-    expect(clearTimeoutSpy).toHaveBeenCalled();
-    expect(timeoutCallback).toBeDefined();
   });
 
   it('clears sending state after timeout fires', async () => {
@@ -357,11 +274,7 @@ describe('EmulatorConsole', () => {
 
     render(<EmulatorConsole />);
     typeCommand('LONG RUN');
-    const sendButton = getButtonByText('Send') as HTMLButtonElement;
-
-    await act(async () => {
-      sendButton.click();
-    });
+    pressKey('Enter');
 
     await act(async () => {
       await Promise.resolve();
@@ -373,10 +286,9 @@ describe('EmulatorConsole', () => {
     await act(async () => {
       await Promise.resolve();
     });
-    const updatedSendButton = getButtonByText('Send') as HTMLButtonElement;
-    expect(updatedSendButton.disabled).toBe(false);
-    expect(setTimeoutSpy).toHaveBeenCalledWith(expect.any(Function), 15000);
+
+    expect(getCommandInput().disabled).toBe(false);
+    expect(setTimeoutSpy.mock.calls.some(([, delay]) => delay === 15000)).toBe(true);
     expect(clearTimeoutSpy).toHaveBeenCalled();
   });
-
 });
