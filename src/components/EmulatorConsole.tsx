@@ -156,17 +156,6 @@ export default function EmulatorConsole() {
     element.scrollTop = element.scrollHeight;
   };
 
-  const clampSelectionToCommand = useCallback((element: HTMLTextAreaElement) => {
-    if (!inputReady) return;
-    const start = element.selectionStart ?? element.value.length;
-    const end = element.selectionEnd ?? element.value.length;
-    if (start >= editableStart && end >= editableStart) return;
-    element.setSelectionRange(
-      Math.max(editableStart, start),
-      Math.max(editableStart, end)
-    );
-  }, [editableStart, inputReady]);
-
   useEffect(() => {
     if (output.length < outputCursorRef.current) {
       outputCursorRef.current = 0;
@@ -369,8 +358,6 @@ export default function EmulatorConsole() {
               spellCheck={false}
               style={TERMINAL_TEXTAREA_STYLE}
               onFocus={placeCaretAtEnd}
-              onClick={(e) => clampSelectionToCommand(e.currentTarget)}
-              onSelect={(e) => clampSelectionToCommand(e.currentTarget)}
               onKeyDown={handleInputKeyDown}
               onChange={(e) => handleTextAreaChange(e.target.value)}
             />
