@@ -19,14 +19,8 @@ const mockEmulatorStateMocks = vi.hoisted(() => ({
   useEmulatorState: vi.fn(),
 }));
 
-const mockDebugMocks = vi.hoisted(() => ({
-  subscribeDebugOutput: vi.fn(),
-  unsubscribeDebugOutputMock: vi.fn(),
-}));
-
 vi.mock('@/lib/i650', () => mockServiceMocks);
 vi.mock('./EmulatorStateProvider', () => mockEmulatorStateMocks);
-vi.mock('@/lib/simh/debug', () => mockDebugMocks);
 
 const render = (ui: React.ReactElement) => {
   act(() => {
@@ -50,7 +44,6 @@ describe('EmulatorConsoleProvider', () => {
     mockServiceMocks.init.mockResolvedValue(undefined);
     mockServiceMocks.executeCommand.mockResolvedValue('command result');
     mockServiceMocks.subscribeOutput.mockReturnValue(mockServiceMocks.unsubscribeOutputMock);
-    mockDebugMocks.subscribeDebugOutput.mockReturnValue(mockDebugMocks.unsubscribeDebugOutputMock);
   });
 
   afterEach(() => {
@@ -126,7 +119,6 @@ describe('EmulatorConsoleProvider', () => {
     );
 
     expect(mockServiceMocks.subscribeOutput).toHaveBeenCalled();
-    expect(mockDebugMocks.subscribeDebugOutput).toHaveBeenCalled();
   });
 
   it('buffers output and flushes every 50ms', () => {
@@ -170,40 +162,6 @@ describe('EmulatorConsoleProvider', () => {
 
     // Now output should be flushed
     expect(captured.context?.output).toBe('Hello World');
-  });
-
-  it('forwards debug output into emulator console output', () => {
-    const captured: { context?: ReturnType<typeof useEmulatorConsole> } = {};
-    let debugOutputCallback: ((text: string) => void) | null = null;
-
-    mockDebugMocks.subscribeDebugOutput.mockImplementation((callback: (text: string) => void) => {
-      debugOutputCallback = callback;
-      return mockDebugMocks.unsubscribeDebugOutputMock;
-    });
-
-    const Probe = () => {
-      const context = useEmulatorConsole();
-      React.useEffect(() => {
-        captured.context = context;
-      }, [context]);
-      return null;
-    };
-
-    render(
-      <EmulatorConsoleProvider>
-        <Probe />
-      </EmulatorConsoleProvider>
-    );
-
-    act(() => {
-      debugOutputCallback?.('[simh] debug line\n');
-    });
-
-    act(() => {
-      vi.advanceTimersByTime(50);
-    });
-
-    expect(captured.context?.output).toContain('[simh] debug line');
   });
 
   it('sendCommand does not add prompt echo to output', async () => {
@@ -530,14 +488,12 @@ describe('EmulatorConsoleProvider', () => {
     });
 
     expect(mockServiceMocks.unsubscribeOutputMock).not.toHaveBeenCalled();
-    expect(mockDebugMocks.unsubscribeDebugOutputMock).not.toHaveBeenCalled();
 
     await act(async () => {
       root.unmount();
     });
 
     expect(mockServiceMocks.unsubscribeOutputMock).toHaveBeenCalled();
-    expect(mockDebugMocks.unsubscribeDebugOutputMock).toHaveBeenCalled();
   });
 
   it('passes children through provider', async () => {

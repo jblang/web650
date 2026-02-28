@@ -11,7 +11,6 @@ import {
   ReactNode,
 } from 'react';
 import * as i650Service from '@/lib/i650';
-import { subscribeDebugOutput } from '@/lib/simh/debug';
 import { useEmulatorState } from './EmulatorStateProvider';
 
 interface EmulatorConsoleContextType {
@@ -59,7 +58,6 @@ export function EmulatorConsoleProvider({ children }: { children: ReactNode }) {
   }, []);
 
   useEffect(() => i650Service.subscribeOutput(enqueueOutput), [enqueueOutput]);
-  useEffect(() => subscribeDebugOutput(enqueueOutput), [enqueueOutput]);
 
   useEffect(() => {
     const initialize = async () => {

@@ -15,6 +15,7 @@ import {
   SCPE_KFLAG,
   SCPE_NOMESSAGE,
 } from './constants';
+import { debugLog } from './debug';
 
 // Emscripten's default TTY driver calls prompt() when C code reads from stdin.
 // We never want interactive stdin, so kill it at module-import time before any script loads.
@@ -198,16 +199,16 @@ export async function init(moduleName: string): Promise<void> {
   // Verify preloaded filesystem is available
   try {
     const swStat = Module.FS.stat('/sw');
-    console.log('[simh] /sw directory loaded:', swStat.mode);
+    debugLog('/sw directory loaded', swStat.mode);
   } catch {
-    console.warn('[simh] /sw directory not found — preloaded filesystem may not have loaded');
+    debugLog('/sw directory not found — preloaded filesystem may not have loaded');
   }
 
   try {
     const testsStat = Module.FS.stat('/tests');
-    console.log('[simh] /tests directory loaded:', testsStat.mode);
+    debugLog('/tests directory loaded', testsStat.mode);
   } catch {
-    console.warn('[simh] /tests directory not found — preloaded filesystem may not have loaded');
+    debugLog('/tests directory not found — preloaded filesystem may not have loaded');
   }
 }
 

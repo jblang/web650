@@ -129,7 +129,7 @@ describe('core init', () => {
     expect(stdin?.()).toBeNull();
   });
 
-  it('warns when expected filesystem directories are missing', async () => {
+  it('logs missing filesystem directories only when debug is enabled', async () => {
     addExistingScript('/i650.js');
     const fakeModule = {
       ccall: vi.fn(() => 0),
@@ -140,18 +140,19 @@ describe('core init', () => {
       },
     };
     (globalThis as Record<string, unknown>).createI650Module = vi.fn(async () => fakeModule);
-    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    (globalThis as Record<string, unknown>).__SIMH_DEBUG__ = true;
+    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
 
     const core = await import('./core');
     await core.init('i650');
 
-    expect(warnSpy).toHaveBeenCalledWith(
+    expect(logSpy).toHaveBeenCalledWith(
       '[simh] /sw directory not found — preloaded filesystem may not have loaded'
     );
-    expect(warnSpy).toHaveBeenCalledWith(
+    expect(logSpy).toHaveBeenCalledWith(
       '[simh] /tests directory not found — preloaded filesystem may not have loaded'
     );
-    warnSpy.mockRestore();
+    logSpy.mockRestore();
   });
 
   it('throws when simh_init returns non-zero', async () => {

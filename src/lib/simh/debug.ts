@@ -1,7 +1,6 @@
 const DEBUG_FLAG = '__SIMH_DEBUG__';
 const DEBUG_STORAGE_KEY = '__SIMH_DEBUG__';
-type DebugOutputListener = (text: string) => void;
-const debugOutputListeners = new Set<DebugOutputListener>();
+const DEBUG_CONSOLE_API_KEY = '__SIMH_DEBUG_API__';
 
 function formatPayload(payload: unknown): string {
   if (payload instanceof Error) return payload.stack ?? payload.message;
@@ -13,16 +12,6 @@ function formatPayload(payload: unknown): string {
   }
 }
 
-function emitDebugOutput(message: string, payload?: unknown): void {
-  const line =
-    payload === undefined
-      ? `[simh] ${message}\n`
-      : `[simh] ${message} ${formatPayload(payload)}\n`;
-  for (const listener of debugOutputListeners) {
-    listener(line);
-  }
-}
-
 export function isDebugEnabled(): boolean {
   if (typeof globalThis === 'undefined') return false;
   const flag = (globalThis as { [key: string]: unknown })[DEBUG_FLAG];
@@ -31,18 +20,19 @@ export function isDebugEnabled(): boolean {
 
 export function debugLog(message: string, payload?: unknown): void {
   if (!isDebugEnabled()) return;
-  emitDebugOutput(message, payload);
+  if (payload === undefined) {
+    console.log(`[simh] ${message}`);
+    return;
+  }
+  console.log(`[simh] ${message}`, formatPayload(payload));
 }
 
 export function errorLog(message: string, payload?: unknown): void {
-  emitDebugOutput(message, payload);
-}
-
-export function subscribeDebugOutput(listener: DebugOutputListener): () => void {
-  debugOutputListeners.add(listener);
-  return () => {
-    debugOutputListeners.delete(listener);
-  };
+  if (payload === undefined) {
+    console.error(`[simh] ${message}`);
+    return;
+  }
+  console.error(`[simh] ${message}`, formatPayload(payload));
 }
 
 function readPersistedFlag(): boolean {
@@ -69,6 +59,19 @@ export function setDebugEnabled(enabled: boolean): void {
   }
 }
 
-if (readPersistedFlag() && typeof globalThis !== 'undefined') {
-  (globalThis as { [key: string]: unknown })[DEBUG_FLAG] = true;
+function installConsoleApi(): void {
+  if (typeof globalThis === 'undefined') return;
+  const api = {
+    setEnabled: setDebugEnabled,
+    isEnabled: isDebugEnabled,
+  };
+  (globalThis as { [key: string]: unknown })[DEBUG_CONSOLE_API_KEY] = api;
+  (globalThis as { [key: string]: unknown }).simhDebug = api;
+}
+
+if (typeof globalThis !== 'undefined') {
+  if (readPersistedFlag()) {
+    (globalThis as { [key: string]: unknown })[DEBUG_FLAG] = true;
+  }
+  installConsoleApi();
 }

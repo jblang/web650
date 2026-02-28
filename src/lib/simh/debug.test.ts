@@ -18,6 +18,8 @@ describe('simh debug', () => {
     vi.resetModules();
     vi.unstubAllGlobals();
     delete (globalThis as Record<string, unknown>).__SIMH_DEBUG__;
+    delete (globalThis as Record<string, unknown>).__SIMH_DEBUG_API__;
+    delete (globalThis as Record<string, unknown>).simhDebug;
   });
 
   it('toggles debug flag and persists to localStorage', async () => {
@@ -50,7 +52,7 @@ describe('simh debug', () => {
     expect(debug.isDebugEnabled()).toBe(true);
   });
 
-  it('emits debug and error messages to debug output subscribers', async () => {
+  it('emits debug and error messages to browser console', async () => {
     const storage = {
       getItem: vi.fn(() => null),
       setItem: vi.fn(),
@@ -58,8 +60,8 @@ describe('simh debug', () => {
     };
     stubLocalStorage(storage);
     const debug = await import('./debug');
-    const output = vi.fn();
-    const unsubscribe = debug.subscribeDebugOutput(output);
+    const consoleLogSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
+    const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
 
     debug.setDebugEnabled(true);
     debug.debugLog('hello');
@@ -67,15 +69,16 @@ describe('simh debug', () => {
     debug.errorLog('oops');
     debug.errorLog('payload', { value: 2 });
 
-    expect(output).toHaveBeenCalledWith('[simh] hello\n');
-    expect(output).toHaveBeenCalledWith('[simh] payload {"value":1}\n');
-    expect(output).toHaveBeenCalledWith('[simh] oops\n');
-    expect(output).toHaveBeenCalledWith('[simh] payload {"value":2}\n');
+    expect(consoleLogSpy).toHaveBeenCalledWith('[simh] hello');
+    expect(consoleLogSpy).toHaveBeenCalledWith('[simh] payload', '{"value":1}');
+    expect(consoleErrorSpy).toHaveBeenCalledWith('[simh] oops');
+    expect(consoleErrorSpy).toHaveBeenCalledWith('[simh] payload', '{"value":2}');
 
-    unsubscribe();
+    consoleLogSpy.mockRestore();
+    consoleErrorSpy.mockRestore();
   });
 
-  it('stops emitting after unsubscribe', async () => {
+  it('suppresses debug logs when debug flag is disabled', async () => {
     const storage = {
       getItem: vi.fn(() => null),
       setItem: vi.fn(),
@@ -83,13 +86,35 @@ describe('simh debug', () => {
     };
     stubLocalStorage(storage);
     const debug = await import('./debug');
-    const output = vi.fn();
-    const unsubscribe = debug.subscribeDebugOutput(output);
+    const consoleLogSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
 
-    debug.setDebugEnabled(true);
-    unsubscribe();
+    debug.setDebugEnabled(false);
     debug.debugLog('hello');
 
-    expect(output).not.toHaveBeenCalled();
+    expect(consoleLogSpy).not.toHaveBeenCalled();
+    consoleLogSpy.mockRestore();
+  });
+
+  it('installs a global console API to set and read debug status', async () => {
+    const storage = {
+      getItem: vi.fn(() => null),
+      setItem: vi.fn(),
+      removeItem: vi.fn(),
+    };
+    stubLocalStorage(storage);
+    await import('./debug');
+
+    const api = (globalThis as Record<string, unknown>).__SIMH_DEBUG_API__ as
+      | { setEnabled: (enabled: boolean) => void; isEnabled: () => boolean }
+      | undefined;
+    const namedApi = (globalThis as Record<string, unknown>).simhDebug as
+      | { setEnabled: (enabled: boolean) => void; isEnabled: () => boolean }
+      | undefined;
+
+    expect(api).toBeDefined();
+    expect(namedApi).toBe(api);
+    api?.setEnabled(true);
+    expect(api?.isEnabled()).toBe(true);
+    expect(storage.setItem).toHaveBeenCalledWith('__SIMH_DEBUG__', 'true');
   });
 });

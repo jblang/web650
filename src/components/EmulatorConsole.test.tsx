@@ -6,13 +6,7 @@ import EmulatorConsole from './EmulatorConsole';
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
 const COMMAND_HISTORY_KEY = 'simh.command-history';
 
-type CheckboxProps = {
-  id?: string;
-  onChange?: (e: { target: { value: string; checked?: boolean } }) => void;
-} & Record<string, unknown>;
 type ButtonProps = { onClick?: (e?: unknown) => void } & Record<string, unknown>;
-
-const inputPropsById = new Map<string, CheckboxProps>();
 
 const stripDomProps = (props: Record<string, unknown>) => {
   const {
@@ -32,13 +26,6 @@ const stripDomProps = (props: Record<string, unknown>) => {
 };
 
 vi.mock('@carbon/react', () => ({
-  Checkbox: ({ onChange, ...props }: CheckboxProps) => {
-    const merged = { ...props, onChange };
-    if (typeof merged.id === 'string') {
-      inputPropsById.set(merged.id, merged as CheckboxProps);
-    }
-    return <input type="checkbox" {...stripDomProps(merged)} />;
-  },
   Button: ({ onClick, ...props }: ButtonProps) => {
     const merged = { ...props, onClick };
     return <button type="button" {...stripDomProps(merged)} />;
@@ -74,16 +61,6 @@ vi.mock('./EmulatorActionsProvider', () => ({
   useEmulatorActions: () => ({
     onProgramStopClick: actionMocks.onProgramStopClick,
   }),
-}));
-
-const optionState = vi.hoisted(() => ({
-  setDebugEnabled: vi.fn(),
-  debugEnabled: false,
-}));
-
-vi.mock('@/lib/simh/debug', () => ({
-  setDebugEnabled: optionState.setDebugEnabled,
-  isDebugEnabled: () => optionState.debugEnabled,
 }));
 
 let container: HTMLDivElement;
@@ -148,14 +125,11 @@ describe('EmulatorConsole', () => {
     container = document.createElement('div');
     document.body.appendChild(container);
     root = createRoot(container);
-    inputPropsById.clear();
     emulatorConsoleState.sendCommand.mockReset();
     emulatorConsoleState.sendCommand.mockImplementation(async () => '');
     emulatorConsoleState.outputValue = 'hello\n';
     emulatorConsoleState.initializedValue = true;
     emulatorConsoleState.isRunningValue = false;
-    optionState.debugEnabled = false;
-    optionState.setDebugEnabled.mockClear();
     actionMocks.onProgramStopClick.mockClear();
     window.localStorage.clear();
   });
@@ -303,14 +277,6 @@ describe('EmulatorConsole', () => {
     });
 
     expect(emulatorConsoleState.sendCommand).toHaveBeenCalledWith('go');
-  });
-
-  it('toggles debug option', () => {
-    render(<EmulatorConsole />);
-    act(() => {
-      inputPropsById.get('simh-debug')?.onChange?.({ target: { value: '', checked: true } });
-    });
-    expect(optionState.setDebugEnabled).toHaveBeenCalledWith(true);
   });
 
   it('clears sending state after timeout fires', async () => {

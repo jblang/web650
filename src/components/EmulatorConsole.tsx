@@ -3,12 +3,10 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type KeyboardEvent } from 'react';
 import {
   Button,
-  Checkbox,
 } from '@carbon/react';
 import { Stop, Play } from '@carbon/icons-react';
 import { useEmulatorConsole } from './EmulatorConsoleProvider';
 import { useEmulatorActions } from './EmulatorActionsProvider';
-import { setDebugEnabled, isDebugEnabled } from '@/lib/simh/debug';
 
 const COMMAND_HISTORY_KEY = 'simh.command-history';
 const MAX_COMMAND_HISTORY = 50;
@@ -50,8 +48,11 @@ export default function EmulatorConsole() {
   const PROMPT = 'sim> ';
 
   const CONSOLE_CONTAINER_STYLE = {
-    height: 'calc(100dvh - var(--cds-shell-header-height, 3rem))',
-    maxHeight: 'calc(100dvh - var(--cds-shell-header-height, 3rem))',
+    flex: 1,
+    width: '100%',
+    height: '100%',
+    maxHeight: '100%',
+    minHeight: 0,
     margin: 0,
     padding: '1rem 0',
     boxSizing: 'border-box',
@@ -113,7 +114,6 @@ export default function EmulatorConsole() {
   } as const;
 
   const [sending, setSending] = useState(false);
-  const [debugEnabled, setDebugEnabledState] = useState(() => isDebugEnabled());
   const [commandInput, setCommandInput] = useState('');
   const [transcript, setTranscript] = useState('');
   const { output, sendCommand, initialized, isRunning } = useEmulatorConsole();
@@ -363,11 +363,6 @@ export default function EmulatorConsole() {
     }
   };
 
-  const handleDebugToggle = (checked: boolean) => {
-    setDebugEnabled(checked);
-    setDebugEnabledState(checked);
-  };
-
   return (
     <div style={CONSOLE_CONTAINER_STYLE}>
       <div style={TERMINAL_ROW_STYLE}>
@@ -416,14 +411,6 @@ export default function EmulatorConsole() {
             </Button>
           )}
         </div>
-      </div>
-      <div>
-        <Checkbox
-          id="simh-debug"
-          labelText="Enable SIMH debug logging"
-          checked={debugEnabled}
-          onChange={(e) => handleDebugToggle((e.target as HTMLInputElement).checked)}
-        />
       </div>
     </div>
   );
