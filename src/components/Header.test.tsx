@@ -167,14 +167,14 @@ describe('Header', () => {
     expect(link?.textContent).toBe('Punched Cards');
   });
 
-  it('renders Emulator link', () => {
+  it('renders Simulator link', () => {
     render(<AppHeader />);
 
     const link = Array.from(container.querySelectorAll('[data-testid="header-menu-item"]')).find(
-      (el) => el.getAttribute('href') === '/emulator'
+      (el) => el.getAttribute('href') === '/simulator'
     );
     expect(link).not.toBeNull();
-    expect(link?.textContent).toBe('Emulator');
+    expect(link?.textContent).toBe('Simulator');
   });
 
   it('renders Documentation link', () => {
@@ -199,7 +199,7 @@ describe('Header', () => {
   });
 
   it('does not mark Front Panel as current page when pathname does not match', () => {
-    mockPathname.value = '/emulator';
+    mockPathname.value = '/simulator';
 
     render(<AppHeader />);
 
@@ -220,13 +220,13 @@ describe('Header', () => {
     expect(link?.getAttribute('data-is-current')).toBe('true');
   });
 
-  it('marks Emulator as current page when pathname matches', () => {
-    mockPathname.value = '/emulator';
+  it('marks Simulator as current page when pathname matches', () => {
+    mockPathname.value = '/simulator';
 
     render(<AppHeader />);
 
     const link = Array.from(container.querySelectorAll('[data-testid="header-menu-item"]')).find(
-      (el) => el.getAttribute('href') === '/emulator'
+      (el) => el.getAttribute('href') === '/simulator'
     );
     expect(link?.getAttribute('data-is-current')).toBe('true');
   });

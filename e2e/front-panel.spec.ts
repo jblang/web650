@@ -54,7 +54,7 @@ async function setupFrontPanelManualReadOut(page: import('@playwright/test').Pag
 }
 
 async function setupEmulatorConsole(page: import('@playwright/test').Page) {
-  await page.goto('/emulator');
+  await page.goto('/simulator');
   return page.locator('.emulator-console__output');
 }
 
@@ -226,8 +226,8 @@ test('console register deposit round-trip and front panel display mapping', asyn
   await page.getByTestId('display-knob').locator('span').filter({ hasText: /READ.?IN STORAGE/ }).click();
   await expect(page.getByTestId('display-section')).toHaveAttribute('data-display-value', '0123498765+');
 
-  await page.getByRole('link', { name: 'Emulator' }).click();
-  await expect(page).toHaveURL(/\/emulator\/?$/);
+  await page.getByRole('link', { name: 'Simulator' }).click();
+  await expect(page).toHaveURL(/\/simulator\/?$/);
   await sendConsoleCommand(page, 'examine state');
   await expectConsoleState(output, {
     ACCLO: '0123456789+',
@@ -267,7 +267,7 @@ test('program reset stops execution and clears PR and AR', async ({ page }) => {
   await clickPanelButton(page, 'PROGRAM RESET');
   await expect(page.getByTestId('operating-program')).toHaveAttribute('data-lit', 'false');
 
-  await page.getByRole('link', { name: 'Emulator' }).click();
+  await page.getByRole('link', { name: 'Simulator' }).click();
   await sendConsoleCommand(page, 'examine state');
   await expectConsoleState(output, {
     PR: '0000000000+',
@@ -287,7 +287,7 @@ test('computer reset stops execution and restores baseline register values', asy
   await clickPanelButton(page, 'COMPUTER RESET');
   await expect(page.getByTestId('operating-program')).toHaveAttribute('data-lit', 'false');
 
-  await page.getByRole('link', { name: 'Emulator' }).click();
+  await page.getByRole('link', { name: 'Simulator' }).click();
   await sendConsoleCommand(page, 'examine state');
   // Computer reset issues SIMH RESET and should restore baseline register values.
   await expectConsoleState(output, {
@@ -305,7 +305,7 @@ test('emulator reset clears console output and keeps console usable', async ({ p
 
   await page.getByRole('link', { name: 'Front Panel' }).click();
   await clickPanelButtonDom(page, 'MASTER RESET');
-  await page.getByRole('link', { name: 'Emulator' }).click();
+  await page.getByRole('link', { name: 'Simulator' }).click();
   await expect(output).not.toContainText(/ACCLO:\s*0000000123\+/);
   await sendConsoleCommand(page, 'examine state');
   await expect(output).toContainText(/ACCLO:\s*0000000000\+/);
@@ -334,7 +334,7 @@ test('display selector changes visible value without mutating register state', a
   await page.getByTestId('display-knob').getByText('DISTRIBUTOR').click();
   await expect(page.getByTestId('display-section')).toHaveAttribute('data-display-value', '1029384756+');
 
-  await page.getByRole('link', { name: 'Emulator' }).click();
+  await page.getByRole('link', { name: 'Simulator' }).click();
   await sendConsoleCommand(page, 'examine state');
   await expectConsoleState(output, {
     ACCLO: '1122334455+',
@@ -366,7 +366,7 @@ test('transfer only updates AR in manual operation mode', async ({ page }) => {
   await clickPanelButton(page, 'TRANSFER');
   await expect(page.getByTestId('address-display')).toHaveAttribute('data-address-value', '4321');
 
-  await page.getByRole('link', { name: 'Emulator' }).click();
+  await page.getByRole('link', { name: 'Simulator' }).click();
   await sendConsoleCommand(page, 'examine state');
   await expectConsoleState(output, { AR: '04321' });
 });
@@ -539,8 +539,8 @@ test('emulator remains usable across navigation', async ({ page }) => {
 
   await page.getByRole('link', { name: 'Front Panel' }).click();
   await expect(page).toHaveURL(/\/front-panel\/?$/);
-  await page.getByRole('link', { name: 'Emulator' }).click();
-  await expect(page).toHaveURL(/\/emulator\/?$/);
+  await page.getByRole('link', { name: 'Simulator' }).click();
+  await expect(page).toHaveURL(/\/simulator\/?$/);
 
   await expect(page.locator('#command')).toBeVisible();
   await sendConsoleCommand(page, 'examine state');

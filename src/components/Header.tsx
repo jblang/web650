@@ -17,7 +17,7 @@ const links = [
   { href: '/front-panel', text: 'Front Panel' },
   { href: '/programming', text: 'Programming' },
   { href: '/cards', text: 'Punched Cards' },
-  { href: '/emulator', text: 'Emulator' },
+  { href: '/simulator', text: 'Simulator' },
   { href: '/docs', text: 'Documentation' },
 ];
 

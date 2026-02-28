@@ -56,7 +56,7 @@ The 650 was introduced at a time in which many of the computing conventions that
 
 The front panel cleverly arranges the 7 lights for each digit into a 2x5 table with a decimal digit printed at the intersection of each row and column. To read the value of a bi-quinary digit, just look at the number indicated by the lit row and column bulbs. Bi-quinary also has built-in error detecting properties because only very specific combinations of bits are valid.
 
-Go to the Emulator tab, and type the following commands:
+Go to the Simulator tab, and type the following command:
 
 ```
 do /tests/fpcount.ini
@@ -175,16 +175,17 @@ C
 
 ### Simulator CLI
 
-Before running programs or compiling your own, you'll need to get comfortable with the simulator CLI on the Emulator tab. Basic commands should be familiar to both Unix and Windows users:
+Before running programs or compiling your own, you'll need to get comfortable with the simulator CLI on the Simulator tab. Basic commands should be familiar to both Unix and Windows users:
 
 - `ls` or `dir` shows the contents of the current directory.
 - `cd` navigates the filesystem, where:
-  - `/` is the root direcotry
+  - `/` is the root directory
   - `.` is the current directory
   - `..` is the parent directory
   - subdirectories are separated by `/`
 - `cat` or `type` displays the contents of any text file, including but not limited to scripts.
-- `do` will execute a script. Scripts often end in `.ini` but aren't necessarily required to.
+- `do` will execute a script. Scripts conventionally end in `.ini` but aren't required to.
+- `help` will show a list of commands. `help [command]` will display help for the specified command.
 
 The `/sw/i650_demo_all.ini` script and all the scripts it calls are good places to start looking for practical examples of how to build and run programs.
 
