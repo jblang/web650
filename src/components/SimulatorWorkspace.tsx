@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { Tab, TabList, TabPanel, TabPanels, Tabs } from '@carbon/react';
 import EmulatorConsole from './EmulatorConsole';
-import SimulatorStateTab from './SimulatorStateTab';
+import SimulatorDebugTab from './SimulatorDebugTab';
 
 export default function SimulatorWorkspace() {
   const [selectedIndex, setSelectedIndex] = useState(0);
@@ -13,14 +13,14 @@ export default function SimulatorWorkspace() {
       <Tabs selectedIndex={selectedIndex} onChange={({ selectedIndex: nextIndex }) => setSelectedIndex(nextIndex)}>
         <TabList aria-label="Simulator tabs" contained>
           <Tab>Console</Tab>
-          <Tab>State</Tab>
+          <Tab>Debugging</Tab>
         </TabList>
         <TabPanels>
           <TabPanel>
             <EmulatorConsole />
           </TabPanel>
           <TabPanel>
-            <SimulatorStateTab active={selectedIndex === 1} />
+            <SimulatorDebugTab active={selectedIndex === 1} />
           </TabPanel>
         </TabPanels>
       </Tabs>
