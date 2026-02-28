@@ -119,10 +119,10 @@ const typeCommand = (value: string) => {
   });
 };
 
-const pressKey = (key: string) => {
+const pressKey = (key: string, options?: { metaKey?: boolean; ctrlKey?: boolean; altKey?: boolean }) => {
   const commandInput = getCommandInput();
   act(() => {
-    commandInput.dispatchEvent(new KeyboardEvent('keydown', { key, bubbles: true }));
+    commandInput.dispatchEvent(new KeyboardEvent('keydown', { key, bubbles: true, ...options }));
   });
 };
 
@@ -261,6 +261,21 @@ describe('EmulatorConsole', () => {
       input.setSelectionRange(0, 0);
     });
     pressKey('ArrowLeft');
+
+    expect(input.selectionStart).toBe(promptStart);
+    expect(input.selectionEnd).toBe(promptStart);
+  });
+
+  it('keeps caret out of historical output on Cmd+ArrowLeft', () => {
+    render(<EmulatorConsole />);
+    typeCommand('abc');
+    const input = getCommandInput();
+    const promptStart = input.value.lastIndexOf('sim> ') + 'sim> '.length;
+
+    act(() => {
+      input.setSelectionRange(0, 0);
+    });
+    pressKey('ArrowLeft', { metaKey: true });
 
     expect(input.selectionStart).toBe(promptStart);
     expect(input.selectionEnd).toBe(promptStart);

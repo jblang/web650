@@ -220,10 +220,34 @@ export default function EmulatorConsole() {
   };
 
   const handleInputKeyDown = async (event: KeyboardEvent<HTMLTextAreaElement>) => {
-    if (event.metaKey || event.ctrlKey || event.altKey) return;
     const element = event.currentTarget;
     const start = element.selectionStart ?? element.value.length;
     const end = element.selectionEnd ?? element.value.length;
+    const hasModifier = event.metaKey || event.ctrlKey || event.altKey;
+
+    if (hasModifier) {
+      if (
+        event.key === 'ArrowLeft' ||
+        event.key === 'ArrowUp' ||
+        event.key === 'Home' ||
+        event.key === 'PageUp'
+      ) {
+        event.preventDefault();
+        element.setSelectionRange(editableStart, editableStart);
+        return;
+      }
+      if (
+        event.key === 'ArrowRight' ||
+        event.key === 'ArrowDown' ||
+        event.key === 'End' ||
+        event.key === 'PageDown'
+      ) {
+        event.preventDefault();
+        placeCaretAtEnd();
+        return;
+      }
+      return;
+    }
 
     if (event.key === 'ArrowUp') {
       const history = loadCommandHistory();
