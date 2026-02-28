@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { Tab, TabList, TabPanel, TabPanels, Tabs } from '@carbon/react';
 import EmulatorConsole from './EmulatorConsole';
+import SimulatorConfigTab from './SimulatorConfigTab';
 import SimulatorDebugTab from './SimulatorDebugTab';
 
 export default function SimulatorWorkspace() {
@@ -14,6 +15,7 @@ export default function SimulatorWorkspace() {
         <TabList aria-label="Simulator tabs" contained>
           <Tab>Console</Tab>
           <Tab>Debugging</Tab>
+          <Tab>Hardware</Tab>
         </TabList>
         <TabPanels>
           <TabPanel>
@@ -21,6 +23,9 @@ export default function SimulatorWorkspace() {
           </TabPanel>
           <TabPanel>
             <SimulatorDebugTab active={selectedIndex === 1} />
+          </TabPanel>
+          <TabPanel>
+            <SimulatorConfigTab active={selectedIndex === 2} />
           </TabPanel>
         </TabPanels>
       </Tabs>
