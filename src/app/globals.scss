@@ -79,3 +79,14 @@ html[data-app-theme='g100'] body {
   background-color: $support-success;
   border-color: $support-success;
 }
+
+// Keep OV checkbox visibly legible while still disabled.
+#sim-state-OV:disabled + .cds--checkbox-label {
+  color: $text-primary;
+  opacity: 1;
+}
+
+#sim-state-OV:disabled + .cds--checkbox-label::before {
+  border-color: $border-strong-01;
+  opacity: 1;
+}

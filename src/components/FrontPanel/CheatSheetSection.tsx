@@ -3,9 +3,11 @@ import { Button, Form, TextInput, Theme } from '@carbon/react';
 import { Download, Export } from '@carbon/icons-react';
 import * as i650Service from '@/lib/i650';
 import {
-  normalizeAddress,
-  normalizeWord,
-} from '@/lib/i650/format';
+  getNextInputValue,
+  isValidDraftValue,
+  normalizeAddressForCommit,
+  normalizeWordForCommit,
+} from '@/lib/i650/inputValidation';
 import styles from './CheatSheetSection.module.scss';
 
 interface CheatSheetSectionProps {
@@ -33,35 +35,6 @@ type FieldMeta = {
 };
 
 const isAddressField = (field: FieldKey): boolean => field === 'addressRegister';
-const WORD_EDIT_PATTERN = /^([+-]?\d{0,10}|\d{0,10}[+-]?)$/;
-const ADDRESS_EDIT_PATTERN = /^\d{0,4}$/;
-
-const getNextInputValue = (
-  currentValue: string,
-  selectionStart: number | null,
-  selectionEnd: number | null,
-  insertedText: string
-): string => {
-  const start = selectionStart ?? currentValue.length;
-  const end = selectionEnd ?? start;
-  return `${currentValue.slice(0, start)}${insertedText}${currentValue.slice(end)}`;
-};
-
-const normalizeAddressForCommit = (value: string): string => {
-  const digits = value.replace(/\D/g, '');
-  return normalizeAddress(digits === '' ? '0' : digits);
-};
-
-const normalizeWordForCommit = (value: string): string => {
-  const trimmed = value.trim();
-  if (trimmed === '') {
-    return normalizeWord('0');
-  }
-  if (/^[+-]$/.test(trimmed)) {
-    return normalizeWord(`${trimmed}0`);
-  }
-  return normalizeWord(trimmed);
-};
 
 const CheatSheetSection: React.FC<CheatSheetSectionProps> = ({
   consoleSwitches,
@@ -116,9 +89,7 @@ const CheatSheetSection: React.FC<CheatSheetSectionProps> = ({
   };
 
   const onFieldChange = (field: FieldKey, next: string) => {
-    const valid = isAddressField(field)
-      ? ADDRESS_EDIT_PATTERN.test(next)
-      : WORD_EDIT_PATTERN.test(next);
+    const valid = isValidDraftValue(isAddressField(field) ? 'address' : 'word', next);
     if (!valid) return;
     setDrafts((prev) => ({ ...prev, [field]: next }));
   };
@@ -171,9 +142,7 @@ const CheatSheetSection: React.FC<CheatSheetSectionProps> = ({
                   input.selectionEnd,
                   event.data
                 );
-                const valid = isAddressField(key)
-                  ? ADDRESS_EDIT_PATTERN.test(nextValue)
-                  : WORD_EDIT_PATTERN.test(nextValue);
+                const valid = isValidDraftValue(isAddressField(key) ? 'address' : 'word', nextValue);
                 if (!valid) {
                   event.preventDefault();
                 }
@@ -187,9 +156,7 @@ const CheatSheetSection: React.FC<CheatSheetSectionProps> = ({
                   input.selectionEnd,
                   pastedText
                 );
-                const valid = isAddressField(key)
-                  ? ADDRESS_EDIT_PATTERN.test(nextValue)
-                  : WORD_EDIT_PATTERN.test(nextValue);
+                const valid = isValidDraftValue(isAddressField(key) ? 'address' : 'word', nextValue);
                 if (!valid) {
                   event.preventDefault();
                 }

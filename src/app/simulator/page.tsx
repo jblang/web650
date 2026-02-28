@@ -1,5 +1,5 @@
-import EmulatorConsole from '@/components/EmulatorConsole';
+import SimulatorWorkspace from '@/components/SimulatorWorkspace';
 
-export default function EmulatorPage() {
-  return <EmulatorConsole />;
+export default function SimulatorPage() {
+  return <SimulatorWorkspace />;
 }

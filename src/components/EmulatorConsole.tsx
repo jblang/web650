@@ -79,16 +79,10 @@ export default function EmulatorConsole() {
     gap: '0.5rem',
     alignItems: 'stretch',
   } as const;
-  const ICON_BUTTON_STYLE = {
-    width: '3rem',
-    minWidth: '3rem',
-    height: '3rem',
-    padding: 0,
-  } as const;
   const TERMINAL_CONTAINER_STYLE = {
     height: '100%',
     maxHeight: '100%',
-    minHeight: 0,
+    minHeight: '34rem',
     backgroundColor: 'var(--cds-layer, #f4f4f4)',
     border: '1px solid var(--cds-border-subtle-01, #c6c6c6)',
     borderRadius: 0,
@@ -432,19 +426,18 @@ export default function EmulatorConsole() {
               kind="danger"
               renderIcon={Stop}
               onClick={onProgramStopClick}
-              size="lg"
+              size="sm"
               hasIconOnly
               iconDescription="Stop"
               tooltipPosition="left"
               aria-label="Stop"
-              style={ICON_BUTTON_STYLE}
             >
             </Button>
           ) : (
             <Button
               onClick={handleGo}
               disabled={sending}
-              size="lg"
+              size="sm"
               kind="primary"
               className="emulator-console__go"
               renderIcon={Play}
@@ -452,59 +445,54 @@ export default function EmulatorConsole() {
               iconDescription="Go"
               tooltipPosition="left"
               aria-label="Go"
-              style={ICON_BUTTON_STYLE}
             >
             </Button>
           )}
           <Button
             onClick={handleStep}
             disabled={!initialized || busy || sending}
-            size="lg"
+            size="sm"
             kind="primary"
             hasIconOnly
             renderIcon={ViewNext}
             iconDescription="Step"
             tooltipPosition="left"
             aria-label="Step"
-            style={ICON_BUTTON_STYLE}
           >
           </Button>
           <Button
             onClick={() => setScriptBrowserOpen(true)}
             disabled={!initialized || busy || sending}
-            size="lg"
+            size="sm"
             kind="primary"
             hasIconOnly
             renderIcon={Script}
             iconDescription="Run script"
             tooltipPosition="left"
             aria-label="Run script"
-            style={ICON_BUTTON_STYLE}
           >
           </Button>
           <Button
             onClick={handleClearOutput}
-            size="lg"
+            size="sm"
             kind="primary"
             hasIconOnly
             renderIcon={Clean}
             iconDescription="Clear output"
             tooltipPosition="left"
             aria-label="Clear output"
-            style={ICON_BUTTON_STYLE}
           >
           </Button>
           <Button
             onClick={handleReset}
             disabled={!initialized || busy || sending}
-            size="lg"
+            size="sm"
             kind="danger"
             hasIconOnly
             renderIcon={Reset}
             iconDescription="Reset"
             tooltipPosition="left"
             aria-label="Reset"
-            style={ICON_BUTTON_STYLE}
           >
           </Button>
         </div>
