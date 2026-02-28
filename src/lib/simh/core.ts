@@ -348,6 +348,22 @@ export type StateStreamSample = {
   accUp: string;
   dist: string;
   ov: number;
+  halfCycle: number;
+  op: number;
+  opIo: number;
+  opInquiry: number;
+  opRamac: number;
+  opTape: number;
+  opAccumulator: number;
+  stopReason: number;
+  chkProgramRegister: number;
+  chkControlUnit: number;
+  chkStorageSelection: number;
+  chkStorageUnit: number;
+  chkDistributor: number;
+  chkClocking: number;
+  chkAccumulator: number;
+  chkErrorSense: number;
 };
 
 const STATE_STREAM_OFFSETS = {
@@ -358,7 +374,23 @@ const STATE_STREAM_OFFSETS = {
   accUp: 34,
   dist: 46,
   ov: 58,
-  size: 59,
+  halfCycle: 59,
+  op: 60,
+  opIo: 61,
+  opInquiry: 62,
+  opRamac: 63,
+  opTape: 64,
+  opAccumulator: 65,
+  stopReason: 66,
+  chkProgramRegister: 67,
+  chkControlUnit: 68,
+  chkStorageSelection: 69,
+  chkStorageUnit: 70,
+  chkDistributor: 71,
+  chkClocking: 72,
+  chkAccumulator: 73,
+  chkErrorSense: 74,
+  size: 75,
 } as const;
 
 let stateStreamSampleSize: number | null = null;
@@ -435,6 +467,22 @@ export function readStateStream(maxSamples = 64): StateStreamSample[] {
       accUp: readCString(bytes, base + STATE_STREAM_OFFSETS.accUp, 12),
       dist: readCString(bytes, base + STATE_STREAM_OFFSETS.dist, 12),
       ov: bytes[base + STATE_STREAM_OFFSETS.ov] ?? 0,
+      halfCycle: bytes[base + STATE_STREAM_OFFSETS.halfCycle] ?? 0,
+      op: bytes[base + STATE_STREAM_OFFSETS.op] ?? 0,
+      opIo: bytes[base + STATE_STREAM_OFFSETS.opIo] ?? 0,
+      opInquiry: bytes[base + STATE_STREAM_OFFSETS.opInquiry] ?? 0,
+      opRamac: bytes[base + STATE_STREAM_OFFSETS.opRamac] ?? 0,
+      opTape: bytes[base + STATE_STREAM_OFFSETS.opTape] ?? 0,
+      opAccumulator: bytes[base + STATE_STREAM_OFFSETS.opAccumulator] ?? 0,
+      stopReason: bytes[base + STATE_STREAM_OFFSETS.stopReason] ?? 0,
+      chkProgramRegister: bytes[base + STATE_STREAM_OFFSETS.chkProgramRegister] ?? 0,
+      chkControlUnit: bytes[base + STATE_STREAM_OFFSETS.chkControlUnit] ?? 0,
+      chkStorageSelection: bytes[base + STATE_STREAM_OFFSETS.chkStorageSelection] ?? 0,
+      chkStorageUnit: bytes[base + STATE_STREAM_OFFSETS.chkStorageUnit] ?? 0,
+      chkDistributor: bytes[base + STATE_STREAM_OFFSETS.chkDistributor] ?? 0,
+      chkClocking: bytes[base + STATE_STREAM_OFFSETS.chkClocking] ?? 0,
+      chkAccumulator: bytes[base + STATE_STREAM_OFFSETS.chkAccumulator] ?? 0,
+      chkErrorSense: bytes[base + STATE_STREAM_OFFSETS.chkErrorSense] ?? 0,
     });
   }
   return samples;

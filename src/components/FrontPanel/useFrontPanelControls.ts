@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { useEmulatorState, INITIAL_OPERATING_STATE, INITIAL_CHECKING_STATE } from '../EmulatorStateProvider';
+import { useEmulatorState } from '../EmulatorStateProvider';
 import { useEmulatorActions } from '../EmulatorActionsProvider';
 import { OperatingState } from './OperatingStatus';
 import { CheckingState } from './CheckingStatus';
@@ -23,7 +23,8 @@ export const useFrontPanelControls = () => {
     programmedStop,
     halfCycle,
     overflowStop,
-    isRunning,
+    operatingLights: streamedOperatingLights,
+    checkingLights: streamedCheckingLights,
   } = useEmulatorState();
 
   const {
@@ -45,11 +46,8 @@ export const useFrontPanelControls = () => {
     onEmulatorResetClick,
   } = useEmulatorActions();
 
-  const operatingLights: OperatingState = {
-    ...INITIAL_OPERATING_STATE,
-    program: isRunning,
-  };
-  const checkingLights: CheckingState = INITIAL_CHECKING_STATE;
+  const operatingLights: OperatingState = streamedOperatingLights;
+  const checkingLights: CheckingState = streamedCheckingLights;
 
   // Ensure front panel reflects emulator state when loaded or when display knob changes.
   useEffect(() => {

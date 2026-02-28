@@ -23,6 +23,22 @@ type StateStreamMessage = {
     accUp: string;
     dist: string;
     ov: number;
+    halfCycle: number;
+    op: number;
+    opIo: number;
+    opInquiry: number;
+    opRamac: number;
+    opTape: number;
+    opAccumulator: number;
+    stopReason: number;
+    chkProgramRegister: number;
+    chkControlUnit: number;
+    chkStorageSelection: number;
+    chkStorageUnit: number;
+    chkDistributor: number;
+    chkClocking: number;
+    chkAccumulator: number;
+    chkErrorSense: number;
   };
 };
 
@@ -232,6 +248,16 @@ export async function setYieldSteps(steps: number): Promise<void> {
   await call('setYieldSteps', steps);
 }
 
+export async function getYieldEnabled(): Promise<boolean> {
+  await ensureInit();
+  return call('getYieldEnabled');
+}
+
+export async function setYieldEnabled(enabled: boolean): Promise<void> {
+  await ensureInit();
+  await call('setYieldEnabled', enabled);
+}
+
 export async function enableStateStream(enabled: boolean): Promise<void> {
   await ensureInit();
   await call('stateStreamEnable', enabled);
@@ -255,6 +281,22 @@ export async function readStateStream(maxSamples: number): Promise<Array<{
   accUp: string;
   dist: string;
   ov: number;
+  halfCycle: number;
+  op: number;
+  opIo: number;
+  opInquiry: number;
+  opRamac: number;
+  opTape: number;
+  opAccumulator: number;
+  stopReason: number;
+  chkProgramRegister: number;
+  chkControlUnit: number;
+  chkStorageSelection: number;
+  chkStorageUnit: number;
+  chkDistributor: number;
+  chkClocking: number;
+  chkAccumulator: number;
+  chkErrorSense: number;
 }>> {
   await ensureInit();
   return call('stateStreamRead', maxSamples);

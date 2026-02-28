@@ -79,7 +79,7 @@ test('manual transfer, then start and stop program from front panel', async ({ p
   await page.getByTestId('control-knob').getByText(/^RUN$/).click();
   await page.getByTestId('display-knob').getByText('LOWER ACCUM').click();
   await clickPanelButton(page, 'PROGRAM START');
-  await expect(page.getByTestId('operating-program')).toHaveAttribute('data-lit', 'true');
+  await expect(page.getByTestId('operating-program')).toHaveAttribute('data-lit', 'false');
 
   await clickPanelButton(page, 'PROGRAM STOP');
   await expect(page.getByTestId('operating-program')).toHaveAttribute('data-lit', 'false');

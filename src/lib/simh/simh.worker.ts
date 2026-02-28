@@ -74,6 +74,8 @@ const handlers: Record<string, (...args: unknown[]) => unknown> = {
   isEmulatorBusy: () => simh.isEmulatorBusy(),
   getYieldSteps: () => simh.getYieldSteps(),
   setYieldSteps: (steps: unknown) => simh.setYieldSteps(Number(steps)),
+  getYieldEnabled: () => simh.getYieldEnabled(),
+  setYieldEnabled: (enabled: unknown) => simh.setYieldEnabled(Boolean(enabled)),
   stateStreamEnable: (enabled: unknown) => {
     stateStreamEnabled = Boolean(enabled);
     simh.enableStateStream(stateStreamEnabled);

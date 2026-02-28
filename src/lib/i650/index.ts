@@ -4,6 +4,7 @@ import { getDisplayValue, isManualOperation, DisplaySwitch, Control, Display, Er
 import { extractOperationCode, validateAddress, validateWord, normalizeAddresses } from './format';
 import type { DisplayPosition, ControlPosition, ErrorSwitchPosition } from './controls';
 import { debugLog, errorLog } from '../simh/debug';
+import { SCPE_STOP } from '../simh/constants';
 
 /**
  * I650 emulator state containing all registers, switches, and control flags.
@@ -27,6 +28,27 @@ export type I650EmulatorState = {
   displayValue: string;
   operation: string;
   stateStreamTick: number;
+  operatingLights: {
+    dataAddress: boolean;
+    program: boolean;
+    inputOutput: boolean;
+    inquiry: boolean;
+    ramac: boolean;
+    magneticTape: boolean;
+    instAddress: boolean;
+    accumulator: boolean;
+    overflow: boolean;
+  };
+  checkingLights: {
+    programRegister: boolean;
+    controlUnit: boolean;
+    storageSelection: boolean;
+    storageUnit: boolean;
+    distributor: boolean;
+    clocking: boolean;
+    accumulator: boolean;
+    errorSense: boolean;
+  };
 };
 
 type StateListener = (state: I650EmulatorState) => void;
@@ -59,6 +81,27 @@ let state: I650EmulatorState = {
   displayValue: ZERO_DATA,
   operation: ZERO_OPERATION,
   stateStreamTick: 0,
+  operatingLights: {
+    dataAddress: false,
+    program: false,
+    inputOutput: false,
+    inquiry: false,
+    ramac: false,
+    magneticTape: false,
+    instAddress: false,
+    accumulator: false,
+    overflow: false,
+  },
+  checkingLights: {
+    programRegister: false,
+    controlUnit: false,
+    storageSelection: false,
+    storageUnit: false,
+    distributor: false,
+    clocking: false,
+    accumulator: false,
+    errorSense: false,
+  },
 };
 
 let initialized = false;
@@ -74,6 +117,17 @@ let stateStreamInitialized = false;
 let stateStreamActive = false;
 let runRequestedUntil = 0;
 let stateStreamActivationId = 0;
+let halfCycleYieldOverrideActive = false;
+let halfCycleYieldRestoreValue = true;
+const STOP_HALT = 1;
+const STOP_PROG = 5;
+const STOP_ADDR = 8;
+function isProgramLightOn(stopReason: number): boolean {
+  return stopReason === STOP_ADDR ||
+    stopReason === STOP_HALT ||
+    stopReason === STOP_PROG ||
+    stopReason === SCPE_STOP;
+}
 
 function handleSimhOutput(text: string): void {
   for (const listener of outputListeners) {
@@ -96,15 +150,55 @@ const stateStreamListener = (sample: {
   accUp: string;
   dist: string;
   ov: number;
+  halfCycle: number;
+  op: number;
+  opIo: number;
+  opInquiry: number;
+  opRamac: number;
+  opTape: number;
+  opAccumulator: number;
+  stopReason: number;
+  chkProgramRegister: number;
+  chkControlUnit: number;
+  chkStorageSelection: number;
+  chkStorageUnit: number;
+  chkDistributor: number;
+  chkClocking: number;
+  chkAccumulator: number;
+  chkErrorSense: number;
 }) => {
   if (!stateStreamActive) return;
+  const operatingLights = {
+    dataAddress: sample.halfCycle === 2,
+    program: isProgramLightOn(sample.stopReason),
+    inputOutput: Boolean(sample.opIo),
+    inquiry: Boolean(sample.opInquiry),
+    ramac: Boolean(sample.opRamac),
+    magneticTape: Boolean(sample.opTape),
+    instAddress: sample.halfCycle === 1,
+    accumulator: Boolean(sample.opAccumulator),
+    overflow: sample.ov !== 0,
+  };
+  const checkingLights = {
+    programRegister: Boolean(sample.chkProgramRegister),
+    controlUnit: Boolean(sample.chkControlUnit),
+    storageSelection: Boolean(sample.chkStorageSelection),
+    storageUnit: Boolean(sample.chkStorageUnit),
+    distributor: Boolean(sample.chkDistributor),
+    clocking: Boolean(sample.chkClocking),
+    accumulator: Boolean(sample.chkAccumulator),
+    errorSense: Boolean(sample.chkErrorSense),
+  };
   mergeState({
     programRegister: sample.pr,
     addressRegister: sample.ar,
     lowerAccumulator: sample.accLo,
     upperAccumulator: sample.accUp,
     distributor: sample.dist,
+    operation: String(sample.op).padStart(2, '0'),
     stateStreamTick: state.stateStreamTick + 1,
+    operatingLights,
+    checkingLights,
   });
 };
 
@@ -145,6 +239,7 @@ function parseDebugLine(line: string): Partial<I650EmulatorState> | null {
     const instructionAddress = match[4];
     return {
       programRegister: `${opcode}${dataAddress}${instructionAddress}+`,
+      operation: opcode,
     };
   }
 
@@ -184,8 +279,7 @@ function computeDerived(next: I650EmulatorState): I650EmulatorState {
     distributor: next.distributor,
     programRegister: next.programRegister,
   });
-  const operation = extractOperationCode(next.programRegister);
-  return { ...next, displayValue, operation };
+  return { ...next, displayValue };
 }
 
 function emit(next: I650EmulatorState): void {
@@ -254,6 +348,7 @@ async function getRegisterSnapshot(): Promise<{
   lowerAccumulator: string;
   upperAccumulator: string;
   distributor: string;
+  operation: string;
   consoleSwitches: string;
   programmedStop: boolean;
   overflowStop: boolean;
@@ -266,10 +361,11 @@ async function getRegisterSnapshot(): Promise<{
     lowerAccumulator: values.ACCLO ?? ZERO_DATA,
     upperAccumulator: values.ACCUP ?? ZERO_DATA,
     distributor: values.DIST ?? ZERO_DATA,
+    operation: extractOperationCode(values.PR ?? ZERO_DATA),
     consoleSwitches: values.CSW ?? ZERO_DATA,
     programmedStop: (values.CSWPS?.trim() ?? '0') === '1',
     overflowStop: (values.CSWOS?.trim() ?? '0') === '1',
-    halfCycle: (values.HALF?.trim() ?? '0') === '1',
+    halfCycle: (values.HALF?.trim() ?? '0') !== '0',
   };
 }
 
@@ -365,6 +461,10 @@ export async function init(): Promise<void> {
 export async function restart(): Promise<void> {
   await ensureInit();
   const restarting = (async () => {
+    if (halfCycleYieldOverrideActive) {
+      await simh.setYieldEnabled(halfCycleYieldRestoreValue);
+      halfCycleYieldOverrideActive = false;
+    }
     runRequestedUntil = 0;
     stateStreamInitialized = false;
     mergeState({ initialized: false, isRunning: false });
@@ -383,6 +483,7 @@ export async function restart(): Promise<void> {
       lowerAccumulator: snapshot.lowerAccumulator,
       upperAccumulator: snapshot.upperAccumulator,
       distributor: snapshot.distributor,
+      operation: snapshot.operation,
       consoleSwitches: snapshot.consoleSwitches,
       programmedStop: snapshot.programmedStop,
       overflowStop: snapshot.overflowStop,
@@ -463,6 +564,7 @@ export async function refreshRegisters(): Promise<void> {
     lowerAccumulator: snapshot.lowerAccumulator,
     upperAccumulator: snapshot.upperAccumulator,
     distributor: snapshot.distributor,
+    operation: snapshot.operation,
     consoleSwitches: snapshot.consoleSwitches,
     programmedStop: snapshot.programmedStop,
     overflowStop: snapshot.overflowStop,
@@ -568,7 +670,10 @@ export async function setAddressRegister(value: string): Promise<void> {
  */
 export async function setProgramRegister(value: string): Promise<void> {
   validateWord(value);
-  await depositAndMerge('PR', value, { programRegister: value });
+  await depositAndMerge('PR', value, {
+    programRegister: value,
+    operation: extractOperationCode(value),
+  });
 }
 
 /**
@@ -639,6 +744,36 @@ export async function setOverflowStop(value: boolean): Promise<void> {
  * @param value - true for HALF cycle, false for RUN
  */
 export async function setHalfCycle(value: boolean): Promise<void> {
+  await ensureInit();
+
+  if (value && !halfCycleYieldOverrideActive) {
+    const currentYieldEnabled = await simh.getYieldEnabled();
+    halfCycleYieldRestoreValue = currentYieldEnabled;
+    if (currentYieldEnabled) {
+      await simh.setYieldEnabled(false);
+    }
+    try {
+      await depositAndMerge('HALF', '1', { halfCycle: true });
+      halfCycleYieldOverrideActive = true;
+      return;
+    } catch (err) {
+      if (currentYieldEnabled) {
+        await simh.setYieldEnabled(true);
+      }
+      throw err;
+    }
+  }
+
+  if (!value && halfCycleYieldOverrideActive) {
+    try {
+      await depositAndMerge('HALF', '0', { halfCycle: false });
+    } finally {
+      await simh.setYieldEnabled(halfCycleYieldRestoreValue);
+      halfCycleYieldOverrideActive = false;
+    }
+    return;
+  }
+
   await depositAndMerge('HALF', value ? '1' : '0', { halfCycle: value });
 }
 

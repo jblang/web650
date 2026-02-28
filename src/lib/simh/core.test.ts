@@ -538,7 +538,7 @@ describe('core state stream', () => {
     const buffer = new ArrayBuffer(1024);
     const heapu8 = new Uint8Array(buffer);
     const ccall = vi.fn((name: string) => {
-      if (name === 'simh_state_stream_sample_size') return 59;
+      if (name === 'simh_state_stream_sample_size') return 75;
       if (name === 'simh_state_stream_buffer_ptr') return 0;
       if (name === 'simh_state_stream_read_to_buffer') return 0;
       return 0;
@@ -571,9 +571,17 @@ describe('core state stream', () => {
     heapu8.set(accUpBytes, 100 + 34); // accUp at offset 34
     heapu8.set(distBytes, 100 + 46);  // dist at offset 46
     heapu8[100 + 58] = 1;  // ov at offset 58
+    heapu8[100 + 59] = 2;  // halfCycle
+    heapu8[100 + 60] = 69; // op
+    heapu8[100 + 61] = 1;  // opIo
+    heapu8[100 + 62] = 0;  // opInquiry
+    heapu8[100 + 63] = 0;  // opRamac
+    heapu8[100 + 64] = 0;  // opTape
+    heapu8[100 + 65] = 1;  // opAccumulator
+    heapu8[100 + 66] = 8;  // stopReason
 
     const ccall = vi.fn((name: string) => {
-      if (name === 'simh_state_stream_sample_size') return 59;
+      if (name === 'simh_state_stream_sample_size') return 75;
       if (name === 'simh_state_stream_buffer_ptr') return 100;
       if (name === 'simh_state_stream_read_to_buffer') return 1;
       return 0;
@@ -592,6 +600,22 @@ describe('core state stream', () => {
       accUp: '0000000004+',
       dist: '0000000005+',
       ov: 1,
+      halfCycle: 2,
+      op: 69,
+      opIo: 1,
+      opInquiry: 0,
+      opRamac: 0,
+      opTape: 0,
+      opAccumulator: 1,
+      stopReason: 8,
+      chkProgramRegister: 0,
+      chkControlUnit: 0,
+      chkStorageSelection: 0,
+      chkStorageUnit: 0,
+      chkDistributor: 0,
+      chkClocking: 0,
+      chkAccumulator: 0,
+      chkErrorSense: 0,
     });
   });
 
@@ -614,7 +638,7 @@ describe('core state stream', () => {
     const buffer = new ArrayBuffer(1024);
     const heapu8 = new Uint8Array(buffer);
     const ccall = vi.fn((name: string) => {
-      if (name === 'simh_state_stream_sample_size') return 59;
+      if (name === 'simh_state_stream_sample_size') return 75;
       if (name === 'simh_state_stream_buffer_ptr') return 100;
       if (name === 'simh_state_stream_read_to_buffer') return 0;
       return 0;
@@ -679,7 +703,7 @@ describe('core state stream', () => {
     // Write two samples
     const encoder = new TextEncoder();
     const sample1Offset = 100;
-    const sample2Offset = 100 + 59;
+    const sample2Offset = 100 + 75;
 
     // Sample 1
     heapu8.set(encoder.encode('0000000001+\0'), sample1Offset + 0);
@@ -689,6 +713,8 @@ describe('core state stream', () => {
     heapu8.set(encoder.encode('0000000004+\0'), sample1Offset + 34);
     heapu8.set(encoder.encode('0000000005+\0'), sample1Offset + 46);
     heapu8[sample1Offset + 58] = 0;
+    heapu8[sample1Offset + 59] = 1;
+    heapu8[sample1Offset + 60] = 10;
 
     // Sample 2
     heapu8.set(encoder.encode('0000000010+\0'), sample2Offset + 0);
@@ -698,9 +724,11 @@ describe('core state stream', () => {
     heapu8.set(encoder.encode('0000000040+\0'), sample2Offset + 34);
     heapu8.set(encoder.encode('0000000050+\0'), sample2Offset + 46);
     heapu8[sample2Offset + 58] = 1;
+    heapu8[sample2Offset + 59] = 2;
+    heapu8[sample2Offset + 60] = 20;
 
     const ccall = vi.fn((name: string) => {
-      if (name === 'simh_state_stream_sample_size') return 59;
+      if (name === 'simh_state_stream_sample_size') return 75;
       if (name === 'simh_state_stream_buffer_ptr') return 100;
       if (name === 'simh_state_stream_read_to_buffer') return 2;
       return 0;
@@ -713,8 +741,12 @@ describe('core state stream', () => {
     expect(result).toHaveLength(2);
     expect(result[0].pr).toBe('0000000001+');
     expect(result[0].ov).toBe(0);
+    expect(result[0].halfCycle).toBe(1);
+    expect(result[0].op).toBe(10);
     expect(result[1].pr).toBe('0000000010+');
     expect(result[1].ov).toBe(1);
+    expect(result[1].halfCycle).toBe(2);
+    expect(result[1].op).toBe(20);
   });
 
   it('readStateStream gets HEAPU8 from global Module when not on main module', async () => {
@@ -726,7 +758,7 @@ describe('core state stream', () => {
     (globalThis as { Module?: { HEAPU8?: Uint8Array } }).Module = { HEAPU8: heapu8 };
 
     const ccall = vi.fn((name: string) => {
-      if (name === 'simh_state_stream_sample_size') return 59;
+      if (name === 'simh_state_stream_sample_size') return 75;
       if (name === 'simh_state_stream_buffer_ptr') return 0;
       if (name === 'simh_state_stream_read_to_buffer') return 0;
       return 0;

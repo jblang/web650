@@ -32,6 +32,27 @@ const mockState: I650EmulatorState = {
   displayValue: '0000000000+',
   operation: '00',
   stateStreamTick: 0,
+  operatingLights: {
+    dataAddress: false,
+    program: false,
+    inputOutput: false,
+    inquiry: false,
+    ramac: false,
+    magneticTape: false,
+    instAddress: false,
+    accumulator: false,
+    overflow: false,
+  },
+  checkingLights: {
+    programRegister: false,
+    controlUnit: false,
+    storageSelection: false,
+    storageUnit: false,
+    distributor: false,
+    clocking: false,
+    accumulator: false,
+    errorSense: false,
+  },
 };
 
 const mockServiceMocks = vi.hoisted(() => ({

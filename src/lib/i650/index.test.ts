@@ -22,6 +22,8 @@ const simhMocks = {
   }>>>(),
   enableStateStream: vi.fn<(enabled: boolean) => Promise<void>>(),
   setStateStreamStride: vi.fn<(stride: number) => Promise<void>>(),
+  getYieldEnabled: vi.fn<() => Promise<boolean>>(),
+  setYieldEnabled: vi.fn<(enabled: boolean) => Promise<void>>(),
   clearStateStream: vi.fn<() => Promise<void>>(),
   readStateStream: vi.fn<() => Promise<Array<{
     pr: string;
@@ -31,6 +33,22 @@ const simhMocks = {
     accUp: string;
     dist: string;
     ov: number;
+    halfCycle: number;
+    op: number;
+    opIo: number;
+    opInquiry: number;
+    opRamac: number;
+    opTape: number;
+    opAccumulator: number;
+    stopReason: number;
+    chkProgramRegister: number;
+    chkControlUnit: number;
+    chkStorageSelection: number;
+    chkStorageUnit: number;
+    chkDistributor: number;
+    chkClocking: number;
+    chkAccumulator: number;
+    chkErrorSense: number;
   }>>>(),
   onStateStream: vi.fn<(listener: (sample: {
     pr: string;
@@ -40,6 +58,22 @@ const simhMocks = {
     accUp: string;
     dist: string;
     ov: number;
+    halfCycle: number;
+    op: number;
+    opIo: number;
+    opInquiry: number;
+    opRamac: number;
+    opTape: number;
+    opAccumulator: number;
+    stopReason: number;
+    chkProgramRegister: number;
+    chkControlUnit: number;
+    chkStorageSelection: number;
+    chkStorageUnit: number;
+    chkDistributor: number;
+    chkClocking: number;
+    chkAccumulator: number;
+    chkErrorSense: number;
   }) => void) => void>(),
   stop: vi.fn<() => Promise<void>>(),
 };
@@ -86,6 +120,8 @@ describe('i650', () => {
     simhMocks.sendCommand.mockResolvedValue('');
     simhMocks.examine.mockResolvedValue({ ...defaultState });
     simhMocks.deposit.mockResolvedValue(undefined);
+    simhMocks.getYieldEnabled.mockResolvedValue(true);
+    simhMocks.setYieldEnabled.mockResolvedValue(undefined);
     simhMocks.readFile.mockResolvedValue('');
     simhMocks.listDirectory.mockResolvedValue([]);
     simhMocks.stop.mockResolvedValue(undefined);
@@ -327,6 +363,18 @@ describe('i650', () => {
     expect(simhMocks.sendCommand).not.toHaveBeenCalled();
   });
 
+  it('updates operation when setting program register directly', async () => {
+    const service = await setupService();
+    await service.init();
+    await flushPromises();
+
+    await service.setProgramRegister('6912345678+');
+
+    expect(simhMocks.deposit).toHaveBeenCalledWith('PR', '6912345678+');
+    expect(service.getState().programRegister).toBe('6912345678+');
+    expect(service.getState().operation).toBe('69');
+  });
+
   it('initializes lazily when setting programmed/overflow/half cycle flags', async () => {
     const service = await setupService();
 
@@ -338,6 +386,8 @@ describe('i650', () => {
     expect(simhMocks.deposit).toHaveBeenCalledWith('CSWPS', '1');
     expect(simhMocks.deposit).toHaveBeenCalledWith('CSWOS', '1');
     expect(simhMocks.deposit).toHaveBeenCalledWith('HALF', '1');
+    expect(simhMocks.getYieldEnabled).toHaveBeenCalled();
+    expect(simhMocks.setYieldEnabled).toHaveBeenCalledWith(false);
   });
 
   it('manual read-in transfer writes memory and distributor', async () => {
@@ -436,6 +486,20 @@ describe('i650', () => {
     expect(service.getState().halfCycle).toBe(true);
   });
 
+  it('treats HALF=2 snapshot value as half-cycle mode active', async () => {
+    simhMocks.examine.mockResolvedValue({
+      ...defaultState,
+      HALF: '2',
+    });
+
+    const service = await setupService();
+    await service.init();
+    await flushPromises();
+    await service.refreshRegisters();
+
+    expect(service.getState().halfCycle).toBe(true);
+  });
+
   it('falls back to default register values when snapshot keys are missing', async () => {
     simhMocks.examine.mockResolvedValue({});
 
@@ -499,6 +563,21 @@ describe('i650', () => {
 
     expect(simhMocks.deposit).toHaveBeenCalledWith('CSWPS', '0');
     expect(simhMocks.deposit).toHaveBeenCalledWith('CSWOS', '0');
+    expect(simhMocks.deposit).toHaveBeenCalledWith('HALF', '0');
+  });
+
+  it('restores yield mode when leaving half-cycle mode', async () => {
+    const service = await setupService();
+    await service.init();
+    await flushPromises();
+
+    simhMocks.getYieldEnabled.mockResolvedValueOnce(true);
+    await service.setHalfCycle(true);
+    await service.setHalfCycle(false);
+
+    expect(simhMocks.setYieldEnabled).toHaveBeenNthCalledWith(1, false);
+    expect(simhMocks.setYieldEnabled).toHaveBeenNthCalledWith(2, true);
+    expect(simhMocks.deposit).toHaveBeenCalledWith('HALF', '1');
     expect(simhMocks.deposit).toHaveBeenCalledWith('HALF', '0');
   });
 
@@ -650,5 +729,51 @@ describe('i650', () => {
     expect(simhMocks.enableStateStream).toHaveBeenCalledWith(true);
     expect(simhMocks.setStateStreamStride).toHaveBeenCalled();
     expect(simhMocks.onStateStream).toHaveBeenCalled();
+  });
+
+  it('maps streamed light fields into emulator state', async () => {
+    const service = await setupService();
+    await service.init();
+    await flushPromises();
+    await service.setStateStreamActive(true);
+
+    const stateStreamListener = simhMocks.onStateStream.mock.calls.at(-1)?.[0];
+    stateStreamListener?.({
+      pr: '6980001001+',
+      ar: '1000',
+      ic: '1000',
+      accLo: '1234567890+',
+      accUp: '0000000000+',
+      dist: '1111111111+',
+      ov: 1,
+      halfCycle: 2,
+      op: 69,
+      opIo: 1,
+      opInquiry: 0,
+      opRamac: 1,
+      opTape: 0,
+      opAccumulator: 1,
+      stopReason: 8,
+      chkProgramRegister: 0,
+      chkControlUnit: 0,
+      chkStorageSelection: 1,
+      chkStorageUnit: 0,
+      chkDistributor: 0,
+      chkClocking: 0,
+      chkAccumulator: 0,
+      chkErrorSense: 0,
+    });
+
+    const next = service.getState();
+    expect(next.operatingLights.dataAddress).toBe(true);
+    expect(next.operatingLights.inputOutput).toBe(true);
+    expect(next.operatingLights.ramac).toBe(true);
+    expect(next.operatingLights.accumulator).toBe(true);
+    expect(next.operatingLights.overflow).toBe(true);
+    expect(next.operatingLights.program).toBe(true);
+    expect(next.checkingLights.programRegister).toBe(false);
+    expect(next.checkingLights.storageSelection).toBe(true);
+    expect(next.checkingLights.distributor).toBe(false);
+    expect(next.checkingLights.accumulator).toBe(false);
   });
 });

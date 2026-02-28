@@ -5,7 +5,7 @@ import { useFrontPanelControls } from './useFrontPanelControls';
 import { EmulatorStateProvider } from '../EmulatorStateProvider';
 import { EmulatorConsoleProvider } from '../EmulatorConsoleProvider';
 import { EmulatorActionsProvider } from '../EmulatorActionsProvider';
-import { Programmed, HalfCycle, Overflow, Display } from '@/lib/i650/controls';
+import { Programmed, HalfCycle, Overflow, Display, Control } from '@/lib/i650/controls';
 import type { I650EmulatorState } from '@/lib/i650';
 
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
@@ -32,6 +32,27 @@ const mockState: I650EmulatorState = {
   displayValue: '1234567890+',
   operation: '69',
   stateStreamTick: 0,
+  operatingLights: {
+    dataAddress: false,
+    program: false,
+    inputOutput: false,
+    inquiry: false,
+    ramac: false,
+    magneticTape: false,
+    instAddress: false,
+    accumulator: false,
+    overflow: false,
+  },
+  checkingLights: {
+    programRegister: false,
+    controlUnit: false,
+    storageSelection: false,
+    storageUnit: false,
+    distributor: false,
+    clocking: false,
+    accumulator: false,
+    errorSense: false,
+  },
 };
 
 const mockServiceMocks = vi.hoisted(() => ({
@@ -289,32 +310,13 @@ describe('useFrontPanelControls', () => {
     expect(captured.controls?.overflow).toBe(Overflow.STOP);
   });
 
-  it('sets operatingState.program to true when isRunning is true', async () => {
+  it('passes through streamed operatingState.program (does not derive from control mode)', async () => {
     const captured: { controls?: ReturnType<typeof useFrontPanelControls> } = {};
-    mockServiceMocks.getState.mockReturnValue({ ...mockState, isRunning: true });
-
-    const Probe = () => {
-      const controls = useFrontPanelControls();
-      React.useEffect(() => {
-        captured.controls = controls;
-      }, [controls]);
-      return null;
-    };
-
-    await act(async () => {
-      render(
-        <TestWrapper>
-          <Probe />
-        </TestWrapper>
-      );
+    mockServiceMocks.getState.mockReturnValue({
+      ...mockState,
+      controlSwitch: Control.MANUAL_OPERATION,
+      operatingLights: { ...mockState.operatingLights, program: false },
     });
-
-    expect(captured.controls?.operatingState.program).toBe(true);
-  });
-
-  it('sets operatingState.program to false when isRunning is false', async () => {
-    const captured: { controls?: ReturnType<typeof useFrontPanelControls> } = {};
-    mockServiceMocks.getState.mockReturnValue({ ...mockState, isRunning: false });
 
     const Probe = () => {
       const controls = useFrontPanelControls();
@@ -333,6 +335,46 @@ describe('useFrontPanelControls', () => {
     });
 
     expect(captured.controls?.operatingState.program).toBe(false);
+  });
+
+  it('passes through streamed operating and checking light state', async () => {
+    const captured: { controls?: ReturnType<typeof useFrontPanelControls> } = {};
+    mockServiceMocks.getState.mockReturnValue({
+      ...mockState,
+      operatingLights: {
+        ...mockState.operatingLights,
+        inputOutput: true,
+        ramac: true,
+        overflow: true,
+      },
+      checkingLights: {
+        ...mockState.checkingLights,
+        controlUnit: true,
+        distributor: true,
+      },
+    });
+
+    const Probe = () => {
+      const controls = useFrontPanelControls();
+      React.useEffect(() => {
+        captured.controls = controls;
+      }, [controls]);
+      return null;
+    };
+
+    await act(async () => {
+      render(
+        <TestWrapper>
+          <Probe />
+        </TestWrapper>
+      );
+    });
+
+    expect(captured.controls?.operatingState.inputOutput).toBe(true);
+    expect(captured.controls?.operatingState.ramac).toBe(true);
+    expect(captured.controls?.operatingState.overflow).toBe(true);
+    expect(captured.controls?.checkingState.controlUnit).toBe(true);
+    expect(captured.controls?.checkingState.distributor).toBe(true);
   });
 
   it('maps entryValue from consoleSwitches', async () => {

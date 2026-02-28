@@ -361,6 +361,29 @@ describe('workerClient', () => {
     worker.emitMessage({ id: setYieldReq.id, ok: true, result: null });
     await setYieldPromise;
 
+    const messageCountBeforeGetYieldEnabled = worker.postedMessages.length;
+    const getYieldEnabledPromise = workerClient.getYieldEnabled();
+    await flushMicrotasks();
+    const getYieldEnabledReq = worker.postedMessages[messageCountBeforeGetYieldEnabled];
+    if (!getYieldEnabledReq) {
+      throw new Error('Expected getYieldEnabled request');
+    }
+    expect(getYieldEnabledReq.method).toBe('getYieldEnabled');
+    worker.emitMessage({ id: getYieldEnabledReq.id, ok: true, result: true });
+    await expect(getYieldEnabledPromise).resolves.toBe(true);
+
+    const messageCountBeforeSetYieldEnabled = worker.postedMessages.length;
+    const setYieldEnabledPromise = workerClient.setYieldEnabled(false);
+    await flushMicrotasks();
+    const setYieldEnabledReq = worker.postedMessages[messageCountBeforeSetYieldEnabled];
+    if (!setYieldEnabledReq) {
+      throw new Error('Expected setYieldEnabled request');
+    }
+    expect(setYieldEnabledReq.method).toBe('setYieldEnabled');
+    expect(setYieldEnabledReq.args).toEqual([false]);
+    worker.emitMessage({ id: setYieldEnabledReq.id, ok: true, result: null });
+    await setYieldEnabledPromise;
+
     const messageCountBeforeStop = worker.postedMessages.length;
     const stopPromise = workerClient.stop();
     await flushMicrotasks();
@@ -417,6 +440,22 @@ describe('workerClient', () => {
         accUp: '0000000004+',
         dist: '0000000005+',
         ov: 1,
+        halfCycle: 2,
+        op: 69,
+        opIo: 1,
+        opInquiry: 0,
+        opRamac: 0,
+        opTape: 0,
+        opAccumulator: 1,
+        stopReason: 8,
+        chkProgramRegister: 0,
+        chkControlUnit: 0,
+        chkStorageSelection: 1,
+        chkStorageUnit: 0,
+        chkDistributor: 0,
+        chkClocking: 0,
+        chkAccumulator: 0,
+        chkErrorSense: 0,
       },
     ];
     const readPromise = workerClient.readStateStream(64);
@@ -447,6 +486,22 @@ describe('workerClient', () => {
       accUp: '0000000004+',
       dist: '0000000005+',
       ov: 1,
+      halfCycle: 2,
+      op: 69,
+      opIo: 1,
+      opInquiry: 0,
+      opRamac: 0,
+      opTape: 0,
+      opAccumulator: 1,
+      stopReason: 8,
+      chkProgramRegister: 0,
+      chkControlUnit: 0,
+      chkStorageSelection: 1,
+      chkStorageUnit: 0,
+      chkDistributor: 0,
+      chkClocking: 0,
+      chkAccumulator: 0,
+      chkErrorSense: 0,
     };
 
     worker.emitMessage({ type: 'state', sample: sampleData });

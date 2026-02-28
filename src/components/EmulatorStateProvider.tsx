@@ -50,6 +50,8 @@ interface EmulatorStateContextType {
   displayValue: string;
   operation: string;
   stateStreamTick: number;
+  operatingLights: OperatingState;
+  checkingLights: CheckingState;
 }
 
 const EmulatorStateContext = createContext<EmulatorStateContextType | null>(null);
@@ -87,6 +89,8 @@ export function EmulatorStateProvider({ children }: { children: ReactNode }) {
       displayValue: emuState.displayValue,
       operation: emuState.operation,
       stateStreamTick: emuState.stateStreamTick,
+      operatingLights: emuState.operatingLights,
+      checkingLights: emuState.checkingLights,
     }),
     [emuState]
   );
