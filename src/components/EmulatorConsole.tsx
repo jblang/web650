@@ -4,9 +4,10 @@ import { useCallback, useEffect, useMemo, useRef, useState, type KeyboardEvent }
 import {
   Button,
 } from '@carbon/react';
-import { Stop, Play } from '@carbon/icons-react';
+import { Stop, Play, ViewNext, Script, Reset, Clean } from '@carbon/icons-react';
 import { useEmulatorConsole } from './EmulatorConsoleProvider';
 import { useEmulatorActions } from './EmulatorActionsProvider';
+import FilesystemBrowser from './FilesystemBrowser';
 
 const COMMAND_HISTORY_KEY = 'simh.command-history';
 const MAX_COMMAND_HISTORY = 50;
@@ -116,8 +117,8 @@ export default function EmulatorConsole() {
   const [sending, setSending] = useState(false);
   const [commandInput, setCommandInput] = useState('');
   const [transcript, setTranscript] = useState('');
-  const { output, sendCommand, initialized, isRunning } = useEmulatorConsole();
-  const { onProgramStopClick } = useEmulatorActions();
+  const { output, sendCommand, initialized, isRunning, clearOutput } = useEmulatorConsole();
+  const { onProgramGoClick, onProgramStepClick, onRunScriptClick, onProgramStopClick, onComputerResetClick } = useEmulatorActions();
 
   const sendTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const textAreaRef = useRef<HTMLTextAreaElement | null>(null);
@@ -357,10 +358,53 @@ export default function EmulatorConsole() {
 
     setSending(true);
     try {
-      await sendCommand('go');
+      await onProgramGoClick();
     } finally {
       setSending(false);
     }
+  };
+
+  const handleStep = async () => {
+    if (sending || busy || !initialized) return;
+
+    setSending(true);
+    try {
+      await onProgramStepClick();
+    } finally {
+      setSending(false);
+    }
+  };
+
+  const [scriptBrowserOpen, setScriptBrowserOpen] = useState(false);
+
+  const handleChooseScript = async (path: string) => {
+    if (sending || busy || !initialized) return;
+    setScriptBrowserOpen(false);
+
+    setSending(true);
+    try {
+      await onRunScriptClick(path);
+    } finally {
+      setSending(false);
+    }
+  };
+
+  const handleReset = async () => {
+    if (sending || busy || !initialized) return;
+
+    setSending(true);
+    try {
+      await onComputerResetClick();
+    } finally {
+      setSending(false);
+    }
+  };
+
+  const handleClearOutput = () => {
+    clearOutput();
+    setCommandInput('');
+    historyIndexRef.current = null;
+    historyDraftRef.current = '';
   };
 
   return (
@@ -391,6 +435,7 @@ export default function EmulatorConsole() {
               size="lg"
               hasIconOnly
               iconDescription="Stop"
+              tooltipPosition="left"
               aria-label="Stop"
               style={ICON_BUTTON_STYLE}
             >
@@ -405,13 +450,73 @@ export default function EmulatorConsole() {
               renderIcon={Play}
               hasIconOnly
               iconDescription="Go"
+              tooltipPosition="left"
               aria-label="Go"
               style={ICON_BUTTON_STYLE}
             >
             </Button>
           )}
+          <Button
+            onClick={handleStep}
+            disabled={!initialized || busy || sending}
+            size="lg"
+            kind="primary"
+            hasIconOnly
+            renderIcon={ViewNext}
+            iconDescription="Step"
+            tooltipPosition="left"
+            aria-label="Step"
+            style={ICON_BUTTON_STYLE}
+          >
+          </Button>
+          <Button
+            onClick={() => setScriptBrowserOpen(true)}
+            disabled={!initialized || busy || sending}
+            size="lg"
+            kind="primary"
+            hasIconOnly
+            renderIcon={Script}
+            iconDescription="Run script"
+            tooltipPosition="left"
+            aria-label="Run script"
+            style={ICON_BUTTON_STYLE}
+          >
+          </Button>
+          <Button
+            onClick={handleClearOutput}
+            size="lg"
+            kind="primary"
+            hasIconOnly
+            renderIcon={Clean}
+            iconDescription="Clear output"
+            tooltipPosition="left"
+            aria-label="Clear output"
+            style={ICON_BUTTON_STYLE}
+          >
+          </Button>
+          <Button
+            onClick={handleReset}
+            disabled={!initialized || busy || sending}
+            size="lg"
+            kind="danger"
+            hasIconOnly
+            renderIcon={Reset}
+            iconDescription="Reset"
+            tooltipPosition="left"
+            aria-label="Reset"
+            style={ICON_BUTTON_STYLE}
+          >
+          </Button>
         </div>
       </div>
+      <FilesystemBrowser
+        open={scriptBrowserOpen}
+        onRequestClose={() => setScriptBrowserOpen(false)}
+        onChoose={handleChooseScript}
+        modalHeading="Run script"
+        rootPaths={['/sw', '/tests', '/tmp']}
+        acceptExtensions={['.ini']}
+      />
     </div>
   );
 }

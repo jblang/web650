@@ -196,6 +196,23 @@ export async function sendCommand(
   return call<string>('sendCommand', command, options);
 }
 
+export async function go(): Promise<string> {
+  return sendCommand('GO', { streamOutput: true });
+}
+
+export async function stepInstruction(): Promise<string> {
+  return sendCommand('STEP', { streamOutput: true });
+}
+
+export async function runScript(path: string): Promise<string> {
+  const trimmed = path.trim();
+  if (!trimmed) {
+    throw new TypeError('Script path must be non-empty');
+  }
+  const escapedPath = trimmed.includes(' ') ? `"${trimmed.replaceAll('"', '\\"')}"` : trimmed;
+  return sendCommand(`DO ${escapedPath}`, { streamOutput: true });
+}
+
 export async function examine(
   ref: string,
   options?: { echo?: boolean }

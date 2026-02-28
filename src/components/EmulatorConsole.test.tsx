@@ -15,6 +15,8 @@ const stripDomProps = (props: Record<string, unknown>) => {
     renderIcon,
     hasIconOnly,
     iconDescription,
+    tooltipPosition,
+    tooltipAlignment,
     ...rest
   } = props;
   void labelText;
@@ -22,6 +24,8 @@ const stripDomProps = (props: Record<string, unknown>) => {
   void renderIcon;
   void hasIconOnly;
   void iconDescription;
+  void tooltipPosition;
+  void tooltipAlignment;
   return rest;
 };
 
@@ -35,10 +39,30 @@ vi.mock('@carbon/react', () => ({
 vi.mock('@carbon/icons-react', () => ({
   Stop: () => null,
   Play: () => null,
+  ViewNext: () => null,
+  Script: () => null,
+  Reset: () => null,
+  Clean: () => null,
+}));
+
+type FilesystemBrowserProps = {
+  open: boolean;
+  onRequestClose: () => void;
+  onChoose: (path: string) => Promise<void> | void;
+};
+
+vi.mock('./FilesystemBrowser', () => ({
+  default: ({ open, onRequestClose, onChoose }: FilesystemBrowserProps) => (
+    <div data-testid="script-browser" data-open={String(open)}>
+      <button type="button" onClick={() => void onChoose('/sw/script.ini')}>Choose script</button>
+      <button type="button" onClick={onRequestClose}>Close browser</button>
+    </div>
+  ),
 }));
 
 const emulatorConsoleState = vi.hoisted(() => ({
   sendCommand: vi.fn(async () => ''),
+  clearOutput: vi.fn(),
   outputValue: 'hello\n',
   initializedValue: true,
   isRunningValue: false,
@@ -48,18 +72,27 @@ vi.mock('./EmulatorConsoleProvider', () => ({
   useEmulatorConsole: () => ({
     output: emulatorConsoleState.outputValue,
     sendCommand: emulatorConsoleState.sendCommand,
+    clearOutput: emulatorConsoleState.clearOutput,
     initialized: emulatorConsoleState.initializedValue,
     isRunning: emulatorConsoleState.isRunningValue,
   }),
 }));
 
 const actionMocks = vi.hoisted(() => ({
+  onProgramGoClick: vi.fn(),
+  onProgramStepClick: vi.fn(),
+  onRunScriptClick: vi.fn(),
   onProgramStopClick: vi.fn(),
+  onComputerResetClick: vi.fn(),
 }));
 
 vi.mock('./EmulatorActionsProvider', () => ({
   useEmulatorActions: () => ({
+    onProgramGoClick: actionMocks.onProgramGoClick,
+    onProgramStepClick: actionMocks.onProgramStepClick,
+    onRunScriptClick: actionMocks.onRunScriptClick,
     onProgramStopClick: actionMocks.onProgramStopClick,
+    onComputerResetClick: actionMocks.onComputerResetClick,
   }),
 }));
 
@@ -127,9 +160,18 @@ describe('EmulatorConsole', () => {
     root = createRoot(container);
     emulatorConsoleState.sendCommand.mockReset();
     emulatorConsoleState.sendCommand.mockImplementation(async () => '');
+    emulatorConsoleState.clearOutput.mockClear();
     emulatorConsoleState.outputValue = 'hello\n';
     emulatorConsoleState.initializedValue = true;
     emulatorConsoleState.isRunningValue = false;
+    actionMocks.onProgramGoClick.mockReset();
+    actionMocks.onProgramGoClick.mockResolvedValue(undefined);
+    actionMocks.onProgramStepClick.mockReset();
+    actionMocks.onProgramStepClick.mockResolvedValue(undefined);
+    actionMocks.onRunScriptClick.mockReset();
+    actionMocks.onRunScriptClick.mockResolvedValue(undefined);
+    actionMocks.onComputerResetClick.mockReset();
+    actionMocks.onComputerResetClick.mockResolvedValue(undefined);
     actionMocks.onProgramStopClick.mockClear();
     window.localStorage.clear();
   });
@@ -260,7 +302,9 @@ describe('EmulatorConsole', () => {
     render(<EmulatorConsole />);
 
     const stopButton = getButtonByLabel('Stop') as HTMLButtonElement;
+    const stepButton = getButtonByLabel('Step') as HTMLButtonElement;
     expect(stopButton).toBeDefined();
+    expect(stepButton.disabled).toBe(true);
     await act(async () => {
       stopButton.click();
     });
@@ -276,7 +320,77 @@ describe('EmulatorConsole', () => {
       goButton.click();
     });
 
-    expect(emulatorConsoleState.sendCommand).toHaveBeenCalledWith('go');
+    expect(actionMocks.onProgramGoClick).toHaveBeenCalledTimes(1);
+  });
+
+  it('runs step command from Step button', async () => {
+    render(<EmulatorConsole />);
+    const stepButton = getButtonByLabel('Step') as HTMLButtonElement;
+
+    await act(async () => {
+      stepButton.click();
+    });
+
+    expect(actionMocks.onProgramStepClick).toHaveBeenCalledTimes(1);
+  });
+
+  it('opens run script browser and executes do command for selected ini file', async () => {
+    let resolveScriptRun: (() => void) | null = null;
+    actionMocks.onRunScriptClick.mockImplementation(
+      () =>
+        new Promise<void>((resolve) => {
+          resolveScriptRun = () => resolve();
+        })
+    );
+    render(<EmulatorConsole />);
+    const runScriptButton = getButtonByLabel('Run script') as HTMLButtonElement;
+
+    expect(container.querySelector('[data-testid="script-browser"]')?.getAttribute('data-open')).toBe('false');
+
+    await act(async () => {
+      runScriptButton.click();
+    });
+
+    expect(container.querySelector('[data-testid="script-browser"]')?.getAttribute('data-open')).toBe('true');
+
+    const chooseScriptButton = Array.from(container.querySelectorAll('button')).find(
+      (button) => button.textContent === 'Choose script'
+    ) as HTMLButtonElement;
+
+    await act(async () => {
+      chooseScriptButton.click();
+      await Promise.resolve();
+    });
+
+    expect(container.querySelector('[data-testid="script-browser"]')?.getAttribute('data-open')).toBe('false');
+    expect(actionMocks.onRunScriptClick).toHaveBeenCalledWith('/sw/script.ini');
+
+    await act(async () => {
+      resolveScriptRun?.();
+      await Promise.resolve();
+    });
+  });
+
+  it('runs reset action from Reset button', async () => {
+    render(<EmulatorConsole />);
+    const resetButton = getButtonByLabel('Reset') as HTMLButtonElement;
+
+    await act(async () => {
+      resetButton.click();
+    });
+
+    expect(actionMocks.onComputerResetClick).toHaveBeenCalledTimes(1);
+  });
+
+  it('clears output from Clear output button', async () => {
+    render(<EmulatorConsole />);
+    const clearButton = getButtonByLabel('Clear output') as HTMLButtonElement;
+
+    await act(async () => {
+      clearButton.click();
+    });
+
+    expect(emulatorConsoleState.clearOutput).toHaveBeenCalledTimes(1);
   });
 
   it('clears sending state after timeout fires', async () => {

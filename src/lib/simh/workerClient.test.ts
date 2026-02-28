@@ -239,6 +239,50 @@ describe('workerClient', () => {
     await depositPromise;
   });
 
+  it('provides wrapper commands for go/step/do script', async () => {
+    const workerClient = await import('./workerClient');
+    const initPromise = workerClient.init('i650');
+    const worker = FakeWorker.instances[0];
+    const initReq = getLastRequest(worker);
+    worker.emitMessage({ id: initReq.id, ok: true, result: null });
+    await initPromise;
+
+    const goPromise = workerClient.go();
+    await flushMicrotasks();
+    const goReq = getLastRequest(worker);
+    expect(goReq.method).toBe('sendCommand');
+    expect(goReq.args).toEqual(['GO', { streamOutput: true }]);
+    worker.emitMessage({ id: goReq.id, ok: true, result: 'go ok' });
+    await expect(goPromise).resolves.toBe('go ok');
+
+    const stepPromise = workerClient.stepInstruction();
+    await flushMicrotasks();
+    const stepReq = getLastRequest(worker);
+    expect(stepReq.method).toBe('sendCommand');
+    expect(stepReq.args).toEqual(['STEP', { streamOutput: true }]);
+    worker.emitMessage({ id: stepReq.id, ok: true, result: 'step ok' });
+    await expect(stepPromise).resolves.toBe('step ok');
+
+    const scriptPromise = workerClient.runScript('/sw/script.ini');
+    await flushMicrotasks();
+    const scriptReq = getLastRequest(worker);
+    expect(scriptReq.method).toBe('sendCommand');
+    expect(scriptReq.args).toEqual(['DO /sw/script.ini', { streamOutput: true }]);
+    worker.emitMessage({ id: scriptReq.id, ok: true, result: 'script ok' });
+    await expect(scriptPromise).resolves.toBe('script ok');
+  });
+
+  it('rejects runScript when path is empty', async () => {
+    const workerClient = await import('./workerClient');
+    const initPromise = workerClient.init('i650');
+    const worker = FakeWorker.instances[0];
+    const initReq = getLastRequest(worker);
+    worker.emitMessage({ id: initReq.id, ok: true, result: null });
+    await initPromise;
+
+    await expect(workerClient.runScript('   ')).rejects.toThrow('Script path must be non-empty');
+  });
+
   it('resets init promise when ensureInit sees an init failure', async () => {
     const workerClient = await import('./workerClient');
     const initPromise = workerClient.init('i650');

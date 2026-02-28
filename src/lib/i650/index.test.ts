@@ -12,6 +12,9 @@ const simhMocks = {
   onOutput: vi.fn<(cb: ((text: string) => void) | null) => Promise<void>>(),
   onRunState: vi.fn<(listener: (running: boolean) => void) => void>(),
   sendCommand: vi.fn<(cmd: string, options?: { streamOutput?: boolean; echo?: boolean }) => Promise<string>>(),
+  go: vi.fn<() => Promise<string>>(),
+  stepInstruction: vi.fn<() => Promise<string>>(),
+  runScript: vi.fn<(path: string) => Promise<string>>(),
   examine: vi.fn<(ref: string, options?: { echo?: boolean }) => Promise<Record<string, string>>>(),
   deposit: vi.fn<(ref: string, value: string, options?: { echo?: boolean }) => Promise<void>>(),
   readFile: vi.fn<(path: string) => Promise<string>>(),
@@ -118,6 +121,9 @@ describe('i650', () => {
       runStateListener = listener;
     });
     simhMocks.sendCommand.mockResolvedValue('');
+    simhMocks.go.mockResolvedValue('');
+    simhMocks.stepInstruction.mockResolvedValue('');
+    simhMocks.runScript.mockResolvedValue('');
     simhMocks.examine.mockResolvedValue({ ...defaultState });
     simhMocks.deposit.mockResolvedValue(undefined);
     simhMocks.getYieldEnabled.mockResolvedValue(true);
@@ -236,7 +242,7 @@ describe('i650', () => {
     await service.startProgramOrTransfer();
 
     expect(simhMocks.deposit).toHaveBeenCalledWith('DIST', '1234567890+');
-    expect(simhMocks.sendCommand).not.toHaveBeenCalledWith('GO', { streamOutput: true });
+    expect(simhMocks.go).not.toHaveBeenCalled();
   });
 
   it('manual read-out falls back to numeric key and zero default', async () => {
@@ -271,7 +277,7 @@ describe('i650', () => {
     service.setControlSwitch(Control.RUN);
     await service.startProgramOrTransfer();
 
-    expect(simhMocks.sendCommand).toHaveBeenCalledWith('GO', { streamOutput: true });
+    expect(simhMocks.go).toHaveBeenCalledTimes(1);
   });
 
   it('manual mode with non-transfer display performs no drum action', async () => {
@@ -285,7 +291,7 @@ describe('i650', () => {
 
     const depositCalls = simhMocks.deposit.mock.calls.filter(([ref]) => ref === 'DIST');
     expect(depositCalls.length).toBe(0);
-    expect(simhMocks.sendCommand).not.toHaveBeenCalledWith('GO', { streamOutput: true });
+    expect(simhMocks.go).not.toHaveBeenCalled();
   });
 
   it('restarts simulator and reapplies startup configuration', async () => {
@@ -404,7 +410,7 @@ describe('i650', () => {
 
     expect(simhMocks.deposit).toHaveBeenCalledWith('8001', '8888888888+');
     expect(simhMocks.deposit).toHaveBeenCalledWith('DIST', '8888888888+');
-    expect(simhMocks.sendCommand).not.toHaveBeenCalledWith('GO', { streamOutput: true });
+    expect(simhMocks.go).not.toHaveBeenCalled();
   });
 
   it('resetProgram stops running emulator and zeroes program/address registers', async () => {
@@ -453,6 +459,45 @@ describe('i650', () => {
     await service.reset();
 
     expect(simhMocks.sendCommand).toHaveBeenCalledWith('RESET', undefined);
+  });
+
+  it('go issues GO command through wrapper', async () => {
+    const service = await setupService();
+    await service.init();
+    await flushPromises();
+
+    await service.go();
+
+    expect(simhMocks.go).toHaveBeenCalledTimes(1);
+  });
+
+  it('step issues STEP command through wrapper', async () => {
+    const service = await setupService();
+    await service.init();
+    await flushPromises();
+
+    await service.step();
+
+    expect(simhMocks.stepInstruction).toHaveBeenCalledTimes(1);
+  });
+
+  it('runScript issues DO command through wrapper', async () => {
+    const service = await setupService();
+    await service.init();
+    await flushPromises();
+
+    await service.runScript('/sw/script.ini');
+
+    expect(simhMocks.runScript).toHaveBeenCalledWith('/sw/script.ini');
+  });
+
+  it('runScript surfaces underlying worker errors', async () => {
+    const service = await setupService();
+    await service.init();
+    await flushPromises();
+
+    simhMocks.runScript.mockRejectedValueOnce(new Error('Script path must be non-empty'));
+    await expect(service.runScript('  ')).rejects.toThrow('Script path must be non-empty');
   });
 
   it('executeCommand returns output and refreshes registers', async () => {
@@ -591,8 +636,7 @@ describe('i650', () => {
     runStateListener?.(true);
     await service.startProgramOrTransfer();
 
-    const goCalls = simhMocks.sendCommand.mock.calls.filter(([cmd]) => cmd === 'GO');
-    expect(goCalls.length).toBe(0);
+    expect(simhMocks.go).not.toHaveBeenCalled();
   });
 
   it('resets init state when init fails and can be retried', async () => {

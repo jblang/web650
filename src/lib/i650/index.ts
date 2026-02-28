@@ -605,6 +605,47 @@ export async function executeCommand(
   }
 }
 
+/**
+ * Executes GO through the I650 service.
+ */
+export async function go(): Promise<string> {
+  await ensureInit();
+  if (!state.isRunning) {
+    runRequestedUntil = Date.now() + 1500;
+    mergeState({ isRunning: true });
+  }
+  try {
+    const result = await simh.go();
+    await refreshRegisters();
+    return result;
+  } finally {
+    runRequestedUntil = 0;
+    mergeState({ isRunning: false });
+  }
+}
+
+/**
+ * Executes STEP through the I650 service.
+ */
+export async function step(): Promise<string> {
+  await ensureInit();
+  const result = await simh.stepInstruction();
+  await refreshRegisters();
+  return result;
+}
+
+/**
+ * Executes a DO script through the I650 service.
+ *
+ * @param path - Script path in the emulator filesystem.
+ */
+export async function runScript(path: string): Promise<string> {
+  await ensureInit();
+  const result = await simh.runScript(path);
+  await refreshRegisters();
+  return result;
+}
+
 export async function listFilesystemDirectory(path: string): Promise<I650FilesystemEntry[]> {
   await ensureInit();
   return simh.listDirectory(path);
@@ -833,7 +874,7 @@ export async function handleDrumTransfer(): Promise<void> {
  * Starts program execution.
  */
 export async function startProgram(): Promise<void> {
-  await executeCommand('GO', { streamOutput: true });
+  await go();
 }
 
 /**

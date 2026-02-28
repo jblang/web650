@@ -20,6 +20,9 @@ export {
 export {
   init,
   sendCommand,
+  go,
+  stepInstruction,
+  runScript,
   sendCommandAsync,
   examine,
   examineAsync,

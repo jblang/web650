@@ -25,6 +25,9 @@ interface EmulatorActionsContextType {
   onEntryValueChange: (value: string) => Promise<void>;
   onTransferClick: () => Promise<void>;
   onProgramStartClick: () => Promise<void>;
+  onProgramGoClick: () => Promise<void>;
+  onProgramStepClick: () => Promise<void>;
+  onRunScriptClick: (path: string) => Promise<void>;
   onProgramStopClick: () => Promise<void>;
   onProgramResetClick: () => Promise<void>;
   onComputerResetClick: () => Promise<void>;
@@ -101,6 +104,18 @@ export function EmulatorActionsProvider({ children }: { children: ReactNode }) {
     await i650Service.startProgramOrTransfer();
   }, []);
 
+  const onProgramGoClick = useCallback(async () => {
+    await i650Service.go();
+  }, []);
+
+  const onProgramStepClick = useCallback(async () => {
+    await i650Service.step();
+  }, []);
+
+  const onRunScriptClick = useCallback(async (path: string) => {
+    await i650Service.runScript(path);
+  }, []);
+
   const onProgramStopClick = useCallback(async () => {
     await i650Service.stopProgram();
   }, []);
@@ -139,6 +154,9 @@ export function EmulatorActionsProvider({ children }: { children: ReactNode }) {
       onEntryValueChange,
       onTransferClick,
       onProgramStartClick,
+      onProgramGoClick,
+      onProgramStepClick,
+      onRunScriptClick,
       onProgramStopClick,
       onProgramResetClick,
       onComputerResetClick,
@@ -157,6 +175,9 @@ export function EmulatorActionsProvider({ children }: { children: ReactNode }) {
       onEntryValueChange,
       onTransferClick,
       onProgramStartClick,
+      onProgramGoClick,
+      onProgramStepClick,
+      onRunScriptClick,
       onProgramStopClick,
       onProgramResetClick,
       onComputerResetClick,

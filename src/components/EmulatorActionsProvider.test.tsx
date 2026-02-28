@@ -20,6 +20,9 @@ const mockServiceMocks = vi.hoisted(() => ({
   setErrorSwitch: vi.fn(),
   setConsoleSwitches: vi.fn(),
   startProgramOrTransfer: vi.fn(),
+  go: vi.fn(),
+  step: vi.fn(),
+  runScript: vi.fn(),
   stopProgram: vi.fn(),
   resetProgram: vi.fn(),
   resetComputer: vi.fn(),
@@ -59,6 +62,9 @@ describe('EmulatorActionsProvider', () => {
     mockServiceMocks.setOverflowStop.mockResolvedValue(undefined);
     mockServiceMocks.setConsoleSwitches.mockResolvedValue(undefined);
     mockServiceMocks.startProgramOrTransfer.mockResolvedValue(undefined);
+    mockServiceMocks.go.mockResolvedValue('');
+    mockServiceMocks.step.mockResolvedValue('');
+    mockServiceMocks.runScript.mockResolvedValue('');
     mockServiceMocks.stopProgram.mockResolvedValue(undefined);
     mockServiceMocks.resetProgram.mockResolvedValue(undefined);
     mockServiceMocks.resetComputer.mockResolvedValue(undefined);
@@ -419,6 +425,78 @@ describe('EmulatorActionsProvider', () => {
     });
 
     expect(mockServiceMocks.stopProgram).toHaveBeenCalled();
+  });
+
+  it('onProgramGoClick calls go', async () => {
+    const captured: { actions?: ReturnType<typeof useEmulatorActions> } = {};
+
+    const Probe = () => {
+      const actions = useEmulatorActions();
+      React.useEffect(() => {
+        captured.actions = actions;
+      }, [actions]);
+      return null;
+    };
+
+    render(
+      <EmulatorActionsProvider>
+        <Probe />
+      </EmulatorActionsProvider>
+    );
+
+    await act(async () => {
+      await captured.actions?.onProgramGoClick();
+    });
+
+    expect(mockServiceMocks.go).toHaveBeenCalled();
+  });
+
+  it('onProgramStepClick calls step', async () => {
+    const captured: { actions?: ReturnType<typeof useEmulatorActions> } = {};
+
+    const Probe = () => {
+      const actions = useEmulatorActions();
+      React.useEffect(() => {
+        captured.actions = actions;
+      }, [actions]);
+      return null;
+    };
+
+    render(
+      <EmulatorActionsProvider>
+        <Probe />
+      </EmulatorActionsProvider>
+    );
+
+    await act(async () => {
+      await captured.actions?.onProgramStepClick();
+    });
+
+    expect(mockServiceMocks.step).toHaveBeenCalled();
+  });
+
+  it('onRunScriptClick calls runScript with path', async () => {
+    const captured: { actions?: ReturnType<typeof useEmulatorActions> } = {};
+
+    const Probe = () => {
+      const actions = useEmulatorActions();
+      React.useEffect(() => {
+        captured.actions = actions;
+      }, [actions]);
+      return null;
+    };
+
+    render(
+      <EmulatorActionsProvider>
+        <Probe />
+      </EmulatorActionsProvider>
+    );
+
+    await act(async () => {
+      await captured.actions?.onRunScriptClick('/sw/script.ini');
+    });
+
+    expect(mockServiceMocks.runScript).toHaveBeenCalledWith('/sw/script.ini');
   });
 
   it('onProgramResetClick calls resetProgram', async () => {
