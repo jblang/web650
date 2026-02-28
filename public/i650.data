@@ -48702,9 +48702,10 @@ L: ... Read Card 1960: 0000908000+ '  0~ '
                                                end                        
                                                
 echof "** Simple accumulator counter for front panel Blinkenlights"
-deposit 0 1500020001
-deposit 2 1
-examine 0-2
+set throttle 5/1
+deposit csw 1
+deposit 0 1580000001
+examine 0-1
 go:: i650_test.ini
 ::
 :: there are not know diagnostic program for ibm 650.

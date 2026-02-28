@@ -1,6 +1,6 @@
 ## About the IBM 650
 
-The [IBM 650](https://en.wikipedia.org/wiki/IBM_650) (wikipedia.org) is an early digital computer released by IBM in 1954. It was one of the first mass-produced computers in the world (at a time when just under 2000 was considered mass-produced). It was affordable enough that many universities could afford their own computer for the first time, and it helped launch many computer science programs. It is famously the computer to which Donald Knuth dedicated *The Art of Computer Programming*.
+The [IBM 650](https://en.wikipedia.org/wiki/IBM_650) (wikipedia.org) is an early digital computer released by IBM in 1954. It was one of the first mass-produced computers in the world (at a time when just under 2000 was considered mass-produced). It was affordable enough that many universities could buy their own computer for the first time, and it helped launch many computer science programs. It is famously the computer to which Donald Knuth dedicated *The Art of Computer Programming*.
 
 > This series of books is affectionately dedicated to the Type 650 computer once installed at Case Institute of Technology, in rememberance of many pleasant evenings.
 
@@ -48,7 +48,7 @@ The term [blinkenlights](https://en.wikipedia.org/wiki/Blinkenlights) comes from
 > HÄNDER IN DAS POCKETS MUSS.
 > ZO RELAXEN UND WATSCHEN DER BLINKENLICHTEN.
 
-Luckily, this simulation of the 650 is more friendly to turisten und sightseeren than this warning suggests. Gefingerpoken und mittengrabben is encouraged. You're very unlikely to blowenfusen or schnappen der springenwerk, so have fun. If something breaks, just reload the web page and your virtual 650 is as good as new. 
+Luckily, this simulation of the 650 is more friendly to turisten und sightseeren than this warning suggests. Gefingerpoken und mittengrabben are encouraged. You're very unlikely to blowenfusen or schnappen der springenwerk, so have fun. If something breaks, just reload the web page and your virtual 650 is as good as new. 
 
 #### Bi-Quinary Counting
 
@@ -59,11 +59,10 @@ The front panel cleverly arranges the 7 lights for each digit into a 2x5 table w
 Go to the Emulator tab, and type the following commands:
 
 ```
-set throttle 5/1
 do /tests/fpcount.ini
 ```
 
-Switch to the Front Panel tab and enjoy bi-quinary counting at its finest.
+Switch to the Front Panel tab and enjoy bi-quinary counting at its finest. You can change the entry switches to control the number that gets added to the accumulator. Experimenting with different values can yield interesting light behavior.
 
 #### Blinkenlights while Programs Run
 
