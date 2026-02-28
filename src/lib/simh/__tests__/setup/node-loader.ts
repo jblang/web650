@@ -5,9 +5,9 @@
  * replacing the browser-specific loader in core.ts.
  */
 
-import path from 'path';
 import type { EmscriptenModule } from '../../types';
-import { setModule as setCoreModule, getModule, handleOutput, sendCommand, setYieldEnabled } from '../../core';
+import { setModule as setCoreModule, getModule, sendCommand, setYieldEnabled, handleOutput } from '../../core';
+import { createNodeSimhRuntime } from '../../../../../scripts/simh-node-runtime.mjs';
 
 export class OutputCapture {
   private lines: string[] = [];
@@ -42,33 +42,8 @@ export async function initWasmForNode(): Promise<EmscriptenModule> {
     // Not initialized, continue with init
   }
 
-  // Dynamically import the Emscripten JS loader
-  // The public/i650.js file exports createI650Module via module.exports
-  const publicDir = path.resolve(__dirname, '../../../../../public');
-  const modulePath = path.join(publicDir, 'i650.js');
-
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
-  const createModule = require(modulePath);
-
-  // Create the module with Node.js-specific configuration
-  // Use handleOutput from core.ts to ensure output capture works correctly
-  const wasmModule = (await createModule({
-    noInitialRun: true,
-    print: (text: string) => handleOutput(text),
-    printErr: (text: string) => handleOutput(text),
-    stdin: () => null,
-    locateFile: (fileName: string) => {
-      // Provide absolute paths to WASM and data files in public/ directory
-      return path.join(publicDir, fileName);
-    },
-  })) as EmscriptenModule;
-
-  // Initialize SIMH
-  const rcResult = wasmModule.ccall('simh_init', 'number', [], []) as number | Promise<number>;
-  const rc = typeof rcResult === 'number' ? rcResult : await rcResult;
-  if (rc !== 0) {
-    throw new Error(`simh_init failed with code ${rc}`);
-  }
+  const runtime = await createNodeSimhRuntime({ onOutputLine: handleOutput });
+  const wasmModule = runtime.wasmModule as EmscriptenModule;
 
   // Set the module in core.ts so all API functions can access it
   setCoreModule(wasmModule);
@@ -80,4 +55,34 @@ export async function initWasmForNode(): Promise<EmscriptenModule> {
   sendCommand('SET CPU 1K');
 
   return wasmModule;
+}
+
+/**
+ * Execute a SIMH command directly in Node-based tests and return command output.
+ *
+ * This is useful when building UI controls around SIMH commands and needing
+ * real command help/introspection output in tests.
+ */
+export function runSimhCommand(command: string): string {
+  const normalized = command.trim();
+  if (!normalized) {
+    throw new TypeError('SIMH command must be non-empty');
+  }
+  return sendCommand(normalized);
+}
+
+/**
+ * Collect command-reference context for SIMH UI work.
+ *
+ * By default this runs HELP/SHOW commands that describe available commands
+ * and current simulator configuration.
+ */
+export function getSimhCommandContext(
+  commands: string[] = ['HELP', 'SHOW CONFIG']
+): Record<string, string> {
+  const context: Record<string, string> = {};
+  for (const command of commands) {
+    context[command] = runSimhCommand(command);
+  }
+  return context;
 }

@@ -20,6 +20,7 @@ Web-based UI for the Open SIMH IBM 650 simulator. The simulator runs entirely in
 npm run dev          # Start dev server
 npm run build        # Production build
 npm run lint         # ESLint (flat config, strict TypeScript)
+npm run simh:cmd -- "HELP"   # Run a direct SIMH command in Node and print output
 npm test             # Run all tests (vitest, watch mode)
 npx vitest run       # Run tests once (CI mode)
 npx vitest run --coverage  # Tests with coverage report
@@ -84,6 +85,7 @@ npm run lint
 - **React Compiler enabled** (`reactCompiler: true` in `next.config.ts`). Don’t add manual memoization unless measured.
 - **Static site**: all pages are statically generated; no server-side API.
 - **WASM artifacts** (`public/i650.js`, `public/i650.wasm`, `public/i650.data`) are checked into git so users can run the UI without rebuilding. Rebuild via `scripts/build-wasm.sh` only when changing SIMH.
+- **SIMH UI context reminder**: when implementing or updating SIMH command UIs, inspect real command output first (for example `npm run simh:cmd -- "HELP"` and `npm run simh:cmd -- "SHOW CONFIG"`), or use `runSimhCommand` / `getSimhCommandContext` in `src/lib/simh/__tests__/setup/node-loader.ts`.
 
 ## More Context
 
