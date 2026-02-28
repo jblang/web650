@@ -270,6 +270,54 @@ describe('workerClient', () => {
     expect(scriptReq.args).toEqual(['DO /sw/script.ini', { streamOutput: true }]);
     worker.emitMessage({ id: scriptReq.id, ok: true, result: 'script ok' });
     await expect(scriptPromise).resolves.toBe('script ok');
+
+    const cpuPromise = workerClient.setCpuType('2k');
+    await flushMicrotasks();
+    const cpuReq = getLastRequest(worker);
+    expect(cpuReq.method).toBe('sendCommand');
+    expect(cpuReq.args).toEqual(['SET CPU 2K', { echo: false }]);
+    worker.emitMessage({ id: cpuReq.id, ok: true, result: '' });
+    await expect(cpuPromise).resolves.toBe('');
+
+    const attachPromise = workerClient.setUnitAttachment('mt0', '/sw/demo.tap');
+    await flushMicrotasks();
+    const attachReq = getLastRequest(worker);
+    expect(attachReq.method).toBe('sendCommand');
+    expect(attachReq.args).toEqual(['ATTACH MT0 /sw/demo.tap', { echo: false }]);
+    worker.emitMessage({ id: attachReq.id, ok: true, result: '' });
+    await expect(attachPromise).resolves.toBe('');
+
+    const detachPromise = workerClient.setUnitAttachment('mt0', '   ');
+    await flushMicrotasks();
+    const detachReq = getLastRequest(worker);
+    expect(detachReq.method).toBe('sendCommand');
+    expect(detachReq.args).toEqual(['DETACH MT0', { echo: false }]);
+    worker.emitMessage({ id: detachReq.id, ok: true, result: '' });
+    await expect(detachPromise).resolves.toBe('');
+
+    const cpuOptionPromise = workerClient.setCpuOption('debug=cmd;data');
+    await flushMicrotasks();
+    const cpuOptionReq = getLastRequest(worker);
+    expect(cpuOptionReq.method).toBe('sendCommand');
+    expect(cpuOptionReq.args).toEqual(['SET CPU DEBUG=CMD;DATA', { echo: false }]);
+    worker.emitMessage({ id: cpuOptionReq.id, ok: true, result: '' });
+    await expect(cpuOptionPromise).resolves.toBe('');
+
+    const setFormatPromise = workerClient.setUnitFormat('cdr0', 'auto');
+    await flushMicrotasks();
+    const setFormatReq = getLastRequest(worker);
+    expect(setFormatReq.method).toBe('sendCommand');
+    expect(setFormatReq.args).toEqual(['SET CDR0 FORMAT=AUTO', { echo: false }]);
+    worker.emitMessage({ id: setFormatReq.id, ok: true, result: '' });
+    await expect(setFormatPromise).resolves.toBe('');
+
+    const setWiringPromise = workerClient.setUnitWiring('cdp0', '8word');
+    await flushMicrotasks();
+    const setWiringReq = getLastRequest(worker);
+    expect(setWiringReq.method).toBe('sendCommand');
+    expect(setWiringReq.args).toEqual(['SET CDP0 WIRING=8WORD', { echo: false }]);
+    worker.emitMessage({ id: setWiringReq.id, ok: true, result: '' });
+    await expect(setWiringPromise).resolves.toBe('');
   });
 
   it('rejects runScript when path is empty', async () => {
@@ -281,6 +329,13 @@ describe('workerClient', () => {
     await initPromise;
 
     await expect(workerClient.runScript('   ')).rejects.toThrow('Script path must be non-empty');
+    await expect(workerClient.setCpuType('   ')).rejects.toThrow('CPU type must be non-empty');
+    await expect(workerClient.setCpuOption('   ')).rejects.toThrow('CPU option must be non-empty');
+    await expect(workerClient.setUnitAttachment('   ', '/sw/demo.tap')).rejects.toThrow('Unit name must be non-empty');
+    await expect(workerClient.setUnitFormat('   ', 'AUTO')).rejects.toThrow('Unit name must be non-empty');
+    await expect(workerClient.setUnitFormat('CDR0', '   ')).rejects.toThrow('Format must be non-empty');
+    await expect(workerClient.setUnitWiring('   ', '8WORD')).rejects.toThrow('Unit name must be non-empty');
+    await expect(workerClient.setUnitWiring('CDR0', '   ')).rejects.toThrow('Wiring must be non-empty');
   });
 
   it('resets init promise when ensureInit sees an init failure', async () => {

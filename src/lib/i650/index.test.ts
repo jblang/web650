@@ -15,6 +15,11 @@ const simhMocks = {
   go: vi.fn<() => Promise<string>>(),
   stepInstruction: vi.fn<() => Promise<string>>(),
   runScript: vi.fn<(path: string) => Promise<string>>(),
+  setCpuType: vi.fn<(cpuType: string) => Promise<string>>(),
+  setCpuOption: vi.fn<(option: string) => Promise<string>>(),
+  setUnitAttachment: vi.fn<(unit: string, path: string) => Promise<string>>(),
+  setUnitFormat: vi.fn<(unit: string, format: string) => Promise<string>>(),
+  setUnitWiring: vi.fn<(unit: string, wiring: string) => Promise<string>>(),
   examine: vi.fn<(ref: string, options?: { echo?: boolean }) => Promise<Record<string, string>>>(),
   deposit: vi.fn<(ref: string, value: string, options?: { echo?: boolean }) => Promise<void>>(),
   readFile: vi.fn<(path: string) => Promise<string>>(),
@@ -124,6 +129,11 @@ describe('i650', () => {
     simhMocks.go.mockResolvedValue('');
     simhMocks.stepInstruction.mockResolvedValue('');
     simhMocks.runScript.mockResolvedValue('');
+    simhMocks.setCpuType.mockResolvedValue('');
+    simhMocks.setCpuOption.mockResolvedValue('');
+    simhMocks.setUnitAttachment.mockResolvedValue('');
+    simhMocks.setUnitFormat.mockResolvedValue('');
+    simhMocks.setUnitWiring.mockResolvedValue('');
     simhMocks.examine.mockResolvedValue({ ...defaultState });
     simhMocks.deposit.mockResolvedValue(undefined);
     simhMocks.getYieldEnabled.mockResolvedValue(true);
@@ -498,6 +508,63 @@ describe('i650', () => {
 
     simhMocks.runScript.mockRejectedValueOnce(new Error('Script path must be non-empty'));
     await expect(service.runScript('  ')).rejects.toThrow('Script path must be non-empty');
+  });
+
+  it('setSimulatorCpuType issues SET CPU through wrapper', async () => {
+    const service = await setupService();
+    await service.init();
+    await flushPromises();
+
+    await service.setSimulatorCpuType('2K');
+
+    expect(simhMocks.setCpuType).toHaveBeenCalledWith('2K');
+    expect(simhMocks.examine).toHaveBeenCalledWith('STATE', { echo: false });
+  });
+
+  it('setSimulatorCpuOption issues generic SET CPU option through wrapper', async () => {
+    const service = await setupService();
+    await service.init();
+    await flushPromises();
+
+    await service.setSimulatorCpuOption('DEBUG=CMD;DATA');
+
+    expect(simhMocks.setCpuOption).toHaveBeenCalledWith('DEBUG=CMD;DATA');
+    expect(simhMocks.examine).toHaveBeenCalledWith('STATE', { echo: false });
+  });
+
+  it('setSimulatorUnitAttachment issues ATTACH/DETACH through wrapper', async () => {
+    const service = await setupService();
+    await service.init();
+    await flushPromises();
+
+    await service.setSimulatorUnitAttachment('MT0', '/sw/demo.tap');
+    await service.setSimulatorUnitAttachment('MT0', '');
+
+    expect(simhMocks.setUnitAttachment).toHaveBeenNthCalledWith(1, 'MT0', '/sw/demo.tap');
+    expect(simhMocks.setUnitAttachment).toHaveBeenNthCalledWith(2, 'MT0', '');
+    expect(simhMocks.examine).toHaveBeenCalledWith('STATE', { echo: false });
+  });
+
+  it('setSimulatorUnitFormat issues SET unit FORMAT through wrapper', async () => {
+    const service = await setupService();
+    await service.init();
+    await flushPromises();
+
+    await service.setSimulatorUnitFormat('CDR0', 'AUTO');
+
+    expect(simhMocks.setUnitFormat).toHaveBeenCalledWith('CDR0', 'AUTO');
+    expect(simhMocks.examine).toHaveBeenCalledWith('STATE', { echo: false });
+  });
+
+  it('setSimulatorUnitWiring issues SET unit WIRING through wrapper', async () => {
+    const service = await setupService();
+    await service.init();
+    await flushPromises();
+
+    await service.setSimulatorUnitWiring('CDR0', '8WORD');
+
+    expect(simhMocks.setUnitWiring).toHaveBeenCalledWith('CDR0', '8WORD');
+    expect(simhMocks.examine).toHaveBeenCalledWith('STATE', { echo: false });
   });
 
   it('executeCommand returns output and refreshes registers', async () => {

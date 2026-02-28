@@ -8,6 +8,7 @@
 // Types
 export type { EmscriptenModule } from './types';
 export type { FilesystemEntry } from './filesystem';
+export type { SimulatorConfigUnit, SimulatorConfiguration } from './config';
 
 // Generic SIMH Constants
 export {
@@ -20,9 +21,6 @@ export {
 export {
   init,
   sendCommand,
-  go,
-  stepInstruction,
-  runScript,
   sendCommandAsync,
   examine,
   examineAsync,
@@ -59,5 +57,11 @@ export {
   unlink,
   listDirectory,
 } from './filesystem';
+
+// Generic SIMH Configuration
+export {
+  parseShowConfig,
+  parseCpuOptions,
+} from './config';
 
 // Generic init/restart are exported from core/control above.

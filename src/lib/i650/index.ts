@@ -5,6 +5,10 @@ import { extractOperationCode, validateAddress, validateWord, normalizeAddresses
 import type { DisplayPosition, ControlPosition, ErrorSwitchPosition } from './controls';
 import { debugLog, errorLog } from '../simh/debug';
 import { SCPE_STOP } from '../simh/constants';
+import {
+  type SimulatorConfiguration,
+  type SimulatorConfigUnit,
+} from '../simh/config';
 
 /**
  * I650 emulator state containing all registers, switches, and control flags.
@@ -57,6 +61,17 @@ export type I650FilesystemEntry = {
   name: string;
   path: string;
   isDirectory: boolean;
+};
+export type I650SimulatorConfigUnit = SimulatorConfigUnit;
+export type I650SimulatorConfiguration = SimulatorConfiguration;
+export type I650CpuDebugStatus = {
+  enabled: boolean;
+  flags: {
+    CMD: boolean;
+    DATA: boolean;
+    DETAIL: boolean;
+    EXP: boolean;
+  };
 };
 
 const listeners = new Set<StateListener>();
@@ -654,6 +669,77 @@ export async function listFilesystemDirectory(path: string): Promise<I650Filesys
 export async function readFilesystemFile(path: string): Promise<string> {
   await ensureInit();
   return simh.readFile(path);
+}
+
+export async function getSimulatorConfiguration(): Promise<I650SimulatorConfiguration> {
+  await ensureInit();
+  return simh.getSimulatorConfiguration();
+}
+
+export async function setSimulatorCpuType(cpuType: string): Promise<void> {
+  await ensureInit();
+  await simh.setCpuType(cpuType);
+  await refreshRegisters();
+}
+
+export async function setSimulatorCpuOption(option: string): Promise<void> {
+  await ensureInit();
+  await simh.setCpuOption(option);
+  await refreshRegisters();
+}
+
+export async function setSimulatorUnitAttachment(unit: string, path: string): Promise<void> {
+  await ensureInit();
+  await simh.setUnitAttachment(unit, path);
+  await refreshRegisters();
+}
+
+export async function setSimulatorUnitFormat(unit: string, format: string): Promise<void> {
+  await ensureInit();
+  await simh.setUnitFormat(unit, format);
+  await refreshRegisters();
+}
+
+export async function setSimulatorUnitWiring(unit: string, wiring: string): Promise<void> {
+  await ensureInit();
+  await simh.setUnitWiring(unit, wiring);
+  await refreshRegisters();
+}
+
+export async function setSimulatorUnitOption(
+  unit: string,
+  option: string,
+  value?: string | number
+): Promise<void> {
+  await ensureInit();
+  await simh.setUnitOption(unit, option, value);
+  await refreshRegisters();
+}
+
+export async function getSimulatorCpuDebugStatus(): Promise<I650CpuDebugStatus> {
+  await ensureInit();
+  const output = (await simh.getCpuDebugStatus()).toUpperCase();
+  const disabled = output.includes('DEBUGGING DISABLED');
+  if (disabled) {
+    return {
+      enabled: false,
+      flags: {
+        CMD: false,
+        DATA: false,
+        DETAIL: false,
+        EXP: false,
+      },
+    };
+  }
+  return {
+    enabled: true,
+    flags: {
+      CMD: output.includes('CMD'),
+      DATA: output.includes('DATA'),
+      DETAIL: output.includes('DETAIL'),
+      EXP: output.includes('EXP'),
+    },
+  };
 }
 
 /**

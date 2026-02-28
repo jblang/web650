@@ -33,7 +33,15 @@ make i650
 echo "=== Copying build artifacts to public/ ==="
 cp "$SIMH_DIR/BIN/i650.js"   "$PROJECT_DIR/public/"
 cp "$SIMH_DIR/BIN/i650.wasm" "$PROJECT_DIR/public/"
-cp "$SIMH_DIR/BIN/i650.data" "$PROJECT_DIR/public/"
+if [[ -f "$SIMH_DIR/BIN/i650.data" ]]; then
+  cp "$SIMH_DIR/BIN/i650.data" "$PROJECT_DIR/public/"
+else
+  rm -f "$PROJECT_DIR/public/i650.data"
+fi
 
 echo "=== Done ==="
-ls -lh "$PROJECT_DIR/public/i650.js" "$PROJECT_DIR/public/i650.wasm" "$PROJECT_DIR/public/i650.data"
+if [[ -f "$PROJECT_DIR/public/i650.data" ]]; then
+  ls -lh "$PROJECT_DIR/public/i650.js" "$PROJECT_DIR/public/i650.wasm" "$PROJECT_DIR/public/i650.data"
+else
+  ls -lh "$PROJECT_DIR/public/i650.js" "$PROJECT_DIR/public/i650.wasm"
+fi

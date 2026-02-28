@@ -46,6 +46,7 @@ type AnyMessage = ResponseMessage | OutputMessage | RunStateMessage | StateStrea
 
 import { debugLog } from './debug';
 import type { FilesystemEntry } from './filesystem';
+import { parseCpuOptions, parseCpuSettings, parseShowConfig, type SimulatorConfiguration } from './config';
 
 let worker: Worker | null = null;
 let requestId = 1;
@@ -211,6 +212,108 @@ export async function runScript(path: string): Promise<string> {
   }
   const escapedPath = trimmed.includes(' ') ? `"${trimmed.replaceAll('"', '\\"')}"` : trimmed;
   return sendCommand(`DO ${escapedPath}`, { streamOutput: true });
+}
+
+export async function setCpuType(cpuType: string): Promise<string> {
+  const trimmed = cpuType.trim().toUpperCase();
+  if (!trimmed) {
+    throw new TypeError('CPU type must be non-empty');
+  }
+  return sendCommand(`SET CPU ${trimmed}`, { echo: false });
+}
+
+export async function setCpuOption(option: string): Promise<string> {
+  const trimmed = option.trim().toUpperCase();
+  if (!trimmed) {
+    throw new TypeError('CPU option must be non-empty');
+  }
+  return sendCommand(`SET CPU ${trimmed}`, { echo: false });
+}
+
+export async function setUnitAttachment(unit: string, path: string): Promise<string> {
+  const normalizedUnit = unit.trim().toUpperCase();
+  if (!normalizedUnit) {
+    throw new TypeError('Unit name must be non-empty');
+  }
+
+  const trimmedPath = path.trim();
+  if (!trimmedPath) {
+    return sendCommand(`DETACH ${normalizedUnit}`, { echo: false });
+  }
+
+  const escapedPath = trimmedPath.includes(' ') ? `"${trimmedPath.replaceAll('"', '\\"')}"` : trimmedPath;
+  return sendCommand(`ATTACH ${normalizedUnit} ${escapedPath}`, { echo: false });
+}
+
+export async function setUnitFormat(unit: string, format: string): Promise<string> {
+  const normalizedUnit = unit.trim().toUpperCase();
+  if (!normalizedUnit) {
+    throw new TypeError('Unit name must be non-empty');
+  }
+  const normalizedFormat = format.trim().toUpperCase();
+  if (!normalizedFormat) {
+    throw new TypeError('Format must be non-empty');
+  }
+  return sendCommand(`SET ${normalizedUnit} FORMAT=${normalizedFormat}`, { echo: false });
+}
+
+export async function setUnitWiring(unit: string, wiring: string): Promise<string> {
+  const normalizedUnit = unit.trim().toUpperCase();
+  if (!normalizedUnit) {
+    throw new TypeError('Unit name must be non-empty');
+  }
+  const normalizedWiring = wiring.trim().toUpperCase();
+  if (!normalizedWiring) {
+    throw new TypeError('Wiring must be non-empty');
+  }
+  return sendCommand(`SET ${normalizedUnit} WIRING=${normalizedWiring}`, { echo: false });
+}
+
+export async function setUnitOption(
+  unit: string,
+  option: string,
+  value?: string | number
+): Promise<string> {
+  const normalizedUnit = unit.trim().toUpperCase();
+  if (!normalizedUnit) {
+    throw new TypeError('Unit name must be non-empty');
+  }
+  const normalizedOption = option.trim().toUpperCase();
+  if (!normalizedOption) {
+    throw new TypeError('Unit option must be non-empty');
+  }
+  if (value === undefined) {
+    return sendCommand(`SET ${normalizedUnit} ${normalizedOption}`, { echo: false });
+  }
+  const normalizedValue = String(value).trim();
+  if (!normalizedValue) {
+    throw new TypeError('Unit option value must be non-empty');
+  }
+  return sendCommand(`SET ${normalizedUnit} ${normalizedOption}=${normalizedValue}`, { echo: false });
+}
+
+export async function getCpuDebugStatus(): Promise<string> {
+  return sendCommand('SHOW CPU DEBUG', { echo: false });
+}
+
+export async function getSimulatorConfiguration(): Promise<SimulatorConfiguration> {
+  const [configOutput, cpuHelpOutput, cpuShowOutput] = await Promise.all([
+    sendCommand('SHOW CONFIG', { echo: false }),
+    sendCommand('SET CPU ?', { echo: false }).catch(() => ''),
+    sendCommand('SHOW CPU', { echo: false }).catch(() => ''),
+  ]);
+
+  const parsed = parseShowConfig(configOutput);
+  const parsedCpuOptions = parseCpuOptions(cpuHelpOutput);
+  const parsedCpuSettings = parseCpuSettings(cpuShowOutput);
+  const cpuOptions = Array.from(new Set([parsed.cpu, ...parsedCpuOptions].filter(Boolean)));
+
+  return {
+    cpu: parsed.cpu || cpuOptions[0] || '1K',
+    cpuOptions: cpuOptions.length > 0 ? cpuOptions : ['1K'],
+    cpuSettings: parsedCpuSettings,
+    units: parsed.units,
+  };
 }
 
 export async function examine(
